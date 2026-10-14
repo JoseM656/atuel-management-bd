@@ -15,11 +15,12 @@
 9 Documentación y defensa
 ```
 
+
 ## Resumen por etapa
 
 | # | Etapa | Objetivo (una línea) | Entregable que la cierra |
 |---|---|---|---|
-| 1 | Modelado | Pasar del escenario a un esquema físico 3FN | `001_esquema.sql` + DER + diccionario |
+| 1 |(COMPLETA) Modelado | Pasar del escenario a un esquema físico 3FN | `001_esquema.sql` + DER + diccionario |
 | 2 | Integridad y lógica | Que las reglas vivan en la base | `002_constraints`…`007_roles` + `db_tests.sql` |
 | 3 | Carga masiva | Datos reales y reproducibles (≥100k filas) | `db/seed/` + `dump_completo.sql.gz` |
 | 4 | Índices | Rendimiento medido con evidencia | `008_indices.sql` + informe |
