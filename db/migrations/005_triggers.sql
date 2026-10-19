@@ -122,6 +122,50 @@ CREATE TRIGGER trg_renglon_comprobante_ai
 AFTER INSERT ON renglon_comprobante
 FOR EACH ROW EXECUTE FUNCTION trg_fn_renglon_comprobante_ai();
 
+-- ---------------------------------------------------------------------
+-- BEFORE UPDATE/DELETE en renglon_comprobante (RN-08, RN-09)
+--   Un renglón vendido no se edita ni se borra suelto: cambiaría el total y
+--   el stock ya descontado. Para anular una venta se borra el comprobante
+--   entero (D1); en ese borrado en cascada el stock no se devuelve.
+--   Excepción: si cambia comprobante.porcentaje_descuento (U1) se aceptan
+--   importe_descuento y subtotal, siempre que coincidan con el recálculo.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION trg_fn_renglon_comprobante_bud() RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_porcentaje NUMERIC(5,2);
+BEGIN
+    SELECT porcentaje_descuento INTO v_porcentaje FROM comprobante WHERE nro = OLD.nro;
+
+    IF TG_OP = 'DELETE' THEN
+        -- Borrado en cascada desde la cabecera: el comprobante ya no existe.
+        IF NOT FOUND THEN
+            RETURN OLD;
+        END IF;
+        RAISE EXCEPTION 'no se puede borrar un renglón del comprobante %: para anular la venta se borra el comprobante completo (RN-08)',
+            OLD.nro;
+    END IF;
+
+    IF NEW.nro <> OLD.nro OR NEW.cod_vino <> OLD.cod_vino
+       OR NEW.cantidad <> OLD.cantidad OR NEW.precio_unitario <> OLD.precio_unitario THEN
+        RAISE EXCEPTION 'no se puede modificar un renglón del comprobante % ya vendido (RN-08)', OLD.nro;
+    END IF;
+
+    IF NEW.importe_descuento <> ROUND(NEW.cantidad * NEW.precio_unitario * (v_porcentaje / 100.0), 2)
+       OR NEW.subtotal <> ROUND(NEW.cantidad * NEW.precio_unitario, 2) - NEW.importe_descuento THEN
+        RAISE EXCEPTION 'el descuento y el subtotal del renglón no se cargan a mano: dependen del porcentaje del comprobante % (RN-08)',
+            OLD.nro;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_renglon_comprobante_bud
+BEFORE UPDATE OR DELETE ON renglon_comprobante
+FOR EACH ROW EXECUTE FUNCTION trg_fn_renglon_comprobante_bud();
+
 -- =====================================================================
 -- 2. Descuento de cliente y comprobante (RN-06)
 -- =====================================================================
@@ -166,21 +210,102 @@ CREATE TRIGGER trg_comprobante_descuento
 BEFORE INSERT ON comprobante
 FOR EACH ROW EXECUTE FUNCTION trg_fn_comprobante_descuento();
 
+-- ---------------------------------------------------------------------
+-- BEFORE UPDATE en comprobante (RN-08): subtotal y total no se cargan a
+-- mano. Se recalculan siempre desde los renglones; si la sentencia intenta
+-- escribir un valor distinto del calculado, se rechaza. Cambiar
+-- porcentaje_descuento (U1) recalcula el total automáticamente.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION trg_fn_comprobante_importes() RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_subtotal NUMERIC(12,2);
+    v_total    NUMERIC(12,2);
+BEGIN
+    SELECT COALESCE(SUM(cantidad * precio_unitario), 0) INTO v_subtotal
+    FROM renglon_comprobante
+    WHERE nro = NEW.nro;
+
+    v_total := ROUND(v_subtotal * (1 - NEW.porcentaje_descuento / 100.0), 2);
+
+    IF NEW.subtotal IS DISTINCT FROM OLD.subtotal AND NEW.subtotal <> v_subtotal THEN
+        RAISE EXCEPTION 'el subtotal del comprobante % no se carga a mano: según sus renglones es % (RN-08)',
+            NEW.nro, v_subtotal;
+    END IF;
+
+    IF NEW.total IS DISTINCT FROM OLD.total AND NEW.total <> v_total THEN
+        RAISE EXCEPTION 'el total del comprobante % no se carga a mano: según sus renglones es % (RN-08)',
+            NEW.nro, v_total;
+    END IF;
+
+    NEW.subtotal := v_subtotal;
+    NEW.total := v_total;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_comprobante_importes
+BEFORE UPDATE ON comprobante
+FOR EACH ROW EXECUTE FUNCTION trg_fn_comprobante_importes();
+
+-- ---------------------------------------------------------------------
+-- AFTER UPDATE OF porcentaje_descuento en comprobante (RN-08, U1)
+--   Propaga el nuevo porcentaje a los renglones para que cada renglón
+--   siga cuadrando con el total del comprobante.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION trg_fn_comprobante_propaga_descuento() RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE renglon_comprobante r
+    SET importe_descuento = ROUND(r.cantidad * r.precio_unitario * (NEW.porcentaje_descuento / 100.0), 2),
+        subtotal = ROUND(r.cantidad * r.precio_unitario, 2)
+                   - ROUND(r.cantidad * r.precio_unitario * (NEW.porcentaje_descuento / 100.0), 2)
+    WHERE r.nro = NEW.nro;
+
+    RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_comprobante_propaga_descuento
+AFTER UPDATE OF porcentaje_descuento ON comprobante
+FOR EACH ROW
+WHEN (NEW.porcentaje_descuento IS DISTINCT FROM OLD.porcentaje_descuento)
+EXECUTE FUNCTION trg_fn_comprobante_propaga_descuento();
+
 -- =====================================================================
 -- 3. Estados de documentos (RN-10, RN-11) y fecha de confección (RN-11)
 -- =====================================================================
 
+-- Todo documento nace en_confeccion.
 -- Transiciones válidas: en_confeccion -> terminado -> procesado, sin retroceso.
 CREATE OR REPLACE FUNCTION trg_fn_estado_avance() RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.estado <> 'en_confeccion' THEN
+            RAISE EXCEPTION 'un documento nuevo debe crearse en_confeccion, no en %', NEW.estado;
+        END IF;
+        RETURN NEW;
+    END IF;
+
     IF NEW.estado = OLD.estado THEN
         RETURN NEW;
     END IF;
 
-    IF (OLD.estado = 'en_confeccion' AND NEW.estado = 'terminado')
-       OR (OLD.estado = 'terminado' AND NEW.estado = 'procesado') THEN
+    IF OLD.estado = 'en_confeccion' AND NEW.estado = 'terminado' THEN
+        RETURN NEW;
+    END IF;
+
+    -- terminado -> procesado solo desde sp_procesar_ingreso /
+    -- sp_procesar_transferencia, que activan la marca atuel.procesando.
+    -- Así ningún documento queda procesado sin haber movido el stock.
+    IF OLD.estado = 'terminado' AND NEW.estado = 'procesado' THEN
+        IF current_setting('atuel.procesando', true) IS DISTINCT FROM 'on' THEN
+            RAISE EXCEPTION 'el paso a procesado se hace con el procedimiento de procesamiento (CALL sp_procesar_...), no con un UPDATE';
+        END IF;
         RETURN NEW;
     END IF;
 
@@ -189,11 +314,11 @@ END;
 $$;
 
 CREATE TRIGGER trg_ingreso_estado
-BEFORE UPDATE ON ingreso
+BEFORE INSERT OR UPDATE ON ingreso
 FOR EACH ROW EXECUTE FUNCTION trg_fn_estado_avance();
 
 CREATE TRIGGER trg_transferencia_estado
-BEFORE UPDATE ON transferencia
+BEFORE INSERT OR UPDATE ON transferencia
 FOR EACH ROW EXECUTE FUNCTION trg_fn_estado_avance();
 
 -- Fecha de confección: se fuerza la actual al insertar y no se puede modificar (RN-11).
@@ -233,6 +358,12 @@ BEGIN
 
     SELECT estado INTO v_estado FROM ingreso WHERE cod_ingreso = v_cod_ingreso;
 
+    -- Borrado en cascada desde la cabecera: el ingreso ya no existe y se
+    -- borra entero (por ejemplo D5), no se está editando un renglón suelto.
+    IF TG_OP = 'DELETE' AND NOT FOUND THEN
+        RETURN OLD;
+    END IF;
+
     IF v_estado IS DISTINCT FROM 'en_confeccion' THEN
         RAISE EXCEPTION 'el ingreso % no está en confección, no se pueden modificar sus renglones',
             v_cod_ingreso;
@@ -263,6 +394,11 @@ BEGIN
     END IF;
 
     SELECT estado INTO v_estado FROM transferencia WHERE nro = v_nro;
+
+    -- Borrado en cascada desde la cabecera (ver trg_fn_renglon_ingreso_doc).
+    IF TG_OP = 'DELETE' AND NOT FOUND THEN
+        RETURN OLD;
+    END IF;
 
     IF v_estado IS DISTINCT FROM 'en_confeccion' THEN
         RAISE EXCEPTION 'la transferencia % no está en confección, no se pueden modificar sus renglones',
