@@ -1,0 +1,2 @@
+# Los scripts que corren dentro del contenedor necesitan finales de línea LF
+*.sh text eol=lf
