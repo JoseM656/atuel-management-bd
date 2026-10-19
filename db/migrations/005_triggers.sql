@@ -166,6 +166,45 @@ CREATE TRIGGER trg_comprobante_descuento
 BEFORE INSERT ON comprobante
 FOR EACH ROW EXECUTE FUNCTION trg_fn_comprobante_descuento();
 
+-- ---------------------------------------------------------------------
+-- BEFORE UPDATE en comprobante (RN-08): subtotal y total no se cargan a
+-- mano. Se recalculan siempre desde los renglones; si la sentencia intenta
+-- escribir un valor distinto del calculado, se rechaza. Cambiar
+-- porcentaje_descuento (U1) recalcula el total automáticamente.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION trg_fn_comprobante_importes() RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_subtotal NUMERIC(12,2);
+    v_total    NUMERIC(12,2);
+BEGIN
+    SELECT COALESCE(SUM(cantidad * precio_unitario), 0) INTO v_subtotal
+    FROM renglon_comprobante
+    WHERE nro = NEW.nro;
+
+    v_total := ROUND(v_subtotal * (1 - NEW.porcentaje_descuento / 100.0), 2);
+
+    IF NEW.subtotal IS DISTINCT FROM OLD.subtotal AND NEW.subtotal <> v_subtotal THEN
+        RAISE EXCEPTION 'el subtotal del comprobante % no se carga a mano: según sus renglones es % (RN-08)',
+            NEW.nro, v_subtotal;
+    END IF;
+
+    IF NEW.total IS DISTINCT FROM OLD.total AND NEW.total <> v_total THEN
+        RAISE EXCEPTION 'el total del comprobante % no se carga a mano: según sus renglones es % (RN-08)',
+            NEW.nro, v_total;
+    END IF;
+
+    NEW.subtotal := v_subtotal;
+    NEW.total := v_total;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_comprobante_importes
+BEFORE UPDATE ON comprobante
+FOR EACH ROW EXECUTE FUNCTION trg_fn_comprobante_importes();
+
 -- =====================================================================
 -- 3. Estados de documentos (RN-10, RN-11) y fecha de confección (RN-11)
 -- =====================================================================
