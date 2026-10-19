@@ -74,7 +74,7 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
   - Verificación: `psql -f db/migrations/005_triggers.sql`; disparar venta sin stock y edición de un documento no confección.
   - Archivos: `db/migrations/005_triggers.sql`.
 
-- [ ] **006_vistas.sql**
+- [x] **006_vistas.sql**
   - Descripción: 3 vistas — stock total por vino (depósito + salas, para el tablero y S6/S9), ventas mensuales por sala (para S8/S11) y documentos pendientes (ingresos/transferencias no procesados, para S5). Una puede ser materializada; la vista de clientes (para resolver los joins del supertipo+subtipos) también encaja acá.
   - Aceptación: las 3 vistas consultables y coherentes con las tablas base.
   - Verificación: `psql -f db/migrations/006_vistas.sql` + SELECT por vista.
