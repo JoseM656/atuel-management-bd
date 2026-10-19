@@ -233,6 +233,12 @@ BEGIN
 
     SELECT estado INTO v_estado FROM ingreso WHERE cod_ingreso = v_cod_ingreso;
 
+    -- Borrado en cascada desde la cabecera: el ingreso ya no existe y se
+    -- borra entero (por ejemplo D5), no se está editando un renglón suelto.
+    IF TG_OP = 'DELETE' AND NOT FOUND THEN
+        RETURN OLD;
+    END IF;
+
     IF v_estado IS DISTINCT FROM 'en_confeccion' THEN
         RAISE EXCEPTION 'el ingreso % no está en confección, no se pueden modificar sus renglones',
             v_cod_ingreso;
@@ -263,6 +269,11 @@ BEGIN
     END IF;
 
     SELECT estado INTO v_estado FROM transferencia WHERE nro = v_nro;
+
+    -- Borrado en cascada desde la cabecera (ver trg_fn_renglon_ingreso_doc).
+    IF TG_OP = 'DELETE' AND NOT FOUND THEN
+        RETURN OLD;
+    END IF;
 
     IF v_estado IS DISTINCT FROM 'en_confeccion' THEN
         RAISE EXCEPTION 'la transferencia % no está en confección, no se pueden modificar sus renglones',
