@@ -20,6 +20,9 @@
 --     lanza excepción (no pasa en silencio).
 --   * Renglones recorridos en orden por cod_vino para evitar deadlocks.
 --   * UPSERT (ON CONFLICT) para crear o sumar en stock_deposito / stock_sala.
+--   * El paso a 'procesado' solo lo pueden dar estos procedimientos: activan
+--     la marca de transacción atuel.procesando que exige el trigger de
+--     estados (005) y la apagan inmediatamente después del UPDATE.
 --
 -- Se aplica después de 001, 002 y 003, sobre la misma base.
 -- =====================================================================
@@ -65,9 +68,12 @@ BEGIN
         DO UPDATE SET cantidad = stock_deposito.cantidad + EXCLUDED.cantidad;
     END LOOP;
 
+    -- Marca que habilita terminado -> procesado en trg_fn_estado_avance (RN-10).
+    PERFORM set_config('atuel.procesando', 'on', true);
     UPDATE ingreso
     SET estado = 'procesado'
     WHERE cod_ingreso = p_cod_ingreso;
+    PERFORM set_config('atuel.procesando', '', true);
 END;
 $$;
 
@@ -131,9 +137,12 @@ BEGIN
         DO UPDATE SET cantidad = stock_sala.cantidad + EXCLUDED.cantidad;
     END LOOP;
 
+    -- Marca que habilita terminado -> procesado en trg_fn_estado_avance (RN-11).
+    PERFORM set_config('atuel.procesando', 'on', true);
     UPDATE transferencia
     SET estado = 'procesado'
     WHERE nro = p_nro;
+    PERFORM set_config('atuel.procesando', '', true);
 END;
 $$;
 

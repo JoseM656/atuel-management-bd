@@ -295,8 +295,17 @@ BEGIN
         RETURN NEW;
     END IF;
 
-    IF (OLD.estado = 'en_confeccion' AND NEW.estado = 'terminado')
-       OR (OLD.estado = 'terminado' AND NEW.estado = 'procesado') THEN
+    IF OLD.estado = 'en_confeccion' AND NEW.estado = 'terminado' THEN
+        RETURN NEW;
+    END IF;
+
+    -- terminado -> procesado solo desde sp_procesar_ingreso /
+    -- sp_procesar_transferencia, que activan la marca atuel.procesando.
+    -- Así ningún documento queda procesado sin haber movido el stock.
+    IF OLD.estado = 'terminado' AND NEW.estado = 'procesado' THEN
+        IF current_setting('atuel.procesando', true) IS DISTINCT FROM 'on' THEN
+            RAISE EXCEPTION 'el paso a procesado se hace con el procedimiento de procesamiento (CALL sp_procesar_...), no con un UPDATE';
+        END IF;
         RETURN NEW;
     END IF;
 
