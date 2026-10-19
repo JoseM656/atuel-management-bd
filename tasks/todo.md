@@ -80,7 +80,7 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
   - Verificación: `psql -f db/migrations/006_vistas.sql` + SELECT por vista.
   - Archivos: `db/migrations/006_vistas.sql`.
 
-- [ ] **007_roles.sql**
+- [x] **007_roles.sql**
   - Descripción: 3 roles — propietario, `app_rw` (lectura/escritura para la API) y un rol de solo lectura para reportes. Se hace `REVOKE ALL ON SCHEMA public FROM PUBLIC` y se otorgan privilegios mínimos (USAGE en schema, DML en tablas, EXECUTE en rutinas). La contraseña de `app_rw` se pasa por variable de entorno, nunca en el repo.
   - Aceptación: la API se conecta con `app_rw` sin privilegios de propietario; el rol de reportes solo puede SELECT.
   - Verificación: `psql -f db/migrations/007_roles.sql`; probar conexión como `app_rw`.
