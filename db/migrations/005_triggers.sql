@@ -278,11 +278,19 @@ EXECUTE FUNCTION trg_fn_comprobante_propaga_descuento();
 -- 3. Estados de documentos (RN-10, RN-11) y fecha de confección (RN-11)
 -- =====================================================================
 
+-- Todo documento nace en_confeccion.
 -- Transiciones válidas: en_confeccion -> terminado -> procesado, sin retroceso.
 CREATE OR REPLACE FUNCTION trg_fn_estado_avance() RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.estado <> 'en_confeccion' THEN
+            RAISE EXCEPTION 'un documento nuevo debe crearse en_confeccion, no en %', NEW.estado;
+        END IF;
+        RETURN NEW;
+    END IF;
+
     IF NEW.estado = OLD.estado THEN
         RETURN NEW;
     END IF;
@@ -297,11 +305,11 @@ END;
 $$;
 
 CREATE TRIGGER trg_ingreso_estado
-BEFORE UPDATE ON ingreso
+BEFORE INSERT OR UPDATE ON ingreso
 FOR EACH ROW EXECUTE FUNCTION trg_fn_estado_avance();
 
 CREATE TRIGGER trg_transferencia_estado
-BEFORE UPDATE ON transferencia
+BEFORE INSERT OR UPDATE ON transferencia
 FOR EACH ROW EXECUTE FUNCTION trg_fn_estado_avance();
 
 -- Fecha de confección: se fuerza la actual al insertar y no se puede modificar (RN-11).
