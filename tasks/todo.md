@@ -92,7 +92,7 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
   - Verificación: `psql -f db/tests/db_tests.sql`.
   - Archivos: `db/tests/db_tests.sql`.
 
-- [ ] **Demo de concurrencia**
+- [x] **Demo de concurrencia**
   - Descripción: dos sesiones `psql` intentan vender la última botella de un vino. Mostrar el comportamiento con y sin `SELECT … FOR UPDATE`, y explicar por qué según el nivel de aislamiento ambas sesiones podrían vender la misma botella sin el bloqueo. Queda en el informe con capturas.
   - Aceptación: con FOR UPDATE una sesión espera, la segunda ve stock 0 y rechaza; sin FOR UPDATE ambas pueden vender la misma botella.
   - Verificación: capturas en el informe de la etapa 2.
