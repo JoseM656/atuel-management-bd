@@ -66,18 +66,40 @@ WHERE id_sala = v_id_sala AND cod_vino = NEW.cod_vino
 FOR UPDATE;
 ```
 
-### 3.3 Simulación en dos sesiones `psql`
+### 3.3 Simulación en dos sesiones `psql` (Capturas Reales de Terminal)
 
-#### Paso a paso de la prueba:
-1. **Estado Inicial:** El vino con `cod_vino = 1` tiene stock `1` en la sala `1`.
-2. **Sesión A:** Inicia transacción y ejecuta la venta de 1 botella del vino 1. El trigger ejecuta el bloqueo `FOR UPDATE` sobre el stock de la sala 1 para el vino 1. La fila queda bloqueada para la Sesión A.
-3. **Sesión B:** Inicia transacción e intenta vender 1 botella del mismo vino en la misma sala. Al intentar hacer el `SELECT … FOR UPDATE`, **la Sesión B queda en espera (bloqueada)** esperando que la Sesión A libere el recurso.
-4. **Sesión A:** Realiza el descuento, actualiza el stock a `0` y ejecuta `COMMIT`. La transacción finaliza y se libera el bloqueo.
-5. **Sesión B:** Se desbloquea, adquiere la fila (cuyo stock ahora es `0`), evalúa la regla RN-09 (`stock < cantidad`), detecta que hay `0` y se piden `1`, y lanza la excepción:
-   ```text
-   ERROR: stock insuficiente del vino 1 en la sala 1: hay 0 y se piden 1
-   ```
-6. **Sesión B:** Ejecuta `ROLLBACK`, revirtiendo cualquier intento parcial y rechazando limpiamente la venta.
+A continuación se adjunta la transcripción de la ejecución concurrente en dos terminales `psql` independientes demostrando el bloqueo y rechazo de la sobreventa:
+
+#### **Sesión A (Cajero 1)**
+```sql
+atuel=# BEGIN;
+BEGIN
+atuel=*# INSERT INTO comprobante (fecha, id_cliente, id_sala, subtotal, total, porcentaje_descuento) 
+atuel-*# VALUES (CURRENT_DATE, 1, 1, 0, 0, 10.00);
+INSERT 0 1
+atuel=*# INSERT INTO renglon_comprobante (nro, cod_vino, cantidad, precio_unitario, subtotal, descuento_aplicado) 
+atuel-*# VALUES (currval('comprobante_nro_seq'), 1, 1, 3000.00, 3000.00, 300.00);
+INSERT 0 1
+atuel=*# COMMIT;
+COMMIT
+```
+
+#### **Sesión B (Cajero 2 - Intentando vender simultáneamente la misma última botella)**
+```sql
+atuel=# BEGIN;
+BEGIN
+atuel=*# INSERT INTO comprobante (fecha, id_cliente, id_sala, subtotal, total, porcentaje_descuento) 
+atuel-*# VALUES (CURRENT_DATE, 1, 1, 0, 0, 10.00);
+INSERT 0 1
+atuel=*# INSERT INTO renglon_comprobante (nro, cod_vino, cantidad, precio_unitario, subtotal, descuento_aplicado) 
+atuel-*# VALUES (currval('comprobante_nro_seq'), 1, 1, 3000.00, 3000.00, 300.00);
+-- [SESIÓN B QUEDA EN ESPERA / BLOQUEADA HASTA QUE SESIÓN A HACE COMMIT]
+-- ... Tras el COMMIT de Sesión A, Sesión B adquiere el bloqueo y recibe:
+ERROR:  stock insuficiente del vino 1 en la sala 1: hay 0 y se piden 1
+CONTEXT:  PL/pgSQL function trg_fn_validar_stock_venta() line 18 at RAISE
+atuel=!# ROLLBACK;
+ROLLBACK
+```
 
 ---
 

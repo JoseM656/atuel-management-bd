@@ -16,12 +16,12 @@ BEGIN;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app_rw') THEN
-        -- Nota: En producción, la contraseña se establece desde una variable de entorno o script de despliegue.
-        CREATE ROLE app_rw LOGIN PASSWORD 'atuel_app_rw_secure_pass';
+        -- Nota: La contraseña se configura por entorno o rol externo (Nunca commiteada).
+        CREATE ROLE app_rw LOGIN;
     END IF;
     
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'reportes_ro') THEN
-        CREATE ROLE reportes_ro LOGIN PASSWORD 'atuel_reportes_ro_secure_pass';
+        CREATE ROLE reportes_ro LOGIN;
     END IF;
 END
 $$;
@@ -32,6 +32,8 @@ GRANT USAGE ON SCHEMA public TO app_rw, reportes_ro;
 
 -- 3. Privilegios para app_rw (Lectura y Escritura para la API)
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_rw;
+-- Revocar UPDATE sobre estado en ingreso y transferencia para forzar uso de sp_procesar_*
+REVOKE UPDATE (estado) ON ingreso, transferencia FROM app_rw;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_rw;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO app_rw;
 GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA public TO app_rw;
@@ -46,7 +48,9 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 ALTER DEFAULT PRIVILEGES IN SCHEMA public 
     GRANT USAGE, SELECT ON SEQUENCES TO app_rw;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-    GRANT EXECUTE ON FUNCTIONS, PROCEDURES TO app_rw;
+    GRANT EXECUTE ON FUNCTIONS TO app_rw;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+    GRANT EXECUTE ON PROCEDURES TO app_rw;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public 
     GRANT SELECT ON TABLES TO reportes_ro;

@@ -133,7 +133,7 @@ FROM transferencia t
 JOIN sala_venta s ON t.id_sala = s.id_sala
 LEFT JOIN renglon_transferencia rt ON t.nro = rt.nro
 WHERE t.estado <> 'procesado'
-GROUP BY t.nro, t.fecha_confeccion, t.estado, t.id_sala, s.calle, s.numero;
+GROUP BY t.nro, t.fecha_confeccion, t.estado, t.id_sala, s.id_sala, s.calle, s.numero;
 
 -- ---------------------------------------------------------------------
 -- 4. v_clientes
