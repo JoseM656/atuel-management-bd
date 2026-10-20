@@ -77,7 +77,7 @@ BEGIN
 atuel=*# INSERT INTO comprobante (fecha, id_cliente, id_sala, subtotal, total, porcentaje_descuento) 
 atuel-*# VALUES (CURRENT_DATE, 1, 1, 0, 0, 10.00);
 INSERT 0 1
-atuel=*# INSERT INTO renglon_comprobante (nro, cod_vino, cantidad, precio_unitario, subtotal, descuento_aplicado) 
+atuel=*# INSERT INTO renglon_comprobante (nro, cod_vino, cantidad, precio_unitario, subtotal, importe_descuento) 
 atuel-*# VALUES (currval('comprobante_nro_seq'), 1, 1, 3000.00, 3000.00, 300.00);
 INSERT 0 1
 atuel=*# COMMIT;
@@ -91,12 +91,12 @@ BEGIN
 atuel=*# INSERT INTO comprobante (fecha, id_cliente, id_sala, subtotal, total, porcentaje_descuento) 
 atuel-*# VALUES (CURRENT_DATE, 1, 1, 0, 0, 10.00);
 INSERT 0 1
-atuel=*# INSERT INTO renglon_comprobante (nro, cod_vino, cantidad, precio_unitario, subtotal, descuento_aplicado) 
+atuel=*# INSERT INTO renglon_comprobante (nro, cod_vino, cantidad, precio_unitario, subtotal, importe_descuento) 
 atuel-*# VALUES (currval('comprobante_nro_seq'), 1, 1, 3000.00, 3000.00, 300.00);
 -- [SESIÓN B QUEDA EN ESPERA / BLOQUEADA HASTA QUE SESIÓN A HACE COMMIT]
 -- ... Tras el COMMIT de Sesión A, Sesión B adquiere el bloqueo y recibe:
 ERROR:  stock insuficiente del vino 1 en la sala 1: hay 0 y se piden 1
-CONTEXT:  PL/pgSQL function trg_fn_validar_stock_venta() line 18 at RAISE
+CONTEXT:  PL/pgSQL function trg_fn_renglon_comprobante_bi() line 18 at RAISE
 atuel=!# ROLLBACK;
 ROLLBACK
 ```

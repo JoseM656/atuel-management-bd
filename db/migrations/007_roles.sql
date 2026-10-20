@@ -32,15 +32,18 @@ GRANT USAGE ON SCHEMA public TO app_rw, reportes_ro;
 
 -- 3. Privilegios para app_rw (Lectura y Escritura para la API)
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_rw;
--- Revocar UPDATE sobre estado en ingreso y transferencia para forzar uso de sp_procesar_*
-REVOKE UPDATE (estado) ON ingreso, transferencia FROM app_rw;
+-- Revocar UPDATE general sobre ingreso y transferencia y otorgar solo sobre columnas permitidas
+REVOKE UPDATE ON ingreso, transferencia FROM app_rw;
+GRANT UPDATE (fecha, cod_transportista, cuit_bodega) ON ingreso TO app_rw;
+GRANT UPDATE (id_sala, fecha_confeccion) ON transferencia TO app_rw;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_rw;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO app_rw;
-GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA public TO app_rw;
+GRANT EXECUTE ON ALL ROUTINES IN SCHEMA public TO app_rw;
 
 -- 4. Privilegios para reportes_ro (Solo lectura para reportes y tableros)
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO reportes_ro;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO reportes_ro;
+GRANT EXECUTE ON ALL ROUTINES IN SCHEMA public TO reportes_ro;
 
 -- 5. Privilegios por defecto para tablas, secuencias y rutinas futuras
 ALTER DEFAULT PRIVILEGES IN SCHEMA public 
@@ -50,7 +53,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 ALTER DEFAULT PRIVILEGES IN SCHEMA public 
     GRANT EXECUTE ON FUNCTIONS TO app_rw;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-    GRANT EXECUTE ON PROCEDURES TO app_rw;
+    GRANT EXECUTE ON ROUTINES TO app_rw;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public 
     GRANT SELECT ON TABLES TO reportes_ro;
