@@ -32,10 +32,10 @@ GRANT USAGE ON SCHEMA public TO app_rw, reportes_ro;
 
 -- 3. Privilegios para app_rw (Lectura y Escritura para la API)
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_rw;
--- Revocar UPDATE general sobre ingreso y transferencia y otorgar solo sobre columnas permitidas
+-- Revocar UPDATE general sobre ingreso y transferencia y otorgar solo sobre columnas permitidas (incluyendo estado para RN-10/11)
 REVOKE UPDATE ON ingreso, transferencia FROM app_rw;
-GRANT UPDATE (fecha, cod_transportista, cuit_bodega) ON ingreso TO app_rw;
-GRANT UPDATE (id_sala, fecha_confeccion) ON transferencia TO app_rw;
+GRANT UPDATE (fecha, cod_transportista, cuit_bodega, estado) ON ingreso TO app_rw;
+GRANT UPDATE (id_sala, fecha_confeccion, estado) ON transferencia TO app_rw;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_rw;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO app_rw;
 GRANT EXECUTE ON ALL ROUTINES IN SCHEMA public TO app_rw;
