@@ -15,33 +15,33 @@ DO $$ BEGIN RAISE NOTICE '=== INICIO DE PRUEBAS DE INTEGRIDAD Y REGLAS DE NEGOCI
 -- =====================================================================
 DO $$ BEGIN RAISE NOTICE '--- Cargando fixture de datos iniciales ---'; END $$;
 
-INSERT INTO departamento (id_departamento, nombre, provincia) VALUES (1, 'San Rafael', 'Mendoza') ON CONFLICT DO NOTHING;
+INSERT INTO departamento (nombre, provincia) VALUES ('San Rafael', 'Mendoza') ON CONFLICT DO NOTHING;
 
 INSERT INTO bodega (cuit, razon_social, domicilio) 
 VALUES ('30712345671', 'Bodega Atuel SRL', 'Ruta 143 km 420') ON CONFLICT DO NOTHING;
 
-INSERT INTO maridaje (id_maridaje, nombre, temperatura_servicio) VALUES (1, 'Carnes Rojas', 18.0) ON CONFLICT DO NOTHING;
+INSERT INTO maridaje (nombre, temperatura_servicio) VALUES ('Carnes Rojas', 18.0) ON CONFLICT DO NOTHING;
 
-INSERT INTO cepa (id_cepa, nombre, tipo) VALUES (1, 'Malbec', 'tinta'), (2, 'Cabernet Sauvignon', 'tinta') ON CONFLICT DO NOTHING;
+INSERT INTO cepa (nombre, tipo) VALUES ('Malbec', 'tinta'), ('Cabernet Sauvignon', 'tinta') ON CONFLICT DO NOTHING;
 
-INSERT INTO finca (id_finca, nombre, superficie_ha, id_departamento) 
-VALUES (1, 'Finca La Rosa', 50.00, 1) ON CONFLICT DO NOTHING;
+INSERT INTO finca (nombre, superficie_ha, id_departamento) 
+VALUES ('Finca La Rosa', 50.00, 1) ON CONFLICT DO NOTHING;
 
 INSERT INTO parcela (id_finca, nro_parcela, superficie_ha, anio_plantacion, id_cepa) 
 VALUES (1, 1, 10.00, 2015, 1) ON CONFLICT DO NOTHING;
 
-INSERT INTO transportista (cod_transportista, razon_social, cuit, email, telefono, domicilio) 
-VALUES (1, 'Transportes del Sur', '20334455661', 'contacto@transur.com', '2604123456', 'Av. Mitre 500') ON CONFLICT DO NOTHING;
+INSERT INTO transportista (razon_social, cuit, email, telefono, domicilio) 
+VALUES ('Transportes del Sur', '20334455661', 'contacto@transur.com', '2604123456', 'Av. Mitre 500') ON CONFLICT DO NOTHING;
 
--- Insertamos sala y empleado de forma coordinada con la FK deferible de localidad
+-- Orden correcto de carga fixture respetando FKs no diferibles y FK diferible de localidad
+INSERT INTO localidad (nombre, provincia, codigo_postal, cuit_encargado) 
+VALUES ('San Rafael', 'Mendoza', '5600', '20123456789') ON CONFLICT DO NOTHING;
+
+INSERT INTO sala_venta (calle, numero, dia_cierre, id_localidad) 
+VALUES ('San Martín', 200, 'domingo', 1) ON CONFLICT DO NOTHING;
+
 INSERT INTO empleado (cuit, nombre, fecha_ingreso, salario, id_sala)
 VALUES ('20123456789', 'Juan Pérez', '2020-01-01', 350000.00, 1) ON CONFLICT DO NOTHING;
-
-INSERT INTO localidad (id_localidad, nombre, provincia, codigo_postal, cuit_encargado) 
-VALUES (1, 'San Rafael', 'Mendoza', '5600', '20123456789') ON CONFLICT DO NOTHING;
-
-INSERT INTO sala_venta (id_sala, calle, numero, dia_cierre, id_localidad) 
-VALUES (1, 'San Martín', 200, 'domingo', 1) ON CONFLICT DO NOTHING;
 
 INSERT INTO deposito (id, id_localidad) 
 VALUES (1, 1) ON CONFLICT DO NOTHING;
@@ -50,27 +50,27 @@ INSERT INTO transportista_localidad (cod_transportista, id_localidad)
 VALUES (1, 1) ON CONFLICT DO NOTHING;
 
 -- Clientes y subtipos
-INSERT INTO cliente (id_cliente, nombre_razon_social, tipo_doc, nro_doc, direccion, id_localidad, fecha_alta, tipo, descuento)
+INSERT INTO cliente (nombre_razon_social, tipo_doc, nro_doc, direccion, id_localidad, fecha_alta, tipo, descuento)
 VALUES 
-(1, 'Socio Test', 'DNI', '11111111', 'Calle 1', 1, CURRENT_DATE, 'socio', 10.00),
-(2, 'Distribuidor Test', 'CUIT', '30222222223', 'Calle 2', 1, CURRENT_DATE, 'distribuidor', 20.00),
-(3, 'Exportador Test', 'CUIT', '30333333333', 'Calle 3', 1, CURRENT_DATE, 'exportador', 30.00)
+('Socio Test', 'DNI', '11111111', 'Calle 1', 1, CURRENT_DATE, 'socio', 10.00),
+('Distribuidor Test', 'CUIT', '30222222223', 'Calle 2', 1, CURRENT_DATE, 'distribuidor', 20.00),
+('Exportador Test', 'CUIT', '30333333333', 'Calle 3', 1, CURRENT_DATE, 'exportador', 30.00)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO socio (id_cliente, tipo) VALUES (1, 'socio') ON CONFLICT DO NOTHING;
-INSERT INTO distribuidor (id_cliente, tipo, zona_cobertura, nro_habilitacion) VALUES (2, 'distribuidor', 'Cuyo', 'HAB-001') ON CONFLICT DO NOTHING;
-INSERT INTO exportador (id_cliente, tipo, pais_destino) VALUES (3, 'exportador', 'Brasil') ON CONFLICT DO NOTHING;
+INSERT INTO socio (id_cliente, tipo) SELECT id_cliente, tipo FROM cliente WHERE tipo = 'socio' ON CONFLICT DO NOTHING;
+INSERT INTO distribuidor (id_cliente, tipo, zona_cobertura, nro_habilitacion) SELECT id_cliente, tipo, 'Cuyo', 'HAB-001' FROM cliente WHERE tipo = 'distribuidor' ON CONFLICT DO NOTHING;
+INSERT INTO exportador (id_cliente, tipo, pais_destino) SELECT id_cliente, tipo, 'Brasil' FROM cliente WHERE tipo = 'exportador' ON CONFLICT DO NOTHING;
 
 -- Vinos y composición que suma 100% (RN-05) y maridaje (RI-02)
-INSERT INTO vino (cod_vino, nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega)
-VALUES (1, 'Atuel Malbec Reserva', 'tinto', 2022, 750, 14.00, 3000.00, '30712345671')
+INSERT INTO vino (nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega)
+VALUES ('Atuel Malbec Reserva', 'tinto', 2022, 750, 14.00, 3000.00, '30712345671')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO composicion (cod_vino, id_cepa, porcentaje) VALUES (1, 1, 100.00) ON CONFLICT DO NOTHING;
-INSERT INTO vino_maridaje (cod_vino, id_maridaje) VALUES (1, 1) ON CONFLICT DO NOTHING;
+INSERT INTO composicion (cod_vino, id_cepa, porcentaje) SELECT cod_vino, 1, 100.00 FROM vino WHERE nombre = 'Atuel Malbec Reserva' ON CONFLICT DO NOTHING;
+INSERT INTO vino_maridaje (cod_vino, id_maridaje) SELECT cod_vino, 1 FROM vino WHERE nombre = 'Atuel Malbec Reserva' ON CONFLICT DO NOTHING;
 
-INSERT INTO stock_sala (id_sala, cod_vino, cantidad) VALUES (1, 1, 100) ON CONFLICT DO NOTHING;
-INSERT INTO stock_deposito (cod_vino, cantidad) VALUES (1, 500) ON CONFLICT DO NOTHING;
+INSERT INTO stock_sala (id_sala, cod_vino, cantidad) SELECT 1, cod_vino, 100 FROM vino WHERE nombre = 'Atuel Malbec Reserva' ON CONFLICT DO NOTHING;
+INSERT INTO stock_deposito (cod_vino, cantidad) SELECT cod_vino, 500 FROM vino WHERE nombre = 'Atuel Malbec Reserva' ON CONFLICT DO NOTHING;
 
 DO $$ BEGIN RAISE NOTICE '=== FIXTURE CARGADO EXITOSAMENTE ==='; END $$;
 
@@ -91,9 +91,10 @@ BEGIN
         RAISE NOTICE 'CORRECTO (RN-01): Rechazó precio 0 o negativo.';
     END;
 
-    INSERT INTO vino (cod_vino, nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega)
-    VALUES (2, 'Atuel Malbec Joven', 'tinto', 2023, 750, 13.50, 2500.00, '30712345671')
+    INSERT INTO vino (nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega)
+    VALUES ('Atuel Malbec Joven', 'tinto', 2023, 750, 13.50, 2500.00, '30712345671')
     ON CONFLICT DO NOTHING;
+    INSERT INTO vino_maridaje (cod_vino, id_maridaje) SELECT cod_vino, 1 FROM vino WHERE nombre = 'Atuel Malbec Joven' ON CONFLICT DO NOTHING;
     RAISE NOTICE 'CORRECTO (RN-01): Vino con precio aceptado.';
 END $$;
 
@@ -134,11 +135,12 @@ DO $$
 BEGIN
     RAISE NOTICE '--- Probando RN-05 (Suma de porcentajes de composición = 100) ---';
     -- Insertamos vino sin maridaje temporalmente, luego agregaremos maridaje para RI-02
-    INSERT INTO vino (cod_vino, nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega)
-    VALUES (3, 'Vino Corte Mal', 'blanco', 2023, 750, 12.00, 2000.00, '30712345671');
+    INSERT INTO vino (nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega)
+    VALUES ('Vino Corte Mal', 'blanco', 2023, 750, 12.00, 2000.00, '30712345671');
 
     BEGIN
-        INSERT INTO composicion (cod_vino, id_cepa, porcentaje) VALUES (3, 1, 50.00);
+        INSERT INTO composicion (cod_vino, id_cepa, porcentaje) 
+        SELECT cod_vino, 1, 50.00 FROM vino WHERE nombre = 'Vino Corte Mal';
         -- Al hacer commit o finalizar la transacción, el constraint trigger diferido evaluará si suma 100.
         -- Probamos insertar una suma != 100
         PERFORM 1;
@@ -147,8 +149,9 @@ BEGIN
     END;
 
     -- Completamos corte al 100% para que pase el constraint trigger al final
-    INSERT INTO composicion (cod_vino, id_cepa, porcentaje) VALUES (3, 1, 80.00), (3, 2, 20.00);
-    INSERT INTO vino_maridaje (cod_vino, id_maridaje) VALUES (3, 1);
+    UPDATE composicion SET porcentaje = 80.00 WHERE cod_vino = (SELECT cod_vino FROM vino WHERE nombre = 'Vino Corte Mal') AND id_cepa = 1;
+    INSERT INTO composicion (cod_vino, id_cepa, porcentaje) SELECT cod_vino, 2, 20.00 FROM vino WHERE nombre = 'Vino Corte Mal';
+    INSERT INTO vino_maridaje (cod_vino, id_maridaje) SELECT cod_vino, 1 FROM vino WHERE nombre = 'Vino Corte Mal';
     RAISE NOTICE 'CORRECTO (RN-05): Composición de corte ajustada a 100%.';
 END $$;
 
@@ -315,13 +318,15 @@ END $$;
 DO $$
 BEGIN
     RAISE NOTICE 'CORRECTO (RI-02): Trigger de maridaje obligatorio verificado.';
-    -- Probamos insertar vino sin maridaje y verificar que falle (o trigger diferido)
+    -- Probamos insertar vino sin maridaje y verificar que falle (trigger diferido)
     BEGIN
-        INSERT INTO vino (cod_vino, nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega)
-        VALUES (4, 'Vino Sin Maridaje', 'tinto', 2022, 750, 14.00, 2500.00, '30712345671');
-        INSERT INTO composicion (cod_vino, id_cepa, porcentaje) VALUES (4, 1, 100.00);
-        -- Al commitear, RI-02 fallará si no tiene maridaje
-        PERFORM 1;
+        INSERT INTO vino (nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega)
+        VALUES ('Vino Sin Maridaje', 'tinto', 2022, 750, 14.00, 2500.00, '30712345671');
+        INSERT INTO composicion (cod_vino, id_cepa, porcentaje) 
+        SELECT cod_vino, 1, 100.00 FROM vino WHERE nombre = 'Vino Sin Maridaje';
+        -- Forzar evaluación inmediata de constraints diferidos para capturar la violación en el bloque
+        SET CONSTRAINTS ALL IMMEDIATE;
+        RAISE EXCEPTION 'DEBIÓ FALLAR: vino sin maridaje';
     EXCEPTION WHEN OTHERS THEN
         RAISE NOTICE 'CORRECTO (RI-02): Detección de vino sin maridaje.';
     END;
