@@ -3,6 +3,8 @@
 -- db/migrations/004_procedimientos.sql
 -- Etapa 2: procedimientos transaccionales (PostgreSQL 14+)
 --
+--   sp_terminar_ingreso / sp_terminar_transferencia
+--                            -> RN-10/RN-11: pasan 'en_confeccion' -> 'terminado'.
 --   sp_procesar_ingreso      -> RN-10: solo un ingreso 'terminado' impacta
 --                               el stock del depósito y pasa a 'procesado'.
 --   sp_procesar_transferencia -> RN-11: solo una transferencia 'terminado'
@@ -23,6 +25,9 @@
 --   * El paso a 'procesado' solo lo pueden dar estos procedimientos: activan
 --     la marca de transacción atuel.procesando que exige el trigger de
 --     estados (005) y la apagan inmediatamente después del UPDATE.
+--   * SECURITY DEFINER: corren con los privilegios del dueño (propietario),
+--     no del llamador. Así la API (rol app_rw) puede terminar/procesar
+--     documentos sin tener UPDATE sobre la columna estado (007).
 --
 -- Se aplica después de 001, 002 y 003, sobre la misma base.
 -- =====================================================================
@@ -37,6 +42,8 @@ BEGIN;
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE sp_procesar_ingreso(p_cod_ingreso INTEGER)
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     v_estado estado_documento;
@@ -85,6 +92,8 @@ $$;
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE sp_procesar_transferencia(p_nro INTEGER)
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     v_id_sala INTEGER;
@@ -143,6 +152,72 @@ BEGIN
     SET estado = 'procesado'
     WHERE nro = p_nro;
     PERFORM set_config('atuel.procesando', '', true);
+END;
+$$;
+
+-- ---------------------------------------------------------------------
+-- sp_terminar_ingreso
+-- Propósito: pasar un ingreso de 'en_confeccion' a 'terminado' (RN-10).
+--   No mueve stock; solo deja el documento listo para sp_procesar_ingreso.
+--   SECURITY DEFINER para que la API (app_rw) pueda hacerlo sin UPDATE sobre
+--   la columna estado.
+-- Parámetros: p_cod_ingreso INTEGER.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE sp_terminar_ingreso(p_cod_ingreso INTEGER)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_estado estado_documento;
+BEGIN
+    SELECT estado INTO v_estado
+    FROM ingreso
+    WHERE cod_ingreso = p_cod_ingreso
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'ingreso % no existe', p_cod_ingreso;
+    END IF;
+
+    IF v_estado <> 'en_confeccion' THEN
+        RAISE EXCEPTION 'ingreso % en estado %, solo se termina desde en_confeccion',
+            p_cod_ingreso, v_estado;
+    END IF;
+
+    UPDATE ingreso SET estado = 'terminado' WHERE cod_ingreso = p_cod_ingreso;
+END;
+$$;
+
+-- ---------------------------------------------------------------------
+-- sp_terminar_transferencia
+-- Propósito: pasar una transferencia de 'en_confeccion' a 'terminado' (RN-11).
+--   No mueve stock; solo deja el documento listo para sp_procesar_transferencia.
+-- Parámetros: p_nro INTEGER.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE sp_terminar_transferencia(p_nro INTEGER)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_estado estado_documento;
+BEGIN
+    SELECT estado INTO v_estado
+    FROM transferencia
+    WHERE nro = p_nro
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'transferencia % no existe', p_nro;
+    END IF;
+
+    IF v_estado <> 'en_confeccion' THEN
+        RAISE EXCEPTION 'transferencia % en estado %, solo se termina desde en_confeccion',
+            p_nro, v_estado;
+    END IF;
+
+    UPDATE transferencia SET estado = 'terminado' WHERE nro = p_nro;
 END;
 $$;
 

@@ -50,49 +50,49 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
 
 > Etapa de mayor peso: que las reglas de negocio (RN-01…15 y RI-01…07) vivan dentro de la base mediante constraints, funciones, procedimientos, triggers, vistas y roles, con pruebas y una demo de concurrencia.
 
-- [ ] **002_constraints.sql**
+- [x] **002_constraints.sql**
   - Descripción: completar UNIQUE, CHECK y DEFAULT sobre el DDL de 001. Casos concretos: `vino` con UNIQUE(nombre, anada, volumen_ml) y CHECK de graduación 5–20, precio>0 y volumen en {187,375,750,1500,3000}; `lote_uva` con índice único de expresión (parcela, año de cosecha) para RN-04; CUIT UNIQUE en `bodega` y `transportista`; `permiso_exportacion` con CHECK vencimiento>emisión (RN-07); `stock_sala`/`stock_deposito` con CHECK cantidad>=0; DEFAULT de estado `en_confeccion` y de fechas de alta actuales.
   - Aceptación: 4 UNIQUE adicionales, 8 CHECK (al menos uno entre columnas), 3 DEFAULT; acciones referenciales consistentes (CASCADE en dependientes, RESTRICT en movimientos, ON UPDATE CASCADE solo en CUIT).
   - Verificación: `psql -f db/migrations/002_constraints.sql` sobre 001 sin errores.
   - Archivos: `db/migrations/002_constraints.sql`.
 
-- [ ] **003_funciones.sql**
+- [x] **003_funciones.sql**
   - Descripción: implementar `fn_total_comprobante` (total con descuento), `fn_stock_sala` (stock de un vino en una sala), `fn_descuento_cliente` (10/20/30 % según tipo; 35 % para exportador con >3 permisos, RN-06/RI-06) y `fn_antiguedad_anios`. Cada una con comentario de cabecera indicando propósito, parámetros y volatilidad (STABLE/IMMUTABLE).
   - Aceptación: 4 funciones operativas y usadas por los triggers/procedimientos de esta etapa.
   - Verificación: `psql -f db/migrations/003_funciones.sql` + SELECT de prueba por función.
   - Archivos: `db/migrations/003_funciones.sql`.
 
-- [ ] **004_procedimientos.sql**
+- [x] **004_procedimientos.sql**
   - Descripción: `sp_procesar_ingreso` y `sp_procesar_transferencia` transaccionales: validan el estado, bloquean las filas necesarias con `FOR UPDATE`, actualizan `stock_deposito`/`stock_sala` y cambian el estado; si algo falla, todo se revierte. Cubrir el caso límite del Anexo A.6: un vino del renglón sin fila en `stock_deposito` no debe pasar en silencio (verificar existencia y suficiencia antes de descontar).
   - Aceptación: solo un documento `terminado` se procesa y pasa a `procesado`; procesar sin stock suficiente no deja cambios a medias.
   - Verificación: `psql -f db/migrations/004_procedimientos.sql` + `CALL sp_procesar_transferencia(nro)` con stock insuficiente.
   - Archivos: `db/migrations/004_procedimientos.sql`.
 
-- [ ] **005_triggers.sql**
+- [x] **005_triggers.sql**
   - Descripción: triggers que protegen RN-09 (validación de stock en venta, BEFORE INSERT en `renglon_comprobante`), RN-08 (descuento de stock y cálculo de totales, AFTER INSERT en `renglon_comprobante`), RN-10/RN-11 (control de estados ingreso/transferencia sin retroceso), RN-12 (bloqueo de renglones si el documento no está en confección), RN-11 (fecha de confección inmutable), RN-13 (auditoría de precio, AFTER UPDATE en `vino`), RN-05 (suma de cortes = 100, constraint trigger DEFERRABLE INITIALLY DEFERRED) y las implícitas RI-01…RI-07. Cada uno encabezado con comentario que cita la regla.
   - Aceptación: al menos un BEFORE, un AFTER y un constraint trigger diferido; RI-01…RI-07 cubiertas; cada regla RN señalable a su trigger.
   - Verificación: `psql -f db/migrations/005_triggers.sql`; disparar venta sin stock y edición de un documento no confección.
   - Archivos: `db/migrations/005_triggers.sql`.
 
-- [ ] **006_vistas.sql**
+- [x] **006_vistas.sql**
   - Descripción: 3 vistas — stock total por vino (depósito + salas, para el tablero y S6/S9), ventas mensuales por sala (para S8/S11) y documentos pendientes (ingresos/transferencias no procesados, para S5). Una puede ser materializada; la vista de clientes (para resolver los joins del supertipo+subtipos) también encaja acá.
   - Aceptación: las 3 vistas consultables y coherentes con las tablas base.
   - Verificación: `psql -f db/migrations/006_vistas.sql` + SELECT por vista.
   - Archivos: `db/migrations/006_vistas.sql`.
 
-- [ ] **007_roles.sql**
+- [x] **007_roles.sql**
   - Descripción: 3 roles — propietario, `app_rw` (lectura/escritura para la API) y un rol de solo lectura para reportes. Se hace `REVOKE ALL ON SCHEMA public FROM PUBLIC` y se otorgan privilegios mínimos (USAGE en schema, DML en tablas, EXECUTE en rutinas). La contraseña de `app_rw` se pasa por variable de entorno, nunca en el repo.
   - Aceptación: la API se conecta con `app_rw` sin privilegios de propietario; el rol de reportes solo puede SELECT.
   - Verificación: `psql -f db/migrations/007_roles.sql`; probar conexión como `app_rw`.
   - Archivos: `db/migrations/007_roles.sql`.
 
-- [ ] **db_tests.sql**
+- [x] **db_tests.sql**
   - Descripción: script de pruebas SQL con casos que deben funcionar y casos que deben fallar. Al menos un caso por RN-01…RN-15 y RI-01…RI-07; cada caso que debe fallar comenta el error esperado. Sirve para demostrar que las reglas se cumplen sin importar quién acceda a la base.
   - Aceptación: los casos que deben fallar fallan con mensaje claro; los que deben funcionar, funcionan; cobertura completa de RN+RI.
   - Verificación: `psql -f db/tests/db_tests.sql`.
   - Archivos: `db/tests/db_tests.sql`.
 
-- [ ] **Demo de concurrencia**
+- [x] **Demo de concurrencia**
   - Descripción: dos sesiones `psql` intentan vender la última botella de un vino. Mostrar el comportamiento con y sin `SELECT … FOR UPDATE`, y explicar por qué según el nivel de aislamiento ambas sesiones podrían vender la misma botella sin el bloqueo. Queda en el informe con capturas.
   - Aceptación: con FOR UPDATE una sesión espera, la segunda ve stock 0 y rechaza; sin FOR UPDATE ambas pueden vender la misma botella.
   - Verificación: capturas en el informe de la etapa 2.
