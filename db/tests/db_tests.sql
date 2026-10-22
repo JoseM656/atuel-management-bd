@@ -178,6 +178,38 @@ INSERT INTO resultado (r) VALUES
    $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (2, 1)$q$,
    $q$INSERT INTO renglon_comprobante (nro, cod_vino, cantidad) VALUES ((SELECT max(nro) FROM comprobante), 1, 2)$q$,
    $q$UPDATE comprobante SET subtotal = 1 WHERE nro = (SELECT max(nro) FROM comprobante)$q$])),
+(pg_temp.debe_funcionar('RN-08 U1: cambiar el descuento recalcula el total', ARRAY[
+   $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (2, 1)$q$,
+   $q$INSERT INTO renglon_comprobante (nro, cod_vino, cantidad) VALUES ((SELECT max(nro) FROM comprobante), 1, 2)$q$,
+   $q$UPDATE comprobante SET porcentaje_descuento = 10 WHERE nro = (SELECT max(nro) FROM comprobante)$q$],
+   $q$SELECT total = 22500 FROM comprobante ORDER BY nro DESC LIMIT 1$q$)),
+(pg_temp.debe_funcionar('RN-08 U1: escribir el total correcto se acepta', ARRAY[
+   $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (2, 1)$q$,
+   $q$INSERT INTO renglon_comprobante (nro, cod_vino, cantidad) VALUES ((SELECT max(nro) FROM comprobante), 1, 2)$q$,
+   $q$UPDATE comprobante SET total = fn_total_comprobante(nro) WHERE nro = (SELECT max(nro) FROM comprobante)$q$],
+   $q$SELECT total = 20000 FROM comprobante ORDER BY nro DESC LIMIT 1$q$)),
+(pg_temp.debe_fallar('RN-08 borrar un renglón suelto', ARRAY[
+   $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (2, 1)$q$,
+   $q$INSERT INTO renglon_comprobante (nro, cod_vino, cantidad) VALUES ((SELECT max(nro) FROM comprobante), 1, 2)$q$,
+   $q$DELETE FROM renglon_comprobante WHERE nro = (SELECT max(nro) FROM comprobante)$q$])),
+(pg_temp.debe_fallar('RN-08 cambiar la cantidad de un renglón vendido', ARRAY[
+   $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (2, 1)$q$,
+   $q$INSERT INTO renglon_comprobante (nro, cod_vino, cantidad) VALUES ((SELECT max(nro) FROM comprobante), 1, 2)$q$,
+   $q$UPDATE renglon_comprobante SET cantidad = 1 WHERE nro = (SELECT max(nro) FROM comprobante)$q$])),
+(pg_temp.debe_fallar('RN-08 pisar el subtotal de un renglón', ARRAY[
+   $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (2, 1)$q$,
+   $q$INSERT INTO renglon_comprobante (nro, cod_vino, cantidad) VALUES ((SELECT max(nro) FROM comprobante), 1, 2)$q$,
+   $q$UPDATE renglon_comprobante SET subtotal = 1 WHERE nro = (SELECT max(nro) FROM comprobante)$q$])),
+(pg_temp.debe_funcionar('RN-08 U1: el nuevo descuento llega a los renglones', ARRAY[
+   $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (2, 1)$q$,
+   $q$INSERT INTO renglon_comprobante (nro, cod_vino, cantidad) VALUES ((SELECT max(nro) FROM comprobante), 1, 2), ((SELECT max(nro) FROM comprobante), 2, 1)$q$,
+   $q$UPDATE comprobante SET porcentaje_descuento = 10 WHERE nro = (SELECT max(nro) FROM comprobante)$q$],
+   $q$SELECT c.total = SUM(r.subtotal) AND SUM(r.importe_descuento) = 3300 FROM comprobante c JOIN renglon_comprobante r USING (nro) WHERE c.nro = (SELECT max(nro) FROM comprobante) GROUP BY c.total$q$)),
+(pg_temp.debe_funcionar('D1 borrar un comprobante no devuelve stock', ARRAY[
+   $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (1, 1)$q$,
+   $q$INSERT INTO renglon_comprobante (nro, cod_vino, cantidad) VALUES ((SELECT max(nro) FROM comprobante), 1, 2)$q$,
+   $q$DELETE FROM comprobante WHERE nro = (SELECT max(nro) FROM comprobante)$q$],
+   $q$SELECT fn_stock_sala(1, 1) = 3$q$)),
 -- RN-09 stock
 (pg_temp.debe_fallar('RN-09 vender 2 con stock 1', ARRAY[
    $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (1, 1)$q$,
@@ -193,6 +225,10 @@ INSERT INTO resultado (r) VALUES
    $q$SELECT (SELECT cantidad FROM stock_deposito WHERE cod_vino = 2) = 55 AND (SELECT estado FROM ingreso WHERE cod_ingreso = 2) = 'procesado'$q$)),
 (pg_temp.debe_fallar('RN-10 retroceder terminado -> en_confeccion', ARRAY[$q$UPDATE ingreso SET estado = 'en_confeccion' WHERE cod_ingreso = 2$q$])),
 (pg_temp.debe_fallar('RN-10 saltar en_confeccion -> procesado', ARRAY[$q$UPDATE ingreso SET estado = 'procesado' WHERE cod_ingreso = 1$q$])),
+(pg_temp.debe_fallar('RN-10 crear ingreso ya procesado', ARRAY[$q$INSERT INTO ingreso (cod_transportista, cuit_bodega, estado) VALUES (1, '30111111111', 'procesado')$q$])),
+(pg_temp.debe_funcionar('RN-10 un ingreso nuevo nace en confección', ARRAY[$q$INSERT INTO ingreso (cod_transportista, cuit_bodega) VALUES (1, '30111111111')$q$],
+   $q$SELECT estado = 'en_confeccion' FROM ingreso ORDER BY cod_ingreso DESC LIMIT 1$q$)),
+(pg_temp.debe_fallar('RN-10 pasar a procesado sin el procedimiento', ARRAY[$q$UPDATE ingreso SET estado = 'procesado' WHERE cod_ingreso = 2$q$])),
 -- RN-11 transferencias
 (pg_temp.debe_fallar('RN-11 procesar sin stock suficiente', ARRAY[$q$CALL sp_procesar_transferencia(2)$q$])),
 (pg_temp.debe_funcionar('RN-11 procesar transferencia OK', ARRAY[$q$CALL sp_procesar_transferencia(3)$q$],
@@ -200,9 +236,19 @@ INSERT INTO resultado (r) VALUES
 (pg_temp.debe_funcionar('RN-11 fecha de confección forzada a hoy', ARRAY[$q$INSERT INTO transferencia (id_sala, fecha_confeccion) VALUES (1, '2020-01-01')$q$],
    $q$SELECT fecha_confeccion = CURRENT_DATE FROM transferencia ORDER BY nro DESC LIMIT 1$q$)),
 (pg_temp.debe_fallar('RN-11 modificar fecha de confección', ARRAY[$q$UPDATE transferencia SET fecha_confeccion = '2020-01-01' WHERE nro = 1$q$])),
+(pg_temp.debe_fallar('RN-11 crear transferencia ya terminada', ARRAY[$q$INSERT INTO transferencia (id_sala, estado) VALUES (1, 'terminado')$q$])),
+(pg_temp.debe_fallar('RN-11 pasar a procesado sin el procedimiento', ARRAY[$q$UPDATE transferencia SET estado = 'procesado' WHERE nro = 3$q$])),
+(pg_temp.debe_fallar('RN-10 la marca no queda activa después del CALL', ARRAY[
+   $q$CALL sp_procesar_transferencia(3)$q$,
+   $q$UPDATE ingreso SET estado = 'procesado' WHERE cod_ingreso = 2$q$])),
+(pg_temp.debe_funcionar('RN-11 sin stock no deja nada a medias', ARRAY[
+   $q$DO $d$ BEGIN CALL sp_procesar_transferencia(2); EXCEPTION WHEN OTHERS THEN NULL; END $d$$q$],
+   $q$SELECT (SELECT cantidad FROM stock_deposito WHERE cod_vino = 1) = 100 AND fn_stock_sala(1, 1) = 5 AND (SELECT estado FROM transferencia WHERE nro = 2) = 'terminado'$q$)),
 -- RN-12 renglones bloqueados
 (pg_temp.debe_fallar('RN-12 agregar renglón a transferencia terminada', ARRAY[$q$INSERT INTO renglon_transferencia VALUES (3, 1, 1)$q$])),
 (pg_temp.debe_fallar('RN-12 borrar renglón de ingreso terminado', ARRAY[$q$DELETE FROM renglon_ingreso WHERE cod_ingreso = 2$q$])),
+(pg_temp.debe_funcionar('RN-12 editar renglón en confección', ARRAY[$q$UPDATE renglon_ingreso SET cantidad = 20 WHERE cod_ingreso = 1$q$],
+   $q$SELECT cantidad = 20 FROM renglon_ingreso WHERE cod_ingreso = 1$q$)),
 -- RN-13 auditoría
 (pg_temp.debe_funcionar('RN-13 cambio de precio auditado', ARRAY[$q$UPDATE vino SET precio = 13000 WHERE cod_vino = 1$q$],
    $q$SELECT count(*) = 1 FROM auditoria_precio WHERE cod_vino = 1 AND precio_anterior = 12500 AND precio_nuevo = 13000 AND usuario = current_user$q$)),
@@ -213,6 +259,7 @@ INSERT INTO resultado (r) VALUES
 -- RN-15 positivos y graduación
 (pg_temp.debe_fallar('RN-15 graduación 25', ARRAY[$q$UPDATE vino SET graduacion = 25 WHERE cod_vino = 1$q$])),
 (pg_temp.debe_fallar('RN-15 cantidad 0 en renglón', ARRAY[$q$INSERT INTO renglon_ingreso VALUES (1, 2, 0)$q$])),
+(pg_temp.debe_fallar('RN-15 kilos negativos', ARRAY[$q$INSERT INTO lote_uva (id_finca, nro_parcela, fecha_cosecha, kg, cuit_bodega) VALUES (1, 1, '2024-03-01', -5, '30111111111')$q$])),
 -- Reglas implícitas
 (pg_temp.debe_fallar('RI-02 vino sin maridaje', ARRAY[$q$INSERT INTO vino (nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega) VALUES ('Sin Maridaje', 'tinto', 2022, 750, 13, 5000, '30111111111')$q$])),
 (pg_temp.debe_funcionar('RI-03 copia histórica precio unitario', ARRAY[
@@ -222,7 +269,19 @@ INSERT INTO resultado (r) VALUES
    $q$SELECT precio_unitario = 12500 FROM renglon_comprobante WHERE cod_vino = 1 ORDER BY nro DESC LIMIT 1$q$)),
 (pg_temp.debe_fallar('RI-04 vino de otra bodega en el ingreso', ARRAY[$q$INSERT INTO renglon_ingreso VALUES (1, 3, 5)$q$])),
 (pg_temp.debe_fallar('RI-05 transportista que no cubre el depósito', ARRAY[$q$INSERT INTO ingreso (cod_transportista, cuit_bodega) VALUES (2, '30111111111')$q$])),
-(pg_temp.debe_fallar('RI-07 subtipo no coincide con supertipo', ARRAY[$q$INSERT INTO cliente (nombre_razon_social, tipo_doc, nro_doc, direccion, id_localidad, tipo, descuento) VALUES ('Z', 'DNI', '1', 'D', 1, 'exportador', 0); INSERT INTO socio (id_cliente) VALUES (currval('cliente_id_cliente_seq'))$q$]));
+(pg_temp.debe_fallar('RI-07 subtipo no coincide con supertipo', ARRAY[$q$INSERT INTO cliente (nombre_razon_social, tipo_doc, nro_doc, direccion, id_localidad, tipo, descuento) VALUES ('Z', 'DNI', '1', 'D', 1, 'exportador', 0); INSERT INTO socio (id_cliente) VALUES (currval('cliente_id_cliente_seq'))$q$])),
+-- D5 / D1 borrados en cascada
+(pg_temp.debe_funcionar('D5 borrar un ingreso (cascade a renglones)', ARRAY[$q$DELETE FROM ingreso WHERE cod_ingreso = 1$q$],
+   $q$SELECT NOT EXISTS (SELECT 1 FROM ingreso WHERE cod_ingreso = 1)$q$)),
+(pg_temp.debe_funcionar('D5 borrar un ingreso terminado entero', ARRAY[$q$DELETE FROM ingreso WHERE cod_ingreso = 2$q$],
+   $q$SELECT NOT EXISTS (SELECT 1 FROM renglon_ingreso WHERE cod_ingreso = 2)$q$)),
+(pg_temp.debe_funcionar('Borrar una transferencia terminada entera', ARRAY[$q$DELETE FROM transferencia WHERE nro = 3$q$],
+   $q$SELECT NOT EXISTS (SELECT 1 FROM renglon_transferencia WHERE nro = 3)$q$)),
+(pg_temp.debe_funcionar('D1 borrar un comprobante (cascade a renglones)', ARRAY[
+   $q$INSERT INTO comprobante (id_cliente, id_sala) VALUES (1, 1)$q$,
+   $q$INSERT INTO renglon_comprobante (nro, cod_vino, cantidad) VALUES ((SELECT max(nro) FROM comprobante), 1, 1)$q$,
+   $q$DELETE FROM comprobante WHERE nro = (SELECT max(nro) FROM comprobante)$q$],
+   $q$SELECT true$q$));
 
 SELECT r AS resultado FROM resultado ORDER BY n;
 ROLLBACK;
