@@ -1,0 +1,16 @@
+nombre,tipo,activa_en_produccion
+Malbec,tinta,true
+Cabernet Sauvignon,tinta,true
+Merlot,tinta,true
+Syrah,tinta,true
+Bonarda,tinta,true
+Tempranillo,tinta,true
+Pinot Noir,tinta,true
+Chardonnay,blanca,true
+Sauvignon Blanc,blanca,true
+Torrontés,blanca,true
+Chenin Blanc,blanca,true
+Semillón,blanca,true
+Petit Verdot,tinta,false
+Cabernet Franc,tinta,false
+Viognier,blanca,false
