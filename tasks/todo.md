@@ -100,35 +100,35 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
 
 ---
 
-## Milestone 3 — Etapa 3: Carga masiva
+## Milestone 3 — Etapa 3: Carga masiva ✓ (COMPLETA)
 
 > Generar datos coherentes y reproducibles a gran escala (≥100k filas en una tabla) con Python + Faker + semilla fija, catálogos reales en CSV y consultas de control.
 
-- [ ] **Catálogos CSV**
+- [x] **Catálogos CSV**
   - Descripción: catálogos reales del Anexo B — cepas tintas (Malbec, Cabernet Sauvignon, Merlot, Syrah, Bonarda, Tempranillo, Pinot Noir) y blancas (Chardonnay, Sauvignon Blanc, Torrontés, Chenin Blanc, Semillón), maridajes con temperatura de servicio, departamentos de Mendoza, tipos de vino y presentaciones (187/375/750/1500/3000 ml). Estos datos no se generan al azar.
   - Aceptación: catálogos completos (10–60 filas cada uno) listos para el script de carga.
   - Verificación: archivos en `db/seed/`.
   - Archivos: `db/seed/*.csv`.
 
-- [ ] **Script de carga Python**
+- [x] **Script de carga Python**
   - Descripción: `psycopg` + `Faker` + `random` con semilla fija, respetando el orden de carga por dependencias FK (primero las tablas sin dependencias, después las que referencian). El orden se dibuja en el informe. Datos coherentes: cosecha antes de elaboración, ingreso antes de venta, cortes que suman 100, descuentos por tipo, stocks no negativos.
   - Aceptación: reproducible — dos ejecuciones con la misma semilla producen los mismos datos.
   - Verificación: `python db/seed/seed.py` dos veces → mismos conteos.
   - Archivos: `db/seed/seed.py`, `db/seed/README.md`.
 
-- [ ] **Coherencia y triggers en carga**
+- [x] **Coherencia y triggers en carga**
   - Descripción: asegurar coherencia temporal y numérica de los datos generados, y resolver la carga histórica frente a los triggers: deshabilitarlos durante la carga con `ALTER TABLE … DISABLE TRIGGER`, volver a habilitarlos y validar con consultas de control. Documentar la decisión y sus riesgos.
   - Aceptación: estrategia ante triggers documentada; datos finales coherentes sin inconsistencias.
   - Verificación: reporte etapa 3 + consultas de control.
   - Archivos: `db/seed/`, `docs/` (reporte).
 
-- [ ] **Carga eficiente por lotes**
+- [x] **Carga eficiente por lotes**
   - Descripción: inserción por lotes (`execute_values`/`executemany` o `COPY`) y medición del tiempo fila a fila vs por lotes. Cumplir los mínimos de volumen: todas las tablas con ≥1 fila, ≥3 tablas >10 000, ≥1 tabla >100 000 (renglones de comprobante → 500 000).
   - Aceptación: ≥100 000 filas en una tabla; renglones de comprobante ~500 000; tiempos registrados.
   - Verificación: reporte de tiempos y conteos.
   - Archivos: `db/seed/`, `docs/` (reporte).
 
-- [ ] **Consultas de control y dump**
+- [x] **Consultas de control y dump**
   - Descripción: consultas de control — conteo por tabla, filas huérfanas, stock negativo, comprobantes cuyo total no coincide con la suma de sus renglones — y volcado de la base cargada con `pg_dump` (`dump_completo.sql.gz`) para poder restaurarla.
   - Aceptación: sin inconsistencias; dump generado (o instrucciones si supera el tamaño permitido).
   - Verificación: `pg_dump` + consultas de control con resultados en el reporte.

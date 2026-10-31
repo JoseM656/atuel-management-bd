@@ -1,1 +1,7 @@
 .opencode
+.env
+.venv/
+__pycache__/
+*.pyc
+dump_completo.sql.gz
+
