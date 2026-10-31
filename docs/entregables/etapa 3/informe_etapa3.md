@@ -1,18 +1,16 @@
-# Informe Técnico — Etapa 3: Carga Masiva y Reproducible de Datos
+# Informe de la Etapa 3: Carga Masiva y Reproducible de Datos · Bodegas del Atuel
 
-> **Trabajo Práctico Integrador · Bases de Datos · Ingeniería en Sistemas · UTN FRSR (Ciclo 2026)**
-> **Sistema:** «Bodegas del Atuel»
-> **Alcance:** Issues **#26, #27, #28, #29 y #30**
+> Trabajo Práctico Integrador · Bases de Datos · Ingeniería en Sistemas · UTN Facultad Regional San Rafael · Ciclo 2026.
 
 ---
 
-## 1. Resumen Ejecutivo
+## 1. Introducción y Alcance de la Etapa 3
 
 En la Etapa 3 se diseñó e implementó el subsistema de carga masiva, determinista y transaccionalmente consistente para las **31 tablas** del esquema relacional de «Bodegas del Atuel» (`001_esquema.sql` a `007_roles.sql`), alcanzando un volumen total de **729.551 registros** en **10,87 segundos** mediante el protocolo `COPY ... FROM STDIN` de PostgreSQL (`psycopg` v3), sin uso de ORM y con cumplimiento estricto de las reglas de negocio (`RN-01..RN-15`) e implícitas (`RI-01..RI-07`).
 
 ---
 
-## 2. Catálogos Reales en CSV (Issue #26)
+## 2. Catálogos Reales en CSV (`db/seed/*.csv`)
 
 Los datos de referencia estáticos del dominio vitivinícola mendocino (Anexo B) se almacenan en archivos CSV codificados en UTF-8 sin BOM dentro de `db/seed/` y no se generan al azar:
 
@@ -28,7 +26,7 @@ Los datos de referencia estáticos del dominio vitivinícola mendocino (Anexo B)
 
 ---
 
-## 3. Orden Topológico de Carga por Dependencias FK (Issue #27)
+## 3. Orden Topológico de Carga por Dependencias FK
 
 El esquema físico posee **31 tablas** vinculadas por **37 claves foráneas**. El orden de carga se estructuró en **6 niveles topológicos** donde toda tabla se carga después de las tablas a las que referencia. El único ciclo del esquema (`localidad.cuit_encargado → empleado.cuit → sala_venta.id_sala → localidad.id_localidad`) se resuelve dentro de la misma transacción gracias a que `fk_localidad_encargado` está declarada `DEFERRABLE INITIALLY DEFERRED` en `001_esquema.sql`:
 
@@ -45,7 +43,7 @@ flowchart TD
 
 ---
 
-## 4. Algoritmo de Coherencia Temporal/Numérica y Estrategia frente a Triggers (Issue #28)
+## 4. Algoritmo de Coherencia Temporal/Numérica y Estrategia frente a Triggers
 
 ### 4.1 Por qué no se puede cargar el historial con los triggers activos
 
@@ -87,7 +85,7 @@ Dado que `ENABLE TRIGGER USER` no ejecuta retroactivamente los triggers sobre fi
 
 ---
 
-## 5. Conteo Final de las 31 Tablas y Tiempos de Carga (Issue #29)
+## 5. Conteo Final de las 31 Tablas y Tiempos de Carga
 
 ### 5.1 Volúmenes y tiempos medidos por tabla (`COPY ... FROM STDIN`)
 
@@ -140,7 +138,7 @@ Sobre una muestra controlada de **10.000 filas** con estructura de `cliente` ins
 
 ---
 
-## 6. Consultas de Control, Reproducibilidad y Backup/Restauración (Issue #30)
+## 6. Consultas de Control, Reproducibilidad y Backup/Restauración
 
 ### 6.1 Resultados de la batería de controles (`db/seed/consultas_control.sql`)
 
@@ -178,3 +176,4 @@ Ejecutando dos veces consecutivas `python db/seed/seed.py --seed 42 --fecha-ref 
 ### 6.3 Generación de `dump_completo.sql.gz` y prueba de restauración
 
 Se generó el volcado comprimido con `pg_dump -U postgres -d atuel --no-owner --no-acl | gzip -9 > dump_completo.sql.gz` y se restauró en una base de datos limpia (`atuel_restore_test`). Al ejecutar `consultas_control.sql` sobre `atuel_restore_test`, se verificaron exactamente las **31 tablas con 729.551 filas totales** y **0 inconsistencias** en `C01..C14`.
+

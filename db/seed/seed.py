@@ -22,7 +22,7 @@ import psycopg
 DEFAULT_SEED = 42
 DEFAULT_FECHA_REF = "2026-10-30"
 DEFAULT_DSN = os.environ.get(
-    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5433/atuel"
+    "DATABASE_URL", "postgresql://postgres:postgres@127.0.0.1:5433/atuel"
 )
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
