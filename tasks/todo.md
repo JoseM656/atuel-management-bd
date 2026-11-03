@@ -140,7 +140,7 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
 
 > Diseñar índices con evidencia medida (`EXPLAIN ANALYZE, BUFFERS`), comparando antes/después y documentando el costo de escritura.
 
-- [ ] **Medición baseline**
+- [x] **Medición baseline**
   - Descripción: ejecutar `ANALYZE` y medir ≥3 consultas candidatas de la sección 8 (S1, S4, S8, S10) con `EXPLAIN (ANALYZE, BUFFERS)` usando solo los índices de PK/UNIQUE. Guardar plan y tiempo de cada una antes de crear índices.
   - Aceptación: plan y tiempo baseline guardados.
   - Verificación: informe etapa 4.
