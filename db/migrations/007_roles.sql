@@ -98,7 +98,11 @@ GRANT EXECUTE ON ALL ROUTINES IN SCHEMA public TO app_rw;
 -- 5. Privilegios para reportes_ro (Solo lectura para reportes y tableros)
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO reportes_ro;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO reportes_ro;
-GRANT EXECUTE ON ALL ROUTINES IN SCHEMA public TO reportes_ro;
+
+-- Los procedimientos modifican datos con los permisos del dueño (SECURITY DEFINER):
+-- reportes_ro no los ejecuta. PostgreSQL da EXECUTE a PUBLIC por defecto, así que
+-- también hay que quitárselo a PUBLIC. app_rw conserva su GRANT explícito.
+REVOKE EXECUTE ON ALL PROCEDURES IN SCHEMA public FROM PUBLIC, reportes_ro;
 
 -- 6. Privilegios por defecto para tablas, secuencias y rutinas futuras
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
@@ -112,7 +116,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
     GRANT SELECT ON TABLES TO reportes_ro;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-    GRANT EXECUTE ON FUNCTIONS TO reportes_ro;
+-- Sin EXECUTE por defecto para reportes_ro: aquí FUNCTIONS también abarca los
+-- procedimientos. Las funciones nuevas siguen ejecutables vía PUBLIC; todo
+-- procedimiento nuevo necesita su propio REVOKE EXECUTE ... FROM PUBLIC.
 
 COMMIT;

@@ -8,7 +8,9 @@
 --     directo (RN-10/RN-11 protegidos por privilegio, no por la marca GUC).
 --   * SÍ puede terminar y procesar documentos vía sp_terminar_* / sp_procesar_*
 --     (SECURITY DEFINER).
---   * reportes_ro es de solo lectura.
+--   * reportes_ro es de solo lectura: no escribe en las tablas ni ejecuta los
+--     procedimientos, que modifican datos con los permisos del dueño. Sí usa
+--     las funciones de cálculo.
 --
 -- Requiere: migraciones 001..007 aplicadas y base sin datos previos.
 -- Corre en una única transacción que termina en ROLLBACK (no deja datos).
@@ -79,6 +81,12 @@ END $$;
 CREATE TEMP TABLE resultado (n serial, r text);
 
 INSERT INTO resultado (r) VALUES
+-- reportes_ro NO ejecuta procedimientos. Van primero: cada documento todavía está
+-- en el estado que su procedimiento acepta, así que solo los frena el permiso.
+(pg_temp.rol_debe_fallar('reportes_ro no termina ingreso', 'reportes_ro', $q$CALL sp_terminar_ingreso(1)$q$)),
+(pg_temp.rol_debe_fallar('reportes_ro no procesa ingreso', 'reportes_ro', $q$CALL sp_procesar_ingreso(2)$q$)),
+(pg_temp.rol_debe_fallar('reportes_ro no termina transferencia', 'reportes_ro', $q$CALL sp_terminar_transferencia(1)$q$)),
+(pg_temp.rol_debe_fallar('reportes_ro no procesa transferencia', 'reportes_ro', $q$CALL sp_procesar_transferencia(2)$q$)),
 -- app_rw NO puede tocar estado por UPDATE directo
 (pg_temp.rol_debe_fallar('app_rw UPDATE estado ingreso', 'app_rw', $q$UPDATE ingreso SET estado = 'procesado' WHERE cod_ingreso = 2$q$)),
 (pg_temp.rol_debe_fallar('app_rw UPDATE estado transferencia', 'app_rw', $q$UPDATE transferencia SET estado = 'procesado' WHERE nro = 2$q$)),
@@ -92,7 +100,8 @@ INSERT INTO resultado (r) VALUES
 (pg_temp.rol_debe_funcionar('app_rw procesa transferencia vía sp', 'app_rw', $q$CALL sp_procesar_transferencia(2)$q$)),
 -- reportes_ro solo lectura
 (pg_temp.rol_debe_fallar('reportes_ro no inserta', 'reportes_ro', $q$INSERT INTO bodega (cuit, razon_social, domicilio) VALUES ('30999999999','X','Y')$q$)),
-(pg_temp.rol_debe_funcionar('reportes_ro lee', 'reportes_ro', $q$SELECT count(*) FROM vino$q$));
+(pg_temp.rol_debe_funcionar('reportes_ro lee', 'reportes_ro', $q$SELECT count(*) FROM vino$q$)),
+(pg_temp.rol_debe_funcionar('reportes_ro usa funciones de cálculo', 'reportes_ro', $q$SELECT fn_stock_sala(1, 1)$q$));
 
 SELECT r AS resultado FROM resultado ORDER BY n;
 
