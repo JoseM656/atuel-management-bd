@@ -65,6 +65,20 @@ ORDER BY botellas_solicitadas DESC, t.id_sala
 LIMIT 5;
 
 -- ---------------------------------------------------------------------
+-- S5. Listado de las salas con menor cantidad de transferencias pendientes
+-- (no procesadas). Se ordena de menor a mayor e incluye las salas sin
+-- pendientes.
+-- Por qué se mide: solo 150 de las 2.500 transferencias están pendientes.
+-- ---------------------------------------------------------------------
+\echo '=== S5 ==='
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT s.id_sala, COUNT(t.nro) AS pendientes
+FROM sala_venta s
+LEFT JOIN transferencia t ON t.id_sala = s.id_sala AND t.estado <> 'procesado'
+GROUP BY s.id_sala
+ORDER BY pendientes, s.id_sala;
+
+-- ---------------------------------------------------------------------
 -- S8. Monto total de ventas por sala en el último trimestre, en orden
 -- descendente.
 -- Por qué se mide: filtra comprobante solo por fecha y necesita además
@@ -105,3 +119,17 @@ SELECT r.id_finca,
                         AND r2.campana = r.campana) AS rinde_menos_que_finca
 FROM rendimiento r
 ORDER BY r.id_finca, r.campana, r.nro_parcela;
+
+-- ---------------------------------------------------------------------
+-- D4 (condición). Clientes socios que nunca compraron y se dieron de alta
+-- hace más de 5 años. Se mide como SELECT para no borrar datos; el DELETE
+-- de la consigna va en consultas/delete.sql (#36).
+-- Por qué se mide: comprobante no tiene índice sobre la FK id_cliente.
+-- ---------------------------------------------------------------------
+\echo '=== D4 ==='
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT c.id_cliente
+FROM cliente c
+WHERE c.tipo = 'socio'
+  AND c.fecha_alta < CURRENT_DATE - INTERVAL '5 years'
+  AND NOT EXISTS (SELECT 1 FROM comprobante co WHERE co.id_cliente = c.id_cliente);
