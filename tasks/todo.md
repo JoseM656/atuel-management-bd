@@ -146,7 +146,7 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
   - Verificación: informe etapa 4.
   - Archivos: `docs/` (informe).
 
-- [ ] **008_indices.sql**
+- [x] **008_indices.sql**
   - Descripción: crear ≥5 índices a partir de lo que muestran los planes (recorridos secuenciales, ordenamientos costosos, joins sin índice). Deben incluir uno compuesto (justificar orden de columnas), uno parcial (`WHERE`), uno sobre una clave foránea (PostgreSQL no indexa FK automáticamente) y una variante (de expresión, BRIN o `INCLUDE`).
   - Aceptación: los 5+ índices creados y justificados.
   - Verificación: `psql -f db/migrations/008_indices.sql`.
