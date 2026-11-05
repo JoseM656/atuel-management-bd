@@ -152,7 +152,7 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
   - Verificación: `psql -f db/migrations/008_indices.sql`.
   - Archivos: `db/migrations/008_indices.sql`.
 
-- [ ] **Comparativa y costo de escritura**
+- [x] **Comparativa y costo de escritura**
   - Descripción: repetir `ANALYZE` y las mediciones, armar tabla comparativa (tiempo antes/después, tipo de scan: Seq/Index/Bitmap, filas leídas), justificar un índice evaluado y descartado, medir el costo de escritura de una tabla grande con y sin índices, y mostrar un caso donde el planificador no usa un índice (baja selectividad / estadísticas desactualizadas).
   - Aceptación: mejora medida en ≥3 consultas; costo de escritura y caso de no-uso documentados.
   - Verificación: informe etapa 4.

@@ -51,13 +51,15 @@ Los índices están en [`008_indices.sql`](../../../db/migrations/008_indices.sq
 
 | Índice | Tipo pedido | Definición | Consulta | Tamaño |
 | :--- | :--- | :--- | :--- | ---: |
-| `idx_comprobante_sala_fecha` | Compuesto | `comprobante (id_sala, fecha)` | S3 | 1.632 kB |
+| `idx_comprobante_sala_fecha` | Compuesto | `comprobante (id_sala, fecha)` | S3 | 2.040 kB |
 | `idx_comprobante_cliente` | Clave foránea | `comprobante (id_cliente)` | D4 | 1.064 kB |
 | `idx_transferencia_pendientes` | Parcial | `transferencia (id_sala) WHERE estado <> 'procesado'` | S5 | 16 kB |
 | `idx_renglon_transferencia_vino` | Variante `INCLUDE` | `renglon_transferencia (cod_vino) INCLUDE (nro, cantidad)` | S4 | 328 kB |
 | `idx_transferencia_fecha` | Simple | `transferencia (fecha_confeccion)` | S4 | 40 kB |
 
 **Orden de columnas del índice compuesto:** primero `id_sala`, que S3 compara por igualdad, y después `fecha`, que compara por rango. Con ese orden, el índice llega a una sola sala y recorre solo su tramo de fechas. Con `(fecha, id_sala)` recorrería todas las salas dentro del rango de fechas.
+
+Los tamaños corresponden a la carga de la sección 1.1. Dependen de los datos: con `--fecha-ref 2026-11-03`, el índice compuesto medía 1.632 kB, porque había 26.254 pares distintos de sala y fecha, contra 44.336 en esta carga.
 
 ### 2.1 Candidatos descartados
 
@@ -74,4 +76,54 @@ El índice de S8 pierde porque el plan original usa dos procesos en paralelo y e
 
 ## 3. Comparativa, costo de escritura y caso sin uso de índice (#33)
 
-Pendiente.
+### 3.1 Tabla comparativa
+
+Las dos mediciones usan la misma carga, el mismo script y el mismo día. Solo cambia que se aplicó `008_indices.sql`, seguido de `VACUUM ANALYZE`. Los planes están en [`anexo_planes_baseline.txt`](anexo_planes_baseline.txt) y [`anexo_planes_con_indices.txt`](anexo_planes_con_indices.txt).
+
+| Consulta | Antes | Después | Cambio | Recorrido antes | Recorrido después | Filas leídas antes → después | Buffers |
+| :--- | ---: | ---: | ---: | :--- | :--- | :--- | :--- |
+| S3 | 9,2 ms | 5,7 ms | -37 % | Parallel Seq Scan | Bitmap Index Scan | 150.000 → 835 | 2.938 → 1.237 |
+| S4 | 1,1 ms | 0,6 ms | -44 % | Seq Scan en ambas tablas | Index Only Scan y Bitmap Index Scan | 10.000 → 327 y 2.500 → 186 | 69 → 21 |
+| S5 | 0,4 ms | 0,3 ms | -22 % | Seq Scan | Bitmap Index Scan | 2.500 → 150 | 15 → 4 |
+| D4 (condición) | 112,2 ms | 10,9 ms | -90 % | Seq Scan y Hash Anti Join | Index Only Scan y Nested Loop Anti Join | Recorre `comprobante` entero → busca por cliente | 1.535 → 7.236 |
+| S1 | 241,3 ms | 246,2 ms | Sin mejora | Parallel Seq Scan | Igual | 500.000 → 500.000 | 3.745 → 3.745 |
+| S8 | 26,0 ms | 27,2 ms | Sin mejora | Parallel Seq Scan | Igual | 150.000 → 150.000 | 1.260 → 1.260 |
+| S10 | 531,7 ms | 523,2 ms | Sin mejora | CTE Scan | Igual | 10.562.500 → 10.562.500 | 36 → 36 |
+
+Hay mejora medida en cuatro consultas. En S1, S8 y S10 el plan no cambió, así que esas diferencias de tiempo son variación entre corridas.
+
+En D4 los buffers suben aunque el tiempo baja mucho. El Nested Loop busca en el índice una vez por cada uno de los 3.475 socios candidatos, y cuenta varias veces las mismas páginas, que ya están en memoria. Recorrer la tabla entera y armar la tabla de hash cuesta más tiempo que esas búsquedas.
+
+S1, S8 y S10 no mejoran por motivos distintos: S1 necesita toda la tabla, S8 conserva el 28 % de las filas y S10 pasa su tiempo en un CTE. El índice que se probó para S8 está en la sección 2.1.
+
+### 3.2 Costo de escritura
+
+Se usó la carga real: `seed.py` sobre dos bases recién migradas, una con 001 a 007 y otra con 001 a 008. Se alternaron 6 cargas por base, se descartó la primera de cada una y se informa la mediana de las otras 5. Ambas bases terminaron con los mismos datos. `seed.py` informa el tiempo de `COPY` de cada tabla.
+
+| Tabla | Índices nuevos | Sin `008` | Con `008` | Diferencia |
+| :--- | ---: | ---: | ---: | ---: |
+| `comprobante` (150.000 filas) | 2 | 1,368 s | 1,611 s | +0,243 s (+18 %) |
+| `renglon_transferencia` (10.000 filas) | 1 | 0,083 s | 0,093 s | +0,010 s (+12 %) |
+| `transferencia` (2.500 filas) | 2 | 0,015 s | 0,018 s | +0,003 s (+20 %) |
+| `renglon_comprobante` (500.000 filas), control | 0 | 4,288 s | 4,256 s | -0,032 s (-1 %) |
+| Carga completa (729.551 filas) | 5 | 7,25 s | 7,50 s | +0,25 s (+3 %) |
+
+`renglon_comprobante` funciona como control: no recibe índices nuevos y su tiempo prácticamente no cambia.
+
+El costo en disco es de 3,4 MB si los índices se crean después de la carga y de 4,0 MB si ya existen durante la carga. Por eso conviene crearlos después cuando se carga una base vacía.
+
+El costo es aceptable: la carga completa tarda un 3 % más, y las consultas de la sección 3.1 mejoran hasta un 90 %.
+
+### 3.3 Caso en que el planificador no usa un índice
+
+El script es [`caso_sin_uso_indice.sql`](caso_sin_uso_indice.sql), y usa `idx_comprobante_sala_fecha`, cuya primera columna es `id_sala`.
+
+| Caso | Filtro | Filas | Plan | Tiempo (mediana) |
+| :--- | :--- | ---: | :--- | ---: |
+| A | `id_sala BETWEEN 1 AND 30` | 125.004 (83 %) | Parallel Seq Scan: no usa el índice | 54,0 ms |
+| B | El mismo, con `enable_seqscan = off` | 125.004 (83 %) | Bitmap Index Scan: usa el índice forzado | 94,3 ms |
+| C | `id_sala = 12` | 4.167 (2,8 %) | Bitmap Index Scan: usa el índice | 4,4 ms |
+
+**Causa: baja selectividad.** En el caso A hay que leer el 83 % de las filas y, de todas formas, casi todas las páginas de la tabla. Pasar por el índice agrega trabajo sin evitar lecturas. El caso B muestra que el planificador acertó: al forzar el índice, la consulta tarda un 75 % más. El caso C muestra que el índice funciona cuando el filtro es selectivo.
+
+También S8 ignora `idx_comprobante_sala_fecha`, por otro motivo: filtra solo por `fecha`, que es la segunda columna del índice.
