@@ -17,8 +17,9 @@ BEGIN;
 -- 1. Índice compuesto. Consulta: S3 (sala y última semana).
 -- Sin índice se leen las 150.000 filas de comprobante para conservar menos del 1 %.
 -- Orden de columnas: primero id_sala, comparada por igualdad, y después
--- fecha, comparada por rango. Así el índice llega a una sola sala y recorre
--- solo su tramo de fechas; al revés recorrería todas las salas de esas fechas.
+-- fecha, comparada por rango. Para S3 el orden inverso rinde casi igual,
+-- porque el costo está en leer la tabla. Se elige este orden porque además
+-- sirve para buscar por sala sola y para la FK fk_comprobante_sala.
 -- ---------------------------------------------------------------------
 CREATE INDEX idx_comprobante_sala_fecha
     ON comprobante (id_sala, fecha);
@@ -54,7 +55,10 @@ CREATE INDEX idx_renglon_transferencia_vino
 
 -- ---------------------------------------------------------------------
 -- 5. Índice simple. Consulta: S4, del lado de la cabecera.
--- La ventana de 15 días conserva 186 de 2.500 transferencias.
+-- La ventana de 15 días conserva 186 de 2.500 transferencias. Hoy no reduce
+-- lecturas, porque la tabla tiene 14 páginas y se leen todas igual: gana
+-- tiempo porque no evalúa las 2.500 filas. Se espera que aporte más al crecer
+-- el historial, porque la ventana seguirá siendo chica.
 -- ---------------------------------------------------------------------
 CREATE INDEX idx_transferencia_fecha
     ON transferencia (fecha_confeccion);
