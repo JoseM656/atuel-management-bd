@@ -15,7 +15,7 @@ BEGIN;
 
 -- ---------------------------------------------------------------------
 -- 1. Índice compuesto. Consulta: S3 (sala y última semana).
--- Sin índice se leen las 150.000 filas de comprobante para conservar 839.
+-- Sin índice se leen las 150.000 filas de comprobante para conservar menos del 1 %.
 -- Orden de columnas: primero id_sala, comparada por igualdad, y después
 -- fecha, comparada por rango. Así el índice llega a una sola sala y recorre
 -- solo su tramo de fechas; al revés recorrería todas las salas de esas fechas.

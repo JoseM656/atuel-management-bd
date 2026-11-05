@@ -10,7 +10,7 @@ Esta medición es el punto de partida contra el que se comparan los índices de 
 | :--- | :--- |
 | Motor | PostgreSQL 16.15 en contenedor `postgres:16`, configuración por defecto |
 | Migraciones aplicadas | `001_esquema.sql` a `007_roles.sql` |
-| Datos | `seed.py --seed 42 --fecha-ref 2026-11-03` (729.551 filas, C01..C14 sin inconsistencias) |
+| Datos | `seed.py --seed 42 --fecha-ref 2026-11-05` (729.551 filas, C01..C14 sin inconsistencias) |
 | Estadísticas | `VACUUM ANALYZE` antes de medir |
 | Consultas | [`consultas_medicion.sql`](consultas_medicion.sql), con `EXPLAIN (ANALYZE, BUFFERS)` |
 | Corridas | 6: la primera calienta la caché y se informa la mediana de las otras 5 |
@@ -25,20 +25,20 @@ La decisión de comparar S10 dentro de cada campaña está explicada en el encab
 
 | Consulta | Tiempo (mediana) | Recorrido principal | Filas leídas | Filas útiles | Buffers |
 | :--- | ---: | :--- | ---: | ---: | ---: |
-| S1 | 239,2 ms | Parallel Seq Scan en `renglon_comprobante` | 500.000 | 500.000 | 3.745 |
-| S3 | 8,3 ms | Parallel Seq Scan en `comprobante` | 150.000 | 839 | 2.946 |
-| S4 | 1,0 ms | Seq Scan en `renglon_transferencia` y `transferencia` | 10.000 y 2.500 | 327 y 186 | 69 |
+| S1 | 241,3 ms | Parallel Seq Scan en `renglon_comprobante` | 500.000 | 500.000 | 3.745 |
+| S3 | 9,2 ms | Parallel Seq Scan en `comprobante` | 150.000 | 835 | 2.938 |
+| S4 | 1,1 ms | Seq Scan en `renglon_transferencia` y `transferencia` | 10.000 y 2.500 | 327 y 186 | 69 |
 | S5 | 0,4 ms | Seq Scan en `transferencia` | 2.500 | 150 | 15 |
-| S8 | 25,2 ms | Parallel Seq Scan en `comprobante` | 150.000 | 42.130 | 1.260 |
-| S10 | 509,9 ms | CTE Scan repetido sobre `rendimiento` | 10.562.500 | 16 por recorrido del CTE, en promedio | 36 |
-| D4 (condición) | 107,9 ms | Seq Scan en `comprobante` y `cliente` | 150.000 y 20.000 | 2.756 en el resultado | 1.535 |
+| S8 | 26,0 ms | Parallel Seq Scan en `comprobante` | 150.000 | 42.115 | 1.260 |
+| S10 | 531,7 ms | CTE Scan repetido sobre `rendimiento` | 10.562.500 | 16 por recorrido del CTE, en promedio | 36 |
+| D4 (condición) | 112,2 ms | Seq Scan en `comprobante` y `cliente` | 150.000 y 20.000 | 2.773 en el resultado | 1.535 |
 
 Los planes completos y el tiempo de cada corrida están en [`anexo_planes_baseline.txt`](anexo_planes_baseline.txt).
 
 ### 1.3 Qué muestran los planes
 
 - **S1:** lee toda la tabla porque agrega todos los renglones. No hay filas que un índice pueda descartar, así que la mejora dependerá de un recorrido solo de índice o de evitar el ordenamiento.
-- **S3:** es el caso más claro de filtro sin índice. Lee 150.000 filas para quedarse con 839, un 0,6 %.
+- **S3:** es el caso más claro de filtro sin índice. Lee 150.000 filas para quedarse con 835, un 0,6 %.
 - **S4:** la PK `(nro, cod_vino)` no sirve para buscar por `cod_vino`, porque esa no es su primera columna. Las tablas son chicas, así que la mejora en tiempo será pequeña.
 - **S8:** conserva un 28 % de las filas. Esa selectividad es baja para un índice común, por lo que un índice solo sobre `fecha` podría no usarse.
 - **S10:** es la más lenta, pero el índice no es la solución. Referenciar el CTE dentro de la subconsulta correlacionada lo recorre entero 3.250 veces (3.250 × 3.250 = 10.562.500 filas), y un CTE materializado no tiene índices. Para mejorarla hay que reescribir la consulta.
@@ -61,7 +61,7 @@ Los índices están en [`008_indices.sql`](../../../db/migrations/008_indices.sq
 
 ### 2.1 Candidatos descartados
 
-Estas pruebas también se hicieron dentro de transacciones con `ROLLBACK`, con la mediana de 5 corridas salvo donde se indica.
+Estas pruebas también se hicieron dentro de transacciones con `ROLLBACK`, con la mediana de 5 corridas salvo donde se indica. Se hicieron sobre la carga anterior, con `--fecha-ref 2026-11-03`, por lo que sus tiempos no se comparan directamente con los de la sección 1.2.
 
 | Candidato | Consulta | Resultado | Por qué se descartó |
 | :--- | :--- | :--- | :--- |
