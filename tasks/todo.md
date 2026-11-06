@@ -140,19 +140,19 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
 
 > Diseñar índices con evidencia medida (`EXPLAIN ANALYZE, BUFFERS`), comparando antes/después y documentando el costo de escritura.
 
-- [ ] **Medición baseline**
+- [x] **Medición baseline**
   - Descripción: ejecutar `ANALYZE` y medir ≥3 consultas candidatas de la sección 8 (S1, S4, S8, S10) con `EXPLAIN (ANALYZE, BUFFERS)` usando solo los índices de PK/UNIQUE. Guardar plan y tiempo de cada una antes de crear índices.
   - Aceptación: plan y tiempo baseline guardados.
   - Verificación: informe etapa 4.
   - Archivos: `docs/` (informe).
 
-- [ ] **008_indices.sql**
+- [x] **008_indices.sql**
   - Descripción: crear ≥5 índices a partir de lo que muestran los planes (recorridos secuenciales, ordenamientos costosos, joins sin índice). Deben incluir uno compuesto (justificar orden de columnas), uno parcial (`WHERE`), uno sobre una clave foránea (PostgreSQL no indexa FK automáticamente) y una variante (de expresión, BRIN o `INCLUDE`).
   - Aceptación: los 5+ índices creados y justificados.
   - Verificación: `psql -f db/migrations/008_indices.sql`.
   - Archivos: `db/migrations/008_indices.sql`.
 
-- [ ] **Comparativa y costo de escritura**
+- [x] **Comparativa y costo de escritura**
   - Descripción: repetir `ANALYZE` y las mediciones, armar tabla comparativa (tiempo antes/después, tipo de scan: Seq/Index/Bitmap, filas leídas), justificar un índice evaluado y descartado, medir el costo de escritura de una tabla grande con y sin índices, y mostrar un caso donde el planificador no usa un índice (baja selectividad / estadísticas desactualizadas).
   - Aceptación: mejora medida en ≥3 consultas; costo de escritura y caso de no-uso documentados.
   - Verificación: informe etapa 4.
