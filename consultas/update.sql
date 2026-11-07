@@ -353,3 +353,98 @@ WHERE fecha_hora = now()
 ORDER BY cod_vino;
 
 ROLLBACK;
+
+
+-- ---------------------------------------------------------------------
+-- U6. A los exportadores con más de 3 permisos de exportación, subirles el
+-- descuento al 35 %.
+--
+-- Estrategia: un UPDATE de cliente con una subconsulta que agrupa
+-- permiso_exportacion por cliente y conserva los que tienen más de 3
+-- (HAVING). No hace falta filtrar por tipo, porque la FK
+-- fk_permiso_exportador solo admite permisos de exportadores.
+--
+-- La condición descuento <> 35 deja afuera a quienes ya tienen el 35 %.
+-- El resultado es el mismo, pero no reescribe filas que no cambian, y cada
+-- fila reescrita dispara trg_cliente_subtipo, que es caro: revisa toda la
+-- tabla cliente.
+--
+-- Por qué afecta 0 filas sobre el seed: RI-06 ya está cubierta por
+-- trg_permiso_descuento, que recalcula el descuento con fn_descuento_cliente
+-- cada vez que se agrega o se borra un permiso, y el seed carga el 35 % a
+-- esos exportadores. U6 solo corrige descuentos que quedaron mal por otra
+-- vía, por ejemplo cambiados a mano: la base no impide modificar
+-- cliente.descuento directamente.
+--
+-- Preparación de la prueba: para ver un cambio real se le baja a mano el
+-- descuento al 30 % a un exportador con más de 3 permisos.
+--
+-- Los comprobantes ya emitidos no cambian: guardan su propio
+-- porcentaje_descuento. El nuevo descuento se aplica a las ventas
+-- siguientes, o a las anteriores si se ejecuta U1.
+--
+-- Triggers: trg_cliente_subtipo es diferido; SET CONSTRAINTS ALL IMMEDIATE
+-- lo evalúa antes del ROLLBACK.
+--
+-- Resultado medido:
+--   - Sin la preparación: 0 filas afectadas. Los 500 exportadores con más
+--     de 3 permisos ya tienen el 35 %.
+--   - Con la preparación: 1 fila afectada. El control pasa de 499 con 35 %
+--     y 1 con otro valor a 500 con 35 % y 0 con otro valor.
+--   - Sin la condición descuento <> 35, la misma sentencia afecta 500 filas
+--     y evaluar trg_cliente_subtipo tarda 2,6 s, contra menos de 0,1 s con
+--     la condición.
+-- ---------------------------------------------------------------------
+BEGIN;
+
+-- Control sin preparación
+SELECT count(*) AS con_mas_de_3_permisos,
+       count(*) FILTER (WHERE c.descuento = 35) AS con_35,
+       count(*) FILTER (WHERE c.descuento <> 35) AS con_otro_descuento
+FROM cliente c
+WHERE c.id_cliente IN (SELECT id_cliente
+                       FROM permiso_exportacion
+                       GROUP BY id_cliente
+                       HAVING count(*) > 3);
+
+-- Preparación: un exportador con más de 3 permisos queda con el 30 %.
+UPDATE cliente
+SET descuento = 30
+WHERE id_cliente = (SELECT id_cliente
+                    FROM permiso_exportacion
+                    GROUP BY id_cliente
+                    HAVING count(*) > 3
+                    ORDER BY id_cliente
+                    LIMIT 1);
+
+-- Control previo
+SELECT count(*) AS con_mas_de_3_permisos,
+       count(*) FILTER (WHERE c.descuento = 35) AS con_35,
+       count(*) FILTER (WHERE c.descuento <> 35) AS con_otro_descuento
+FROM cliente c
+WHERE c.id_cliente IN (SELECT id_cliente
+                       FROM permiso_exportacion
+                       GROUP BY id_cliente
+                       HAVING count(*) > 3);
+
+UPDATE cliente
+SET descuento = 35
+WHERE descuento <> 35
+  AND id_cliente IN (SELECT id_cliente
+                     FROM permiso_exportacion
+                     GROUP BY id_cliente
+                     HAVING count(*) > 3);
+
+SET CONSTRAINTS ALL IMMEDIATE;
+
+-- Control posterior
+SELECT count(*) AS con_mas_de_3_permisos,
+       count(*) FILTER (WHERE c.descuento = 35) AS con_35,
+       count(*) FILTER (WHERE c.descuento <> 35) AS con_otro_descuento
+FROM cliente c
+WHERE c.id_cliente IN (SELECT id_cliente
+                       FROM permiso_exportacion
+                       GROUP BY id_cliente
+                       HAVING count(*) > 3);
+
+ROLLBACK;
