@@ -270,3 +270,86 @@ GROUP BY dia_cierre
 ORDER BY dia_cierre;
 
 ROLLBACK;
+
+
+-- ---------------------------------------------------------------------
+-- U5. Aplicar un 15 % de descuento de precio a los 10 vinos menos vendidos
+-- de toda la red.
+--
+-- Criterio:
+--   - «La red» son las salas de venta. Entran los vinos que llegaron a
+--     alguna sala, es decir, los que tienen fila en stock_sala.
+--   - «Menos vendidos» se mide en unidades: la suma de cantidad en
+--     renglon_comprobante de todas las salas. Un vino que está en una sala
+--     y nunca se vendió cuenta con 0 unidades.
+--   - Los vinos que nunca llegaron a una sala no entran, porque no tuvieron
+--     oportunidad de venderse. En el seed son 152 de 400: si se contaran,
+--     habría 152 empatados en 0 unidades y elegir 10 sería arbitrario.
+--   - Si hubiera empate en el décimo puesto, decide el menor cod_vino. En el
+--     seed no hay empate: el décimo vendió 1.248 unidades y el undécimo 1.251.
+--
+-- Estrategia: la CTE ventas suma las unidades por vino. LEFT JOIN mantiene
+-- los vinos sin ventas y COALESCE les asigna 0. La CTE menos_vendidos ordena
+-- y se queda con 10, y el UPDATE baja el precio de esos vinos.
+-- ROUND deja el precio en 2 decimales, el formato de NUMERIC(12,2).
+--
+-- Triggers y constraints:
+--   - trg_vino_auditoria_precio (RN-13): una fila de auditoría por vino.
+--   - ck_vino_precio: el precio sigue siendo mayor que 0.
+--   - trg_vino_maridaje_obligatorio: es diferido; SET CONSTRAINTS ALL
+--     IMMEDIATE lo evalúa antes del ROLLBACK.
+--
+-- Control previo: los 11 vinos con menos ventas. El undécimo muestra que el
+-- corte en 10 no deja afuera un empate. Control posterior: la auditoría de
+-- esta transacción, con el precio anterior y el nuevo de cada vino.
+--
+-- Resultado medido:
+--   - Filas afectadas: 10.
+--   - Vinos elegidos (unidades): 392 (139), 7 (141), 11 (696), 15 (698),
+--     391 (1.108), 389 (1.110), 6 (1.113), 8 (1.115), 384 (1.247) y
+--     390 (1.248).
+--   - Auditoría: 10 filas nuevas, con precio_nuevo igual a
+--     precio_anterior × 0,85 redondeado.
+-- ---------------------------------------------------------------------
+BEGIN;
+
+-- Control previo
+WITH ventas AS (
+    SELECT s.cod_vino, COALESCE(sum(r.cantidad), 0) AS unidades
+    FROM (SELECT DISTINCT cod_vino FROM stock_sala) s
+    LEFT JOIN renglon_comprobante r ON r.cod_vino = s.cod_vino
+    GROUP BY s.cod_vino
+)
+SELECT row_number() OVER (ORDER BY ve.unidades, ve.cod_vino) AS puesto,
+       ve.cod_vino, ve.unidades, v.precio
+FROM ventas ve
+JOIN vino v ON v.cod_vino = ve.cod_vino
+ORDER BY ve.unidades, ve.cod_vino
+LIMIT 11;
+
+WITH ventas AS (
+    SELECT s.cod_vino, COALESCE(sum(r.cantidad), 0) AS unidades
+    FROM (SELECT DISTINCT cod_vino FROM stock_sala) s
+    LEFT JOIN renglon_comprobante r ON r.cod_vino = s.cod_vino
+    GROUP BY s.cod_vino
+),
+menos_vendidos AS (
+    SELECT cod_vino
+    FROM ventas
+    ORDER BY unidades, cod_vino
+    LIMIT 10
+)
+UPDATE vino
+SET precio = ROUND(precio * 0.85, 2)
+WHERE cod_vino IN (SELECT cod_vino FROM menos_vendidos);
+
+SET CONSTRAINTS ALL IMMEDIATE;
+
+-- Control posterior
+SELECT cod_vino, precio_anterior, precio_nuevo,
+       precio_nuevo = ROUND(precio_anterior * 0.85, 2) AS con_15_por_ciento
+FROM auditoria_precio
+WHERE fecha_hora = now()
+ORDER BY cod_vino;
+
+ROLLBACK;
