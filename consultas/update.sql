@@ -92,3 +92,56 @@ LEFT JOIN (SELECT nro, sum(cantidad * precio_unitario) AS suma
            GROUP BY nro) r USING (nro);
 
 ROLLBACK;
+
+
+-- ---------------------------------------------------------------------
+-- U2. Aumentar un 20 % el salario de los empleados con más de 5 años de
+-- antigüedad.
+--
+-- Estrategia: un UPDATE con la condición sobre fecha_ingreso. «Más de 5
+-- años» se toma literal: ingresó antes de la fecha de hoy menos 5 años.
+-- Quien cumple justo 5 años hoy no entra, porque todavía no los superó.
+--
+-- No se usa fn_antiguedad_anios(fecha_ingreso) > 5: esa función devuelve
+-- años completos, así que un empleado con 5 años y 8 meses daría 5 y
+-- quedaría afuera. Sobre el seed los dos criterios eligen los mismos 44
+-- empleados, porque ninguno tiene entre 4 y 6 años.
+--
+-- ROUND deja el salario en 2 decimales, el formato de NUMERIC(12,2).
+--
+-- Depende de CURRENT_DATE: con el paso de los días puede entrar algún
+-- empleado más.
+--
+-- Triggers y constraints:
+--   - ck_empleado_salario: el salario sigue siendo mayor que 0.
+--   - trg_encargado_empleado (RI-01): es diferido, así que normalmente se
+--     evaluaría en el COMMIT. SET CONSTRAINTS ALL IMMEDIATE lo evalúa antes
+--     del ROLLBACK, para comprobar que el cambio lo cumple.
+--
+-- Resultado medido (CURRENT_DATE 2026-11-07):
+--   - Filas afectadas: 44 de 120.
+--   - Control previo: suma de sus salarios 40.100.000,00; resto 75.160.000,00.
+--   - Control posterior: suma de sus salarios 48.120.000,00 (+20 %); resto
+--     sin cambios.
+-- ---------------------------------------------------------------------
+BEGIN;
+
+-- Control previo
+SELECT count(*) FILTER (WHERE fecha_ingreso < CURRENT_DATE - INTERVAL '5 years') AS con_mas_de_5_anios,
+       sum(salario) FILTER (WHERE fecha_ingreso < CURRENT_DATE - INTERVAL '5 years') AS salarios_con_aumento,
+       sum(salario) FILTER (WHERE fecha_ingreso >= CURRENT_DATE - INTERVAL '5 years') AS salarios_resto
+FROM empleado;
+
+UPDATE empleado
+SET salario = ROUND(salario * 1.20, 2)
+WHERE fecha_ingreso < CURRENT_DATE - INTERVAL '5 years';
+
+SET CONSTRAINTS ALL IMMEDIATE;
+
+-- Control posterior
+SELECT count(*) FILTER (WHERE fecha_ingreso < CURRENT_DATE - INTERVAL '5 years') AS con_mas_de_5_anios,
+       sum(salario) FILTER (WHERE fecha_ingreso < CURRENT_DATE - INTERVAL '5 years') AS salarios_con_aumento,
+       sum(salario) FILTER (WHERE fecha_ingreso >= CURRENT_DATE - INTERVAL '5 years') AS salarios_resto
+FROM empleado;
+
+ROLLBACK;
