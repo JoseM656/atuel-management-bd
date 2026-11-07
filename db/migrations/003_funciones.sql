@@ -10,7 +10,7 @@
 --   fn_descuento_cliente  -> RN-06 / RI-06
 --   fn_stock_sala         -> RN-09 (validación de stock en venta)
 --   fn_total_comprobante  -> RN-08
---   fn_antiguedad_anios   -> U2 (+20 % a empleados con >5 años)
+--   fn_antiguedad_anios   -> años completos de antigüedad de un empleado
 --
 -- Se aplica después de 001 y 002, sobre la misma base.
 -- =====================================================================
@@ -119,8 +119,10 @@ $$;
 
 -- ---------------------------------------------------------------------
 -- fn_antiguedad_anios
--- Propósito: devolver los años de antigüedad desde una fecha de ingreso
---   hasta hoy. Usada por U2 (empleados con más de 5 años).
+-- Propósito: devolver los años completos de antigüedad desde una fecha de
+--   ingreso hasta hoy (5 años y 8 meses devuelve 5). U2 no la usa:
+--   «más de 5 años» incluye a quien tiene 5 años y algunos meses, así que
+--   compara fecha_ingreso con CURRENT_DATE - INTERVAL '5 years'.
 -- Parámetros: p_fecha_ingreso DATE.
 -- Retorno: INTEGER. Volatilidad: STABLE (usa CURRENT_DATE).
 -- ---------------------------------------------------------------------
