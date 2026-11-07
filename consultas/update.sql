@@ -145,3 +145,74 @@ SELECT count(*) FILTER (WHERE fecha_ingreso < CURRENT_DATE - INTERVAL '5 years')
 FROM empleado;
 
 ROLLBACK;
+
+
+-- ---------------------------------------------------------------------
+-- U3. Incrementar un 13 % el precio de los vinos elaborados por una bodega
+-- determinada.
+--
+-- Parámetro: la razón social de la bodega, en la línea \set de abajo.
+-- Se usa la variable :'bodega' de psql para escribir el valor una sola vez.
+--
+-- Estrategia: un UPDATE de vino con una subconsulta que traduce la razón
+-- social al CUIT de la bodega. Si la subconsulta no encuentra la bodega,
+-- devuelve NULL y no se actualiza ninguna fila. Si encontrara más de una,
+-- la sentencia falla en lugar de subir precios de otra bodega.
+-- ROUND deja el precio en 2 decimales, el formato de NUMERIC(12,2).
+--
+-- Triggers y constraints:
+--   - trg_vino_auditoria_precio (RN-13): por cada vino cuyo precio cambia
+--     inserta una fila en auditoria_precio con el precio anterior, el nuevo,
+--     la fecha y hora y el usuario.
+--   - ck_vino_precio: el precio sigue siendo mayor que 0.
+--   - trg_vino_maridaje_obligatorio: es diferido; SET CONSTRAINTS ALL
+--     IMMEDIATE lo evalúa antes del ROLLBACK.
+--
+-- Las ventas ya realizadas no cambian: renglon_comprobante guarda su propio
+-- precio_unitario, copiado del vino al momento de vender (RI-03).
+--
+-- Control: las filas de auditoría de esta transacción se reconocen porque
+-- su fecha_hora es now(), que en PostgreSQL es la hora de inicio de la
+-- transacción.
+--
+-- Resultado medido:
+--   - Filas afectadas: 20 vinos de 400.
+--   - Precios de la bodega: suma 193.300,00 antes y 218.429,00 después.
+--   - Precios de las otras bodegas: 3.520.700,00 antes y después.
+--   - Auditoría: de 400 a 420 filas. Las 20 nuevas tienen precio_nuevo
+--     igual a precio_anterior × 1,13 redondeado.
+-- ---------------------------------------------------------------------
+\set bodega 'Bodega Atuel del Sur S.A.'
+
+BEGIN;
+
+-- Control previo
+SELECT count(*) FILTER (WHERE b.razon_social = :'bodega') AS vinos_de_la_bodega,
+       sum(v.precio) FILTER (WHERE b.razon_social = :'bodega') AS precios_de_la_bodega,
+       sum(v.precio) FILTER (WHERE b.razon_social <> :'bodega') AS precios_otras_bodegas,
+       (SELECT count(*) FROM auditoria_precio) AS filas_auditoria
+FROM vino v
+JOIN bodega b ON b.cuit = v.cuit_bodega;
+
+UPDATE vino
+SET precio = ROUND(precio * 1.13, 2)
+WHERE cuit_bodega = (SELECT cuit FROM bodega WHERE razon_social = :'bodega');
+
+SET CONSTRAINTS ALL IMMEDIATE;
+
+-- Control posterior
+SELECT count(*) FILTER (WHERE b.razon_social = :'bodega') AS vinos_de_la_bodega,
+       sum(v.precio) FILTER (WHERE b.razon_social = :'bodega') AS precios_de_la_bodega,
+       sum(v.precio) FILTER (WHERE b.razon_social <> :'bodega') AS precios_otras_bodegas,
+       (SELECT count(*) FROM auditoria_precio) AS filas_auditoria
+FROM vino v
+JOIN bodega b ON b.cuit = v.cuit_bodega;
+
+-- Auditoría generada por esta transacción
+SELECT count(*) AS filas_nuevas,
+       count(*) FILTER (WHERE precio_nuevo = ROUND(precio_anterior * 1.13, 2)) AS con_13_por_ciento,
+       min(usuario) AS usuario
+FROM auditoria_precio
+WHERE fecha_hora = now();
+
+ROLLBACK;
