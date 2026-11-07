@@ -216,3 +216,57 @@ FROM auditoria_precio
 WHERE fecha_hora = now();
 
 ROLLBACK;
+
+
+-- ---------------------------------------------------------------------
+-- U4. En las salas cuyo día de cierre es lunes cambiarlo a miércoles y
+-- viceversa, en una sola sentencia.
+--
+-- Estrategia: un UPDATE con CASE. El WHERE limita la sentencia a las salas
+-- que cierran lunes o miércoles, y el CASE elige el día opuesto.
+--
+-- Por qué funciona en una sola sentencia: el CASE de cada fila lee el
+-- valor que tenía antes del UPDATE, no el que la sentencia ya escribió en
+-- otras filas. Con dos sentencias seguidas (lunes -> miércoles y después
+-- miércoles -> lunes), la segunda también tomaría las salas que la primera
+-- acababa de pasar a miércoles, y todas terminarían cerrando los lunes.
+--
+-- Los literales del CASE llevan el tipo dia_semana. Sin ese cast, el CASE
+-- da un resultado de tipo text y PostgreSQL no lo asigna a la columna ENUM.
+--
+-- Triggers: trg_encargado_sala (RI-01) es diferido; SET CONSTRAINTS ALL
+-- IMMEDIATE lo evalúa antes del ROLLBACK. El día de cierre no interviene en
+-- esa regla, así que no puede fallar por este cambio.
+--
+-- Control: los IDs de las salas de cada grupo, antes y después.
+--
+-- Resultado medido:
+--   - Filas afectadas: 27 de 36 salas (14 cerraban los lunes y 13 los
+--     miércoles).
+--   - Las salas de cada grupo pasan completas al otro día. Las otras 9
+--     salas no cambian.
+-- ---------------------------------------------------------------------
+BEGIN;
+
+-- Control previo
+SELECT dia_cierre, count(*) AS salas, string_agg(id_sala::text, ',' ORDER BY id_sala) AS ids
+FROM sala_venta
+GROUP BY dia_cierre
+ORDER BY dia_cierre;
+
+UPDATE sala_venta
+SET dia_cierre = CASE dia_cierre
+                     WHEN 'lunes'::dia_semana THEN 'miercoles'::dia_semana
+                     ELSE 'lunes'::dia_semana
+                 END
+WHERE dia_cierre IN ('lunes', 'miercoles');
+
+SET CONSTRAINTS ALL IMMEDIATE;
+
+-- Control posterior
+SELECT dia_cierre, count(*) AS salas, string_agg(id_sala::text, ',' ORDER BY id_sala) AS ids
+FROM sala_venta
+GROUP BY dia_cierre
+ORDER BY dia_cierre;
+
+ROLLBACK;
