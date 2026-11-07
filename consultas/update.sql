@@ -230,11 +230,13 @@ ROLLBACK;
 -- Estrategia: un UPDATE con CASE. El WHERE limita la sentencia a las salas
 -- que cierran lunes o miércoles, y el CASE elige el día opuesto.
 --
--- Por qué funciona en una sola sentencia: el CASE de cada fila lee el
--- valor que tenía antes del UPDATE, no el que la sentencia ya escribió en
--- otras filas. Con dos sentencias seguidas (lunes -> miércoles y después
--- miércoles -> lunes), la segunda también tomaría las salas que la primera
--- acababa de pasar a miércoles, y todas terminarían cerrando los lunes.
+-- Por qué funciona en una sola sentencia: el UPDATE procesa cada fila una
+-- sola vez, según cómo estaba la tabla al empezar la sentencia. Una sala
+-- que pasa de lunes a miércoles no vuelve a ser tomada por el mismo UPDATE,
+-- aunque ahora cumpla el WHERE. Con dos sentencias seguidas (lunes ->
+-- miércoles y después miércoles -> lunes), la segunda también tomaría las
+-- salas que la primera acababa de pasar a miércoles, y todas terminarían
+-- cerrando los lunes.
 --
 -- Los literales del CASE llevan el tipo dia_semana. Sin ese cast, el CASE
 -- da un resultado de tipo text y PostgreSQL no lo asigna a la columna ENUM.
