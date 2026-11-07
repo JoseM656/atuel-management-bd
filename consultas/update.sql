@@ -32,6 +32,9 @@
 --   - trg_comprobante_propaga_descuento: si el porcentaje cambió, actualiza
 --     el descuento y el subtotal de los renglones de ese comprobante.
 --   - trg_renglon_comprobante_bud: valida esos renglones.
+--   - trg_cliente_subtipo: lo dispara la preparación, porque
+--     trg_permiso_descuento actualiza el descuento del cliente. Es diferido;
+--     SET CONSTRAINTS ALL IMMEDIATE lo evalúa antes del ROLLBACK.
 --
 -- Preparación de la prueba: en el seed todos los comprobantes ya tienen el
 -- descuento correcto, así que U1 no cambiaría ningún importe. Para ver un
@@ -80,6 +83,8 @@ LEFT JOIN (SELECT nro, sum(cantidad * precio_unitario) AS suma
 
 UPDATE comprobante
 SET porcentaje_descuento = fn_descuento_cliente(id_cliente);
+
+SET CONSTRAINTS ALL IMMEDIATE;
 
 -- Control posterior
 SELECT count(*) AS comprobantes,
