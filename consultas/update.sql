@@ -21,9 +21,11 @@
 --
 -- Estrategia: la sentencia solo actualiza porcentaje_descuento con
 -- fn_descuento_cliente (RN-06, RI-06), y el total lo calcula la base.
--- Se recorren todos los comprobantes, sin WHERE, porque así lo pide la
--- consigna. La columna total no se escribe en la sentencia, porque RN-08
--- rechaza un total distinto del que surge de los renglones.
+-- No lleva WHERE porque trg_comprobante_importes recalcula el total de cada
+-- fila actualizada, aunque el porcentaje no cambie. Filtrar por porcentaje
+-- distinto dejaría sin corregir un total que esté mal por otra causa.
+-- La columna total no se escribe en la sentencia, porque RN-08 rechaza un
+-- total distinto del que surge de los renglones.
 --
 -- Triggers que se disparan:
 --   - trg_comprobante_importes: recalcula subtotal y total en cada fila.
@@ -41,18 +43,23 @@
 -- descuento vigente al momento de la venta. U1 la reemplaza por el descuento
 -- actual, así que también cambia ventas ya realizadas.
 --
+-- Control: totales_incorrectos cuenta los comprobantes cuyo total no es la
+-- suma de sus renglones con el descuento actual del cliente, calculado
+-- como lo hace trg_comprobante_importes.
+--
 -- Resultado medido:
 --   - Filas afectadas: 150.000. En 83 comprobantes cambia el importe.
---   - Control previo: 83 desactualizados; suma de totales 10.707.050.390,00.
---   - Control posterior: 0 desactualizados; suma de totales 10.706.704.095,00.
---   - Tarda unos 14 s, porque por cada comprobante se ejecutan la función
---     y el trigger que suma sus renglones.
+--   - Control previo: 83 totales incorrectos; suma 10.707.050.390,00.
+--   - Control posterior: 0 totales incorrectos; suma 10.706.704.095,00.
+--   - Sin la preparación, el control previo da 0: el seed ya está al día.
+--   - Tarda entre 4 y 14 s según la caché, porque por cada comprobante se
+--     ejecutan la función y el trigger que suma sus renglones.
 -- ---------------------------------------------------------------------
 BEGIN;
 
 -- Preparación: cuarto permiso para el primer exportador con tres permisos
 -- y al menos un comprobante.
-INSERT INTO permiso_exportacion
+INSERT INTO permiso_exportacion (codigo, id_cliente, fecha_emision, fecha_vencimiento)
 SELECT 'PRUEBA-U1', p.id_cliente, CURRENT_DATE, CURRENT_DATE + 365
 FROM permiso_exportacion p
 WHERE EXISTS (SELECT 1 FROM comprobante c WHERE c.id_cliente = p.id_cliente)
@@ -63,17 +70,25 @@ LIMIT 1;
 
 -- Control previo
 SELECT count(*) AS comprobantes,
-       count(*) FILTER (WHERE porcentaje_descuento <> fn_descuento_cliente(id_cliente)) AS desactualizados,
-       sum(total) AS suma_totales
-FROM comprobante;
+       count(*) FILTER (WHERE c.total <> ROUND(COALESCE(r.suma, 0)
+                        * (1 - fn_descuento_cliente(c.id_cliente) / 100.0), 2)) AS totales_incorrectos,
+       sum(c.total) AS suma_totales
+FROM comprobante c
+LEFT JOIN (SELECT nro, sum(cantidad * precio_unitario) AS suma
+           FROM renglon_comprobante
+           GROUP BY nro) r USING (nro);
 
 UPDATE comprobante
 SET porcentaje_descuento = fn_descuento_cliente(id_cliente);
 
 -- Control posterior
 SELECT count(*) AS comprobantes,
-       count(*) FILTER (WHERE porcentaje_descuento <> fn_descuento_cliente(id_cliente)) AS desactualizados,
-       sum(total) AS suma_totales
-FROM comprobante;
+       count(*) FILTER (WHERE c.total <> ROUND(COALESCE(r.suma, 0)
+                        * (1 - fn_descuento_cliente(c.id_cliente) / 100.0), 2)) AS totales_incorrectos,
+       sum(c.total) AS suma_totales
+FROM comprobante c
+LEFT JOIN (SELECT nro, sum(cantidad * precio_unitario) AS suma
+           FROM renglon_comprobante
+           GROUP BY nro) r USING (nro);
 
 ROLLBACK;
