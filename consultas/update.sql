@@ -6,6 +6,11 @@
 -- Requiere: base migrada y cargada con db/seed/seed.py.
 -- Ejecución: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f consultas/update.sql
 --
+-- Rol: postgres, o propietario con SET ROLE propietario, porque propietario
+-- no tiene LOGIN. Los resultados anotados son los mismos con los dos.
+-- reportes_ro no puede ejecutarlo: es de solo lectura y falla en U1 con
+-- permission denied.
+--
 -- Cada consigna corre en su propia transacción: BEGIN, control previo,
 -- sentencia, control posterior y ROLLBACK. Por eso el archivo no deja
 -- cambios en la base y se puede volver a ejecutar.
