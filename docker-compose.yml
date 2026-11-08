@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: atuel
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_RW_PASSWORD: ${APP_RW_PASSWORD}          # referencia
+    volumes:
+      - ./db/migrations:/migrations:ro
+      - ./db/docker/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    ports: ["5433:5432"]
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgresql://app_rw:${APP_RW_PASSWORD}@db:5432/atuel   # referencia
+      PORT: "3333"
+    ports: ["3333:3333"]
+    depends_on: [db]
