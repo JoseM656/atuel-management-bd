@@ -4,7 +4,13 @@
 -- Sección 8.1 del enunciado: modificación de datos (U1 a U6)
 --
 -- Requiere: base migrada y cargada con db/seed/seed.py.
--- Ejecución: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f consultas/update.sql
+-- Ejecución:
+--   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+--        -v bodega="Bodega Atuel del Sur S.A." -f consultas/update.sql
+--
+-- Parámetro obligatorio: bodega, la razón social que usa U3. No está fijo
+-- en el archivo porque la consigna habla de «una bodega determinada»: se
+-- elige al ejecutar, según los datos cargados. Abajo se usa como :'bodega'.
 --
 -- Rol: postgres, o propietario con SET ROLE propietario, porque propietario
 -- no tiene LOGIN. Los resultados anotados son los mismos con los dos.
@@ -18,6 +24,13 @@
 -- Los resultados anotados salen de una carga con semilla 42 y
 -- --fecha-ref 2026-11-05.
 -- =====================================================================
+
+-- Sin el parámetro bodega el archivo se corta acá, antes de ejecutar U1.
+\if :{?bodega}
+\else
+  \echo 'ERROR: falta el parámetro bodega (ejecutá con -v bodega="..." -f consultas/update.sql)'
+  \quit
+\endif
 
 
 -- ---------------------------------------------------------------------
@@ -161,8 +174,8 @@ ROLLBACK;
 -- U3. Incrementar un 13 % el precio de los vinos elaborados por una bodega
 -- determinada.
 --
--- Parámetro: la razón social de la bodega, en la línea \set de abajo.
--- Se usa la variable :'bodega' de psql para escribir el valor una sola vez.
+-- Parámetro: la razón social de la bodega, que llega con -v bodega="..."
+-- (ver el encabezado). :'bodega' la inserta como literal entre comillas.
 --
 -- Estrategia: un UPDATE de vino con una subconsulta que traduce la razón
 -- social al CUIT de la bodega. Si la subconsulta no encuentra la bodega,
@@ -185,15 +198,13 @@ ROLLBACK;
 -- su fecha_hora es now(), que en PostgreSQL es la hora de inicio de la
 -- transacción.
 --
--- Resultado medido:
+-- Resultado medido con -v bodega="Bodega Atuel del Sur S.A.":
 --   - Filas afectadas: 20 vinos de 400.
 --   - Precios de la bodega: suma 193.300,00 antes y 218.429,00 después.
 --   - Precios de las otras bodegas: 3.520.700,00 antes y después.
 --   - Auditoría: de 400 a 420 filas. Las 20 nuevas tienen precio_nuevo
 --     igual a precio_anterior × 1,13 redondeado.
 -- ---------------------------------------------------------------------
-\set bodega 'Bodega Atuel del Sur S.A.'
-
 BEGIN;
 
 -- Control previo
