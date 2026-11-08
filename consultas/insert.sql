@@ -68,7 +68,7 @@ SET client_min_messages = warning;
 --     impide duplicar una cobertura ya existente.
 --   · fk_tl_transportista (ON DELETE CASCADE) y fk_tl_localidad
 --     (ON DELETE RESTRICT).
---   · Esta tabla es consultada por trg_ingreso_transportista (RN-06) al
+--   · Esta tabla es consultada por trg_ingreso_transportista (RI-05) al
 --     validar ingresos al depósito.
 -- =====================================================================
 \echo '=== I1: nueva cobertura en General Alvear con el transportista con menos envíos en el trimestre ==='
@@ -189,10 +189,10 @@ ROLLBACK;
 --
 -- Funciones, triggers y constraints que intervienen:
 --   · fn_descuento_cliente(id_cliente): calcula el % de descuento según
---     subtipo y cantidad de permisos (RN-07, RI-06).
+--     subtipo y cantidad de permisos (RN-06, RI-06).
 --   · fn_stock_sala(id_sala, cod_vino): devuelve el stock actual en sala.
 --   · fn_total_comprobante(nro): calcula el total neto del comprobante.
---   · trg_comprobante_descuento (BEFORE INSERT ON comprobante, RN-07):
+--   · trg_comprobante_descuento (BEFORE INSERT ON comprobante, RN-08):
 --     asigna automáticamente NEW.porcentaje_descuento invocando
 --     fn_descuento_cliente(NEW.id_cliente).
 --   · trg_renglon_comprobante_bi (BEFORE INSERT, RN-08/RN-09/RI-03):
@@ -346,7 +346,7 @@ ROLLBACK;
 -- RETURNING se inserta el renglón de 120 botellas en renglon_ingreso.
 --
 -- Triggers/constraints que intervienen:
---   · trg_ingreso_transportista (RN-06): verifica que el transportista
+--   · trg_ingreso_transportista (RI-05): verifica que el transportista
 --     cubra la localidad donde está ubicado el depósito central
 --     (San Rafael).
 --   · trg_ingreso_estado (RN-10): exige que todo nuevo ingreso se cree
