@@ -170,13 +170,13 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
   - Verificación: `psql -f consultas/update.sql`.
   - Archivos: `consultas/update.sql`.
 
-- [x] **consultas/insert.sql**
+- [ ] **consultas/insert.sql**
   - Descripción: I1 (cobertura General Alvear con el transportista con menos ingresos en el trimestre), I2 (crear «cordero al disco» si existe tinto ≥14° y asociarlo), I3 (comprobante de 3 renglones en sala 1 usando funciones de cálculo), I4 (nueva bodega), I5 (nueva sala), I6 (ingreso en confección de 120 botellas de un vino dado).
   - Aceptación: I1–I6 comentadas, probadas en transacción, usando las funciones de cálculo (no valores a mano).
   - Verificación: `psql -f consultas/insert.sql`.
   - Archivos: `consultas/insert.sql`.
 
-- [x] **consultas/delete.sql**
+- [ ] **consultas/delete.sql**
   - Descripción: D1 (comprobantes >5 años de socios), D2 (cepas sin composición ni parcela), D3 (empleados de una sala dada de baja con <2 años), D4 (socios sin compras y alta >5 años), D5 (ingresos procesados >365 días), D6 (socios sin compras de una localidad). Anotar qué triggers/constraints se disparan (p. ej. CASCADE en renglones, RESTRICT en movimientos).
   - Aceptación: D1–D6 comentadas, probadas en transacción; documentados los efectos colaterales.
   - Verificación: `psql -f consultas/delete.sql`.
