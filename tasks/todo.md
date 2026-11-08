@@ -164,7 +164,7 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
 
 > Resolver en SQL las operaciones de inserción, modificación, borrado y consulta (U1–U6, I1–I6, D1–D6, S1–S12), probadas en transacción sobre la base cargada.
 
-- [ ] **consultas/update.sql**
+- [x] **consultas/update.sql**
   - Descripción: U1 (recalcular el total de todos los comprobantes con `fn_descuento_cliente`), U2 (+20 % salario a empleados con >5 años de antigüedad), U3 (+13 % precio a vinos de una bodega determinada), U4 (cambiar lunes↔miércoles en una sola sentencia), U5 (−15 % a los 10 vinos menos vendidos de la red), U6 (exportadores con >3 permisos → 35 %). Cada una con encabezado (código, enunciado, estrategia) y probada en transacción.
   - Aceptación: U1–U6 comentadas, con estrategia y probadas con control previo/posterior + ROLLBACK.
   - Verificación: `psql -f consultas/update.sql`.
@@ -176,7 +176,7 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
   - Verificación: `psql -f consultas/insert.sql`.
   - Archivos: `consultas/insert.sql`.
 
-- [ ] **consultas/delete.sql**
+- [x] **consultas/delete.sql**
   - Descripción: D1 (comprobantes >5 años de socios), D2 (cepas sin composición ni parcela), D3 (empleados de una sala dada de baja con <2 años), D4 (socios sin compras y alta >5 años), D5 (ingresos procesados >365 días), D6 (socios sin compras de una localidad). Anotar qué triggers/constraints se disparan (p. ej. CASCADE en renglones, RESTRICT en movimientos).
   - Aceptación: D1–D6 comentadas, probadas en transacción; documentados los efectos colaterales.
   - Verificación: `psql -f consultas/delete.sql`.
@@ -194,13 +194,13 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
 
 > Exponer la base mediante una API en Go (chi + pgx) sin ocultar el SQL, con capa de acceso a datos, traducción de errores SQLSTATE→HTTP y pruebas automáticas.
 
-- [ ] **Estructura del proyecto Go**
+- [x] **Estructura del proyecto Go**
   - Descripción: `api/` con `go.mod`, router `chi` y paquetes separados por responsabilidad: `internal/config` (variables de entorno), `internal/db` (acceso a datos), `internal/httpapi` (handlers), `internal/httperr` (errores). La regla de oro aplica desde el inicio: la API no recalcula totales, descuentos ni stock.
   - Aceptación: compila; estructura por responsabilidad.
   - Verificación: `go build ./...`.
   - Archivos: `api/go.mod`, `api/cmd/api/main.go`, `api/internal/config/`.
 
-- [ ] **Conexión y /salud**
+- [x] **Conexión y /salud**
   - Descripción: pool `pgx` (`pgxpool`) leyendo `DATABASE_URL` desde variables de entorno, conectando con el rol `app_rw`. Endpoint `GET /salud` que verifica que la API llega a la base.
   - Aceptación: `/salud` responde 200 con base accesible; credenciales fuera del código.
   - Verificación: `go run ./cmd/api` + `curl /salud`.

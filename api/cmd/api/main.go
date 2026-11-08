@@ -24,11 +24,13 @@ func main() {
 	}
 	defer pool.Close()
 
-	h := &httpapi.HealthHandler{Pool: pool}
+	health := &httpapi.HealthHandler{Pool: pool}
+	vinos := &httpapi.VinosHandler{Pool: pool}
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger, middleware.Recoverer)
-	r.Get("/salud", h.Salud)
+	r.Get("/salud", health.Salud)
+	r.Get("/vinos", vinos.Listar)
 
 	log.Printf("[API] escuchando en :%s", cfg.Port)
 	http.ListenAndServe(":"+cfg.Port, r)
