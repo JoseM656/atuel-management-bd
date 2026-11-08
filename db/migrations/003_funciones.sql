@@ -120,9 +120,9 @@ $$;
 -- ---------------------------------------------------------------------
 -- fn_antiguedad_anios
 -- Propósito: devolver los años completos de antigüedad desde una fecha de
---   ingreso hasta hoy (5 años y 8 meses devuelve 5). U2 no la usa:
---   «más de 5 años» incluye a quien tiene 5 años y algunos meses, así que
---   compara fecha_ingreso con CURRENT_DATE - INTERVAL '5 years'.
+--   ingreso hasta hoy (5 años y 8 meses devuelve 5). La usa U2
+--   (consultas/update.sql) con >= 5 para elegir a quienes tienen al menos
+--   5 años completos.
 -- Parámetros: p_fecha_ingreso DATE.
 -- Retorno: INTEGER. Volatilidad: STABLE (usa CURRENT_DATE).
 -- ---------------------------------------------------------------------
