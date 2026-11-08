@@ -1,0 +1,3 @@
+# Los scripts de shell se ejecutan dentro de contenedores Linux: con CRLF el
+# shebang queda "#!/bin/bash\r" y docker-entrypoint no puede ejecutarlos.
+*.sh text eol=lf
