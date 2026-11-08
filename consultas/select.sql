@@ -279,6 +279,7 @@ WHERE v.cod_vino = :vino_s9;
 -- Etapa 4). Cumple con la consigna (CTE + subconsulta correlacionada).
 --
 -- Texto idéntico al de consultas_medicion.sql.
+--
 -- =====================================================================
 \echo '=== S10 · resultado ==='
 WITH rendimiento AS (
