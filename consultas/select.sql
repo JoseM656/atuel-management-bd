@@ -31,13 +31,14 @@ SET client_min_messages = warning;
 --   vino_s4   : vino determinado de S4 (cod_vino).
 --   sala_s6   : sala determinada de S6 (id de sala_venta).
 --   vino_s9   : vino de la ficha de S9 (cod_vino).
---   bodega_s12: bodega determinada de S12 (razón social).
+--   cuit_bodega_s12: bodega determinada de S12 (CUIT, PK de bodega).
 -- ---------------------------------------------------------------------
 \set sala_s3 12
 \set vino_s4 1
 \set sala_s6 12
 \set vino_s9 1
-\set bodega_s12 'Bodega Atuel del Sur S.A.'
+-- Bodega Atuel del Sur S.A. (CUIT 30700000019)
+\set cuit_bodega_s12 '30700000019'
 
 -- =====================================================================
 -- S1 · Ranking de los 10 vinos con mayor cantidad de botellas vendidas
@@ -211,7 +212,32 @@ ORDER BY monto_total DESC;
 --
 -- Parámetro: vino :vino_s9.
 -- =====================================================================
-\echo '=== S9 ==='
+\echo '=== S9 · resultado ==='
+SELECT v.cod_vino,
+       v.nombre,
+       v.tipo,
+       v.anada,
+       v.volumen_ml,
+       v.graduacion,
+       v.precio,
+       b.razon_social AS bodega,
+       st.stock_total,
+       (SELECT string_agg(c.nombre || ' ' || co.porcentaje::text || '%', ', '
+                          ORDER BY co.porcentaje DESC, c.nombre)
+        FROM composicion co
+        JOIN cepa c ON c.id_cepa = co.id_cepa
+        WHERE co.cod_vino = v.cod_vino) AS cepas,
+       (SELECT string_agg(m.nombre || ' (' || m.temperatura_servicio::text || '°C)', ', '
+                          ORDER BY m.nombre)
+        FROM vino_maridaje vm
+        JOIN maridaje m ON m.id_maridaje = vm.id_maridaje
+        WHERE vm.cod_vino = v.cod_vino) AS maridajes
+FROM vino v
+JOIN bodega b ON b.cuit = v.cuit_bodega
+JOIN v_stock_total_vino st ON st.cod_vino = v.cod_vino
+WHERE v.cod_vino = :vino_s9;
+
+\echo '=== S9 · plan ==='
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT v.cod_vino,
        v.nombre,
@@ -254,7 +280,27 @@ WHERE v.cod_vino = :vino_s9;
 --
 -- Texto idéntico al de consultas_medicion.sql.
 -- =====================================================================
-\echo '=== S10 ==='
+\echo '=== S10 · resultado ==='
+WITH rendimiento AS (
+    SELECT l.id_finca,
+           l.nro_parcela,
+           EXTRACT(YEAR FROM l.fecha_cosecha)::INTEGER AS campana,
+           l.kg / p.superficie_ha AS kg_por_ha
+    FROM lote_uva l
+    JOIN parcela p ON p.id_finca = l.id_finca AND p.nro_parcela = l.nro_parcela
+)
+SELECT r.id_finca,
+       r.nro_parcela,
+       r.campana,
+       ROUND(r.kg_por_ha, 2) AS kg_por_ha,
+       r.kg_por_ha < (SELECT AVG(r2.kg_por_ha)
+                      FROM rendimiento r2
+                      WHERE r2.id_finca = r.id_finca
+                        AND r2.campana = r.campana) AS rinde_menos_que_finca
+FROM rendimiento r
+ORDER BY r.id_finca, r.campana, r.nro_parcela;
+
+\echo '=== S10 · plan ==='
 EXPLAIN (ANALYZE, BUFFERS)
 WITH rendimiento AS (
     SELECT l.id_finca,
@@ -289,7 +335,47 @@ ORDER BY r.id_finca, r.campana, r.nro_parcela;
 --      SUM(...) OVER (PARTITION BY id_sala ORDER BY anio, mes).
 -- Las columnas que no aplican a cada bloque van en NULL.
 -- =====================================================================
-\echo '=== S11 ==='
+\echo '=== S11 · resultado ==='
+SELECT 'ranking_vinos'::text AS reporte,
+       c.id_sala,
+       v.cod_vino,
+       v.nombre,
+       SUM(r.cantidad) AS botellas,
+       RANK() OVER (PARTITION BY c.id_sala ORDER BY SUM(r.cantidad) DESC) AS ranking,
+       NULL::INTEGER AS anio,
+       NULL::INTEGER AS mes,
+       NULL::NUMERIC(12,2) AS monto_mensual,
+       NULL::NUMERIC(12,2) AS monto_acumulado
+FROM comprobante c
+JOIN renglon_comprobante r ON r.nro = c.nro
+JOIN vino v ON v.cod_vino = r.cod_vino
+GROUP BY c.id_sala, v.cod_vino, v.nombre
+
+UNION ALL
+
+SELECT 'acumulado_mensual'::text AS reporte,
+       id_sala,
+       NULL::INTEGER AS cod_vino,
+       NULL::VARCHAR AS nombre,
+       NULL::BIGINT AS botellas,
+       NULL::BIGINT AS ranking,
+       anio,
+       mes,
+       monto_mensual,
+       SUM(monto_mensual) OVER (PARTITION BY id_sala ORDER BY anio, mes
+                                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS monto_acumulado
+FROM (
+    SELECT id_sala,
+           EXTRACT(YEAR FROM fecha)::INTEGER AS anio,
+           EXTRACT(MONTH FROM fecha)::INTEGER AS mes,
+           SUM(total) AS monto_mensual
+    FROM comprobante
+    GROUP BY id_sala, EXTRACT(YEAR FROM fecha), EXTRACT(MONTH FROM fecha)
+) vm
+
+ORDER BY reporte, id_sala, ranking NULLS LAST, anio NULLS LAST, mes NULLS LAST;
+
+\echo '=== S11 · plan ==='
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT 'ranking_vinos'::text AS reporte,
        c.id_sala,
@@ -345,16 +431,19 @@ ORDER BY reporte, id_sala, ranking NULLS LAST, anio NULLS LAST, mes NULLS LAST;
 -- S12b: anti-join. Un cliente cumple si NO existe ningún comprobante suyo
 -- que contenga un vino de tipo tinto.
 --
--- Parámetro: bodega :'bodega_s12' (razón social, en el encabezado).
+-- Parámetro: bodega :'cuit_bodega_s12' (CUIT, en el encabezado).
+-- S12a devuelve 0 filas si la bodega no existe o no tiene vinos.
 -- =====================================================================
-\echo '=== S12a ==='
-EXPLAIN (ANALYZE, BUFFERS)
+\echo '=== S12a · resultado ==='
 SELECT c.id_cliente, c.nombre_razon_social
 FROM cliente c
-WHERE NOT EXISTS (
+WHERE EXISTS (                       -- guarda: la bodega existe y tiene vinos
+    SELECT 1 FROM vino v WHERE v.cuit_bodega = :'cuit_bodega_s12'
+)
+AND NOT EXISTS (
     SELECT 1
     FROM vino v
-    WHERE v.cuit_bodega = (SELECT cuit FROM bodega WHERE razon_social = :'bodega_s12')
+    WHERE v.cuit_bodega = :'cuit_bodega_s12'
       AND NOT EXISTS (
           SELECT 1
           FROM comprobante co
@@ -365,7 +454,41 @@ WHERE NOT EXISTS (
 )
 ORDER BY c.id_cliente;
 
-\echo '=== S12b ==='
+\echo '=== S12a · plan ==='
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT c.id_cliente, c.nombre_razon_social
+FROM cliente c
+WHERE EXISTS (                       -- guarda: la bodega existe y tiene vinos
+    SELECT 1 FROM vino v WHERE v.cuit_bodega = :'cuit_bodega_s12'
+)
+AND NOT EXISTS (
+    SELECT 1
+    FROM vino v
+    WHERE v.cuit_bodega = :'cuit_bodega_s12'
+      AND NOT EXISTS (
+          SELECT 1
+          FROM comprobante co
+          JOIN renglon_comprobante rc ON rc.nro = co.nro
+          WHERE co.id_cliente = c.id_cliente
+            AND rc.cod_vino = v.cod_vino
+      )
+)
+ORDER BY c.id_cliente;
+
+\echo '=== S12b · resultado ==='
+SELECT c.id_cliente, c.nombre_razon_social
+FROM cliente c
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM comprobante co
+    JOIN renglon_comprobante rc ON rc.nro = co.nro
+    JOIN vino v ON v.cod_vino = rc.cod_vino
+    WHERE co.id_cliente = c.id_cliente
+      AND v.tipo = 'tinto'
+)
+ORDER BY c.id_cliente;
+
+\echo '=== S12b · plan ==='
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT c.id_cliente, c.nombre_razon_social
 FROM cliente c
