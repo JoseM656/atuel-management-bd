@@ -1,0 +1,70 @@
+openapi: 3.0.3
+info:
+  title: Bodegas del Atuel — API
+  version: 0.1.0
+  description: |
+    API REST de la capa de datos (Etapa 6). En desarrollo: hoy expone
+    `/salud` y `/vinos`; se irán agregando clientes, comprobantes,
+    transferencias, ingresos y reportes (S1–S12).
+servers:
+  - url: http://localhost:3333
+    description: Local
+
+paths:
+  /salud:
+    get:
+      summary: Verifica que la API llega a la base
+      responses:
+        "200":
+          description: API y base accesibles
+        "503":
+          description: Base no accesible
+
+  /vinos:
+    get:
+      summary: Lista de vinos con su bodega
+      parameters:
+        - name: tipo
+          in: query
+          required: false
+          description: Filtro por tipo (tinto, blanco, rosado, espumante)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de vinos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vino"
+        "422":
+          description: Filtro inválido
+
+components:
+  schemas:
+    Vino:
+      type: object
+      properties:
+        cod_vino:
+          type: integer
+        nombre:
+          type: string
+        tipo:
+          type: string
+        anada:
+          type: integer
+        volumen_ml:
+          type: integer
+        graduacion:
+          type: number
+        precio:
+          type: number
+        bodega:
+          type: string
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
