@@ -7,6 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       APP_RW_PASSWORD: ${APP_RW_PASSWORD}          # referencia
     volumes:
+      - ./db/migrations:/migrations:ro
       - ./db/docker/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
     ports: ["5433:5432"]
 

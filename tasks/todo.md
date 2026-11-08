@@ -266,7 +266,7 @@ Checklist operativa del proyecto. Cada sección es un milestone (etapa) con su d
   - Verificación: `go test ./...`.
   - Archivos: `api/**/*_test.go`.
 
-- [ ] **Docker Compose y documentación**
+- [x] **Docker Compose y documentación**
   - Descripción: `docker-compose.yml` que levanta base + API con un solo comando; documentación OpenAPI/Swagger o colección Postman coherente con las rutas reales.
   - Aceptación: `docker compose up` funciona; documentación coherente con las rutas.
   - Verificación: `docker compose up`.
