@@ -364,6 +364,25 @@ func TestTableroIgualQueSeccion8(t *testing.T) {
 	}
 	iguales("ventas-por-sala vs S8", ventas.Salas, lista("/reportes/s8"), "id_sala", "monto_total")
 
+	code, body = doJSON(t, http.MethodGet, srv.URL+"/reportes/transportista-activo", nil)
+	if code != http.StatusOK {
+		t.Fatalf("transportista-activo: esperaba 200, obtuve %d: %s", code, body)
+	}
+	var activo struct {
+		Desde         string
+		Transportista map[string]any
+	}
+	if err := json.Unmarshal([]byte(body), &activo); err != nil || activo.Desde == "" {
+		t.Fatalf("transportista-activo: respuesta inválida (%v): %s", err, body)
+	}
+	s7 := lista("/reportes/s7")
+	if (activo.Transportista == nil) != (len(s7) == 0) {
+		t.Fatalf("transportista-activo: %v contra S7 %v", activo.Transportista, s7)
+	}
+	if activo.Transportista != nil {
+		iguales("transportista-activo vs S7", []map[string]any{activo.Transportista}, s7, "cod_transportista", "ingresos_trasladados")
+	}
+
 	sinStock := lista("/reportes/vinos-sin-stock?sala=3")
 	iguales("vinos-sin-stock vs S6", sinStock, lista("/reportes/s6?sala=3"), "cod_vino", "stock_deposito")
 	for _, f := range sinStock {

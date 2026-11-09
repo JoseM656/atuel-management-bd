@@ -2,6 +2,7 @@
 //
 //   Top 10 vinos más vendidos           GET /reportes/top-vinos        (S1)
 //   Ventas por sala, último trimestre   GET /reportes/ventas-por-sala  (S8)
+//   Transportista más activo, último mes GET /reportes/transportista-activo (S7)
 //   Vinos sin stock en una sala         GET /reportes/vinos-sin-stock?sala= (S6)
 //
 // Los reportes son de solo lectura y vienen calculados por la base. El front
@@ -31,6 +32,11 @@ document.addEventListener('alpine:init', () => {
     errorVentas: '',
     todasLasSalas: false,
 
+    // Transportista más activo
+    activo: { desde: '', hasta: '', transportista: null },
+    cargandoActivo: false,
+    errorActivo: '',
+
     // Vinos sin stock
     salas: [],
     salaElegida: '',
@@ -51,6 +57,7 @@ document.addEventListener('alpine:init', () => {
       if (pantalla !== 'tablero') return;
       this.cargarTop();
       this.cargarVentas();
+      this.cargarActivo();
       if (this.cargado) {
         if (this.salaElegida) this.cargarSinStock();
         return;
@@ -81,6 +88,14 @@ document.addEventListener('alpine:init', () => {
       try { this.ventas = await api.ventasPorSala(); }
       catch (e) { this.errorVentas = e.message; this.ventas = { desde: '', hasta: '', salas: [] }; }
       finally { this.cargandoVentas = false; }
+    },
+
+    async cargarActivo() {
+      this.cargandoActivo = true;
+      this.errorActivo = '';
+      try { this.activo = await api.transportistaActivo(); }
+      catch (e) { this.errorActivo = e.message; this.activo = { desde: '', hasta: '', transportista: null }; }
+      finally { this.cargandoActivo = false; }
     },
 
     async cargarSinStock() {
@@ -115,6 +130,7 @@ document.addEventListener('alpine:init', () => {
     numero(n) { return formatoNumero.format(n); },
     millones(n) { return `$ ${formatoMillones.format(n / 1e6)} M`; },
     pesos(n) { return formatoPrecio.format(n); },
+    cuit(c) { return c && c.length === 11 ? `${c.slice(0, 2)}-${c.slice(2, 10)}-${c.slice(10)}` : c; },
     fecha(iso) { return iso ? iso.split('-').reverse().join('/') : ''; },
     etiquetaSala(s) { return `#${s.id_sala} · ${s.direccion} · ${s.localidad}`; },
     claseDeposito(n) { return n >= 100 ? 'stock-ok' : 'stock-bajo'; }, // solo color, como en el catálogo

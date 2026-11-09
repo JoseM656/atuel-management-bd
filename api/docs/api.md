@@ -54,6 +54,7 @@ go run ./cmd/api
 | GET | `/reportes/s1` … `/reportes/s12b` | Consultas S1–S12 (solo lectura) |
 | GET | `/reportes/top-vinos` | Tablero: top 10 vinos (lógica de S1, con añada y volumen) |
 | GET | `/reportes/ventas-por-sala` | Tablero: ventas por sala del último trimestre (lógica de S8, con localidad y período) |
+| GET | `/reportes/transportista-activo` | Tablero: transportista más activo del último mes (lógica de S7, con CUIT y período) |
 | GET | `/reportes/vinos-sin-stock?sala=` | Tablero: vinos sin stock en la sala (lógica de S6, con tipo y bodega) |
 
 ## Errores

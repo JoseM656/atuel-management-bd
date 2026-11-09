@@ -121,6 +121,8 @@ const api = {
   topVinos:       ()            => request('GET', '/reportes/top-vinos'),
   // → { desde, hasta, salas: [{ id_sala, localidad, monto_total }] }
   ventasPorSala:  ()            => request('GET', '/reportes/ventas-por-sala'),
+  // → { desde, hasta, transportista: { cod_transportista, razon_social, cuit, ingresos_trasladados } | null }
+  transportistaActivo: ()       => request('GET', '/reportes/transportista-activo'),
   // → [{ cod_vino, nombre, anada, volumen_ml, tipo, bodega, stock_sala, stock_deposito }]
   vinosSinStock:  (idSala)      => request('GET', '/reportes/vinos-sin-stock', { query: { sala: idSala } }),
 };

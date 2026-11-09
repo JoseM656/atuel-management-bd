@@ -762,6 +762,31 @@ paths:
                         id_sala: { type: integer }
                         localidad: { type: string }
                         monto_total: { type: number }
+  /reportes/transportista-activo:
+    get:
+      summary: Tablero · Transportista más activo del último mes (misma lógica que S7)
+      description: |
+        Mismo resultado que S7 (más ingresos trasladados; empate → menor código),
+        con el CUIT y el período usado (desde = CURRENT_DATE - 1 mes).
+        `transportista` es null si no hubo ingresos en el período.
+      responses:
+        "200":
+          description: Período y transportista
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  desde: { type: string, format: date }
+                  hasta: { type: string, format: date }
+                  transportista:
+                    type: object
+                    nullable: true
+                    properties:
+                      cod_transportista: { type: integer }
+                      razon_social: { type: string }
+                      cuit: { type: string }
+                      ingresos_trasladados: { type: integer }
   /reportes/vinos-sin-stock:
     get:
       summary: Tablero · Vinos sin stock en una sala, con stock en depósito (misma lógica que S6)

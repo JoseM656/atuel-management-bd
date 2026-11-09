@@ -2,18 +2,20 @@ package db
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Consultas del tablero del front (#56), con las rutas que pide el enunciado:
-// /reportes/top-vinos, /reportes/ventas-por-sala y /reportes/vinos-sin-stock.
+// /reportes/top-vinos, /reportes/ventas-por-sala, /reportes/transportista-activo
+// y /reportes/vinos-sin-stock.
 //
-// Cada una usa la misma lógica que su consulta de la sección 8 (S1, S8 y S6,
-// ver reporte.go y consultas/select.sql) y suma solo columnas para mostrar
-// (añada, localidad, tipo, bodega). S1, S6 y S8 no se tocan: su texto es
-// idéntico al de las mediciones de la Etapa 4.
+// Cada una usa la misma lógica que su consulta de la sección 8 (S1, S8, S7 y
+// S6, ver reporte.go y consultas/select.sql) y suma solo columnas para mostrar
+// (añada, localidad, tipo, bodega, CUIT, período). Las consultas S no se
+// tocan: su texto es idéntico al de las mediciones de la Etapa 4.
 
 // ---- Top 10 vinos más vendidos (S1) ----
 
@@ -84,6 +86,52 @@ func VentasPorSalaTrimestre(ctx context.Context, pool *pgxpool.Pool) (*VentasPor
 		return v, err
 	})
 	return res, err
+}
+
+// ---- Transportista más activo del último mes (S7) ----
+
+// TransportistaActivo trae el período usado (CURRENT_DATE - 1 mes) y el
+// transportista con más ingresos trasladados, o null si no hubo ingresos.
+type TransportistaActivo struct {
+	Desde         string            `json:"desde"`
+	Hasta         string            `json:"hasta"`
+	Transportista *TransportistaTop `json:"transportista"`
+}
+
+type TransportistaTop struct {
+	CodTransportista    int    `json:"cod_transportista"`
+	RazonSocial         string `json:"razon_social"`
+	Cuit                string `json:"cuit"`
+	IngresosTrasladados int64  `json:"ingresos_trasladados"`
+}
+
+// TransportistaMasActivo: misma lógica que S7 (empate → menor código), con el
+// CUIT para mostrar.
+func TransportistaMasActivo(ctx context.Context, pool *pgxpool.Pool) (*TransportistaActivo, error) {
+	res := &TransportistaActivo{}
+	if err := pool.QueryRow(ctx, `
+		SELECT (CURRENT_DATE - INTERVAL '1 month')::date::text, CURRENT_DATE::text`,
+	).Scan(&res.Desde, &res.Hasta); err != nil {
+		return nil, err
+	}
+
+	var t TransportistaTop
+	err := pool.QueryRow(ctx, `
+		SELECT t.cod_transportista, t.razon_social, t.cuit::text, COUNT(i.cod_ingreso) AS ingresos_trasladados
+		FROM transportista t
+		JOIN ingreso i ON i.cod_transportista = t.cod_transportista
+		WHERE i.fecha >= CURRENT_DATE - INTERVAL '1 month'
+		GROUP BY t.cod_transportista, t.razon_social, t.cuit
+		ORDER BY ingresos_trasladados DESC, t.cod_transportista
+		LIMIT 1`).Scan(&t.CodTransportista, &t.RazonSocial, &t.Cuit, &t.IngresosTrasladados)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return res, nil // sin ingresos en el período: transportista = null
+	}
+	if err != nil {
+		return nil, err
+	}
+	res.Transportista = &t
+	return res, nil
 }
 
 // ---- Vinos sin stock en una sala, con stock en el depósito (S6) ----

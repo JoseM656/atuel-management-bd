@@ -330,7 +330,7 @@ curl http://localhost:3333/reportes/s12b
 
 ## Reportes — tablero del front (rutas del enunciado)
 
-Misma lógica que S1, S8 y S6; solo suman columnas para mostrar. S1–S12 no cambian.
+Misma lógica que S1, S8, S7 y S6; solo suman columnas para mostrar. S1–S12 no cambian.
 
 ```bash
 # Top 10 vinos (S1) con añada y volumen
@@ -339,6 +339,10 @@ curl http://localhost:3333/reportes/top-vinos
 # Ventas por sala del último trimestre (S8) con localidad y período
 curl http://localhost:3333/reportes/ventas-por-sala
 # → {"desde":"2026-08-09","hasta":"2026-11-09","salas":[{"id_sala":16,"localidad":"...","monto_total":...}]}
+
+# Transportista más activo del último mes (S7) con CUIT y período (transportista = null si no hubo ingresos)
+curl http://localhost:3333/reportes/transportista-activo
+# → {"desde":"2026-10-09","hasta":"2026-11-09","transportista":{"cod_transportista":1,"razon_social":"...","cuit":"...","ingresos_trasladados":57}}
 
 # Vinos sin stock en la sala 3 con stock en depósito (S6) con tipo y bodega
 curl 'http://localhost:3333/reportes/vinos-sin-stock?sala=3'

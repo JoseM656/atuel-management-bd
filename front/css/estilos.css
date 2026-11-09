@@ -474,6 +474,23 @@ input:disabled { background: var(--fondo); color: var(--texto); }
 .barra-sala .pista > div { height: 100%; border-radius: 4px; background: var(--vino); }
 .barra-sala .monto { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 .ver-todas { margin-top: 0.8rem; }
+.columna-tablero { display: flex; flex-direction: column; gap: 1.25rem; }
+.columna-tablero .tarjeta, .grilla-tablero > .tarjeta { margin-bottom: 0; }
+.grilla-tablero { margin-bottom: 1.25rem; }
+.destacado-transportista {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  background: var(--vino-claro);
+}
+.destacado-transportista > div { display: flex; flex-direction: column; gap: 0.2rem; }
+.destacado-transportista span { font-size: 0.78rem; color: var(--texto-suave); }
+.destacado-transportista .cifra { align-items: flex-end; }
+.destacado-transportista .cifra strong { font-size: 1.6rem; line-height: 1; color: var(--vino); font-variant-numeric: tabular-nums; }
 .selector-sala { max-width: 420px; margin-bottom: 1rem; }
 
 /* ---------- Pantallas angostas ---------- */

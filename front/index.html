@@ -867,7 +867,7 @@
     <section x-show="pantalla === 'tablero'" x-data="tablero" @ruta.window="alCambiarRuta($event.detail)">
       <div class="titulo-pantalla">
         <h2>Tablero</h2>
-        <div class="ruta-api">GET /reportes/top-vinos · GET /reportes/ventas-por-sala · GET /reportes/vinos-sin-stock?sala=</div>
+        <div class="ruta-api">GET /reportes/top-vinos · GET /reportes/ventas-por-sala · GET /reportes/transportista-activo · GET /reportes/vinos-sin-stock?sala=</div>
       </div>
 
       <div class="grilla-tablero">
@@ -897,6 +897,7 @@
           <p class="aclaracion">Botellas vendidas en toda la red de salas (consulta S1).</p>
         </div>
 
+        <div class="columna-tablero">
         <!-- Ventas por sala (S8) -->
         <div class="tarjeta">
           <h3>Ventas por sala · último trimestre</h3>
@@ -921,6 +922,35 @@
             Suma del total de los comprobantes del <span x-text="fecha(ventas.desde)"></span>
             al <span x-text="fecha(ventas.hasta)"></span> (consulta S8; el período lo fija la base con <code>CURRENT_DATE</code>).
           </p>
+        </div>
+
+        <!-- Transportista más activo (S7) -->
+        <div class="tarjeta">
+          <h3>Transportista más activo · último mes</h3>
+          <div class="error-api" x-show="errorActivo" x-text="errorActivo"></div>
+          <p class="cargando" x-show="cargandoActivo && !activo.desde">Cargando…</p>
+
+          <template x-if="activo.transportista">
+            <div class="destacado-transportista">
+              <div>
+                <strong x-text="activo.transportista.razon_social"></strong>
+                <span x-text="'#' + activo.transportista.cod_transportista + ' · CUIT ' + cuit(activo.transportista.cuit)"></span>
+              </div>
+              <div class="cifra">
+                <strong x-text="numero(activo.transportista.ingresos_trasladados)"></strong>
+                <span x-text="activo.transportista.ingresos_trasladados === 1 ? 'ingreso trasladado' : 'ingresos trasladados'"></span>
+              </div>
+            </div>
+          </template>
+          <p class="vacio" x-show="!cargandoActivo && !errorActivo && activo.desde && !activo.transportista">
+            No hubo ingresos en el período.
+          </p>
+
+          <p class="aclaracion" x-show="activo.desde">
+            Ingresos del <span x-text="fecha(activo.desde)"></span> al <span x-text="fecha(activo.hasta)"></span>
+            (consulta S7; si hay empate, gana el de menor código).
+          </p>
+        </div>
         </div>
       </div>
 
@@ -977,7 +1007,7 @@
 
       <p class="nota">
         <strong>Nota de diseño:</strong> los reportes son de solo lectura y vienen ya calculados por las consultas de la sección 8
-        (S1, S8 y S6). El front solo dibuja el ranking, el gráfico y la tabla con lo que devuelve la API.
+        (S1, S8, S7 y S6). El front solo dibuja el ranking, el gráfico y la tabla con lo que devuelve la API.
       </p>
     </section>
 

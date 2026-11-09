@@ -31,10 +31,20 @@ func (h *ReportesHandler) Registrar(r chi.Router) {
 	r.Get("/reportes/s12a", h.S12a)
 	r.Get("/reportes/s12b", h.S12b)
 
-	// Tablero del front (#56): rutas del enunciado, misma lógica que S1/S8/S6.
+	// Tablero del front (#56): rutas del enunciado, misma lógica que S1/S8/S7/S6.
 	r.Get("/reportes/top-vinos", h.TopVinos)
 	r.Get("/reportes/ventas-por-sala", h.VentasPorSala)
+	r.Get("/reportes/transportista-activo", h.TransportistaActivo)
 	r.Get("/reportes/vinos-sin-stock", h.VinosSinStock)
+}
+
+func (h *ReportesHandler) TransportistaActivo(w http.ResponseWriter, r *http.Request) {
+	res, err := db.TransportistaMasActivo(r.Context(), h.Pool)
+	if err != nil {
+		httperr.Write(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
 }
 
 func (h *ReportesHandler) TopVinos(w http.ResponseWriter, r *http.Request) {
