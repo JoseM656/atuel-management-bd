@@ -4,18 +4,99 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bodegas del Atuel</title>
-</head>
-<body>
-  <!-- Página provisoria para verificar el proxy de nginx (/api/ → API).
-       La estructura real del front y la capa api.js llegan con #51. -->
-  <h1>Bodegas del Atuel</h1>
-  <p>Estado de la API: <strong id="estado">consultando…</strong></p>
+  <link rel="stylesheet" href="css/estilos.css">
 
-  <script>
-    fetch('/api/salud')
-      .then(r => r.ok ? r.json() : Promise.reject(r.status + ' ' + r.statusText))
-      .then(d => { document.getElementById('estado').textContent = d.estado; })
-      .catch(e => { document.getElementById('estado').textContent = 'error: ' + e; });
-  </script>
+  <!-- Orden de carga: primero la capa de API y la app (registran sus datos en
+       el evento alpine:init) y al final Alpine, que con `defer` arranca cuando
+       el HTML ya está listo. -->
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body x-data="app" x-cloak>
+
+  <header>
+    <h1>Bodegas del Atuel</h1>
+
+    <nav>
+      <template x-for="p in pantallas" :key="p.id">
+        <a :href="'#' + p.id" :class="{ activa: pantalla === p.id }" x-text="p.titulo"></a>
+      </template>
+    </nav>
+
+    <span class="salud" :title="salud">
+      <span class="punto" :class="{ ok: salud === 'ok', error: salud !== 'ok' && salud !== 'consultando' }"></span>
+      API: <span x-text="salud === 'ok' ? 'conectada' : (salud === 'consultando' ? 'consultando…' : salud)"></span>
+    </span>
+  </header>
+
+  <main>
+
+    <!-- #52 Catálogo de vinos -->
+    <section x-show="pantalla === 'catalogo'">
+      <h2>Catálogo de vinos</h2>
+      <div class="boceto">
+        Boceto — se implementa en #52.
+        <ul>
+          <li>Filtros: tipo, cepa, bodega, añada.</li>
+          <li>Listado paginado (<code>GET /vinos</code>).</li>
+          <li>Detalle con composición y maridajes (<code>GET /vinos/{cod}</code>).</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- #53 Alta / edición de vino -->
+    <section x-show="pantalla === 'vino'">
+      <h2>Alta / edición de vino</h2>
+      <div class="boceto">
+        Boceto — se implementa en #53.
+        <ul>
+          <li>Datos del vino y bodega.</li>
+          <li>Composición de cepas con porcentajes (la base valida que sumen 100, RN-05).</li>
+          <li>Error de la API visible tal cual.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- #54 Nueva venta -->
+    <section x-show="pantalla === 'venta'">
+      <h2>Nueva venta</h2>
+      <div class="boceto">
+        Boceto — se implementa en #54.
+        <ul>
+          <li>Elegir cliente y sala.</li>
+          <li>Agregar vinos y cantidades.</li>
+          <li>Total calculado por la base (<code>POST /comprobantes</code> → <code>GET /comprobantes/{nro}</code>).</li>
+          <li>Error de stock insuficiente (RN-09) visible tal cual.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- #55 Transferencias -->
+    <section x-show="pantalla === 'transferencias'">
+      <h2>Transferencias</h2>
+      <div class="boceto">
+        Boceto — se implementa en #55.
+        <ul>
+          <li>Crear transferencia para una sala y cargar renglones.</li>
+          <li>Botones Terminar / Procesar habilitados según el estado.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- #56 Tablero -->
+    <section x-show="pantalla === 'tablero'">
+      <h2>Tablero</h2>
+      <div class="boceto">
+        Boceto — se implementa en #56.
+        <ul>
+          <li>Top 10 vinos más vendidos (S1).</li>
+          <li>Ventas por sala del último trimestre, en gráfico (S8).</li>
+          <li>Vinos sin stock en una sala elegida (S6).</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
 </body>
 </html>

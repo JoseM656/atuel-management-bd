@@ -1,0 +1,79 @@
+/* Estilos base del front. Sin frameworks: CSS plano. */
+
+:root {
+  --vino: #7b1e3a;
+  --vino-claro: #f6e9ed;
+  --texto: #222;
+  --gris: #666;
+  --borde: #ddd;
+  --fondo: #fafafa;
+  --ok: #1f7a3a;
+  --error: #b3261e;
+  --error-fondo: #fdecea;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--texto);
+  background: var(--fondo);
+}
+
+[x-cloak] { display: none !important; }
+
+/* Cabecera y navegación */
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--vino);
+  color: #fff;
+}
+header h1 { margin: 0; font-size: 1.25rem; }
+
+nav { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+}
+nav a:hover { background: rgba(255, 255, 255, 0.15); }
+nav a.activa { background: #fff; color: var(--vino); font-weight: 600; }
+
+.salud { margin-left: auto; font-size: 0.85rem; }
+.salud .punto {
+  display: inline-block;
+  width: 0.6rem; height: 0.6rem;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+  background: #ccc;
+}
+.salud .punto.ok { background: #6fdc8c; }
+.salud .punto.error { background: #ff8a80; }
+
+/* Contenido */
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+main h2 { margin-top: 0; color: var(--vino); }
+
+.boceto {
+  padding: 1rem;
+  border: 1px dashed var(--borde);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--gris);
+}
+.boceto ul { margin: 0.5rem 0 0; }
+
+/* Mensajes de error de la API: se muestran tal cual llegan. */
+.error-api {
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--error);
+  background: var(--error-fondo);
+  color: var(--error);
+  white-space: pre-wrap;
+}
