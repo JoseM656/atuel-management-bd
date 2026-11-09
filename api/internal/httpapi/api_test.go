@@ -304,6 +304,37 @@ func TestListarTransferenciasEstadoInvalido(t *testing.T) {
 	}
 }
 
+// TestCatalogos: los cuatro listados de catálogo responden 200 con una lista
+// no vacía (sobre la base cargada) y cada fila trae el campo id que el front
+// envía después en POST /vinos y POST /comprobantes.
+func TestCatalogos(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	casos := []struct{ ruta, campoID string }{
+		{"/salas", "id_sala"},
+		{"/cepas", "id_cepa"},
+		{"/bodegas", "cuit"},
+		{"/maridajes", "id_maridaje"},
+	}
+	for _, c := range casos {
+		code, body := doJSON(t, http.MethodGet, srv.URL+c.ruta, nil)
+		if code != http.StatusOK {
+			t.Fatalf("%s: esperaba 200, obtuve %d: %s", c.ruta, code, body)
+		}
+		var filas []map[string]any
+		if err := json.Unmarshal([]byte(body), &filas); err != nil {
+			t.Fatalf("%s: esperaba una lista JSON (%v): %s", c.ruta, err, body)
+		}
+		if len(filas) == 0 {
+			t.Fatalf("%s: esperaba al menos una fila", c.ruta)
+		}
+		if filas[0][c.campoID] == nil {
+			t.Fatalf("%s: esperaba el campo %s: %v", c.ruta, c.campoID, filas[0])
+		}
+	}
+}
+
 // fstr convierte un float64 (de JSON) a entero y luego a string, para armar
 // la ruta. Los números de JSON se decodifican como float64.
 func fstr(n float64) string {

@@ -251,6 +251,16 @@ curl -i -X POST http://localhost:3333/ingresos/N/procesar
 # Vino ajeno a la bodega → 409 (RI-04)
 ```
 
+## Catálogos — desplegables del front (solo lectura)
+
+```bash
+# Listas completas, sin paginar, ordenadas por nombre
+curl -i http://localhost:3333/salas       # → [{"id_sala":7,"descripcion":"Av. Principal 70 715, Agrelo","localidad":"Agrelo"}, ...]
+curl -i http://localhost:3333/cepas       # → [{"id_cepa":5,"nombre":"Bonarda","tipo":"tinta"}, ...]
+curl -i http://localhost:3333/bodegas     # → [{"cuit":"30700000085","razon_social":"Bodega Altos del Diamante S.A."}, ...]
+curl -i http://localhost:3333/maridajes   # → [{"id_maridaje":4,"nombre":"Carnes blancas","temperatura_servicio":12}, ...]
+```
+
 ## Reportes — consultas S1–S12 (solo lectura)
 
 ```bash

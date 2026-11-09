@@ -16,6 +16,7 @@ func NewRouter(pool *pgxpool.Pool) *chi.Mux {
 	transferencias := &TransferenciasHandler{Pool: pool}
 	ingresos := &IngresosHandler{Pool: pool}
 	reportes := &ReportesHandler{Pool: pool}
+	catalogo := &CatalogoHandler{Pool: pool}
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger, middleware.Recoverer)
@@ -49,6 +50,7 @@ func NewRouter(pool *pgxpool.Pool) *chi.Mux {
 	r.Post("/ingresos/{cod}/terminar", ingresos.Terminar)
 	r.Post("/ingresos/{cod}/procesar", ingresos.Procesar)
 
+	catalogo.Registrar(r)
 	reportes.Registrar(r)
 
 	return r

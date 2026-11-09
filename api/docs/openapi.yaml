@@ -498,6 +498,55 @@ paths:
         "409":
           description: Estado inválido o no existe
 
+  /salas:
+    get:
+      summary: Salas de venta (catálogo para desplegables)
+      description: Lista completa, sin paginar, ordenada por localidad y dirección.
+      responses:
+        "200":
+          description: Salas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Sala" }
+
+  /cepas:
+    get:
+      summary: Cepas (catálogo para desplegables y filtro ?cepa= de /vinos)
+      responses:
+        "200":
+          description: Cepas ordenadas por nombre
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CepaItem" }
+
+  /bodegas:
+    get:
+      summary: Bodegas (catálogo para desplegables y filtro ?bodega= de /vinos)
+      responses:
+        "200":
+          description: Bodegas ordenadas por razón social
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Bodega" }
+
+  /maridajes:
+    get:
+      summary: Maridajes (catálogo para el alta de vino)
+      responses:
+        "200":
+          description: Maridajes ordenados por nombre
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MaridajeItem" }
+
   /reportes/s1:
     get:
       summary: S1 · Top 10 vinos por botellas vendidas
@@ -826,6 +875,29 @@ components:
         transferencias:
           type: array
           items: { $ref: "#/components/schemas/TransferenciaResumen" }
+    Sala:
+      type: object
+      properties:
+        id_sala: { type: integer }
+        descripcion: { type: string, description: "calle número, localidad" }
+        localidad: { type: string }
+    CepaItem:
+      type: object
+      properties:
+        id_cepa: { type: integer }
+        nombre: { type: string }
+        tipo: { type: string }
+    Bodega:
+      type: object
+      properties:
+        cuit: { type: string }
+        razon_social: { type: string }
+    MaridajeItem:
+      type: object
+      properties:
+        id_maridaje: { type: integer }
+        nombre: { type: string }
+        temperatura_servicio: { type: number }
     RenglonIngresoInput:
       type: object
       required: [cod_vino, cantidad]

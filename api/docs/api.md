@@ -35,6 +35,10 @@ go run ./cmd/api
 | DELETE | `/clientes/{id}` | Baja de un cliente (RN-14 lo rechaza si tiene comprobantes) |
 | POST | `/comprobantes` | Venta transaccional: cabecera + renglones; precios/totales los calcula la base |
 | GET | `/comprobantes/{nro}` | Detalle de un comprobante con sus renglones |
+| GET | `/salas` | Catálogo de salas de venta (para desplegables) |
+| GET | `/cepas` | Catálogo de cepas |
+| GET | `/bodegas` | Catálogo de bodegas |
+| GET | `/maridajes` | Catálogo de maridajes |
 | GET | `/transferencias` | Lista paginada con filtros `estado` e `id_sala` |
 | POST | `/transferencias` | Alta de una transferencia (en confección) |
 | GET | `/transferencias/{nro}` | Detalle con estado actual y renglones |

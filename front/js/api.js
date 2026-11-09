@@ -73,6 +73,12 @@ async function request(metodo, ruta, { query, body } = {}) {
 const api = {
   salud: () => request('GET', '/salud'),
 
+  // Catálogos para los desplegables (#87): listas completas, ordenadas por nombre.
+  listarSalas:     () => request('GET', '/salas'),      // [{ id_sala, descripcion, localidad }]
+  listarCepas:     () => request('GET', '/cepas'),      // [{ id_cepa, nombre, tipo }]
+  listarBodegas:   () => request('GET', '/bodegas'),    // [{ cuit, razon_social }]
+  listarMaridajes: () => request('GET', '/maridajes'),  // [{ id_maridaje, nombre, temperatura_servicio }]
+
   // Vinos — catálogo (#52) y alta/edición (#53)
   // filtros: { tipo, cepa, bodega, anada, limit, offset } → { total, limit, offset, vinos }
   listarVinos:   (filtros)     => request('GET', '/vinos', { query: filtros }),
@@ -92,6 +98,10 @@ const api = {
   obtenerComprobante: (nro)    => request('GET', `/comprobantes/${encodeURIComponent(nro)}`),
 
   // Transferencias (#55): en_confeccion → terminado → procesado
+  // filtros: { estado, id_sala, limit, offset } → { total, limit, offset, transferencias }
+  listarTransferencias: (filtros) => request('GET', '/transferencias', { query: filtros }),
+  // → { nro, id_sala, sala, fecha_confeccion, estado, renglones: [...] }
+  obtenerTransferencia: (nro)     => request('GET', `/transferencias/${encodeURIComponent(nro)}`),
   crearTransferencia:   (idSala)        => request('POST', '/transferencias', { body: { id_sala: idSala } }), // → { nro }
   agregarRenglonesTransferencia: (nro, renglones) =>
     request('POST', `/transferencias/${encodeURIComponent(nro)}/renglones`, { body: renglones }),
