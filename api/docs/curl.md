@@ -328,6 +328,22 @@ curl 'http://localhost:3333/reportes/s12a?bodega=30700000019'
 curl http://localhost:3333/reportes/s12b
 ```
 
+## Reportes — tablero del front (rutas del enunciado)
+
+Misma lógica que S1, S8 y S6; solo suman columnas para mostrar. S1–S12 no cambian.
+
+```bash
+# Top 10 vinos (S1) con añada y volumen
+curl http://localhost:3333/reportes/top-vinos
+
+# Ventas por sala del último trimestre (S8) con localidad y período
+curl http://localhost:3333/reportes/ventas-por-sala
+# → {"desde":"2026-08-09","hasta":"2026-11-09","salas":[{"id_sala":16,"localidad":"...","monto_total":...}]}
+
+# Vinos sin stock en la sala 3 con stock en depósito (S6) con tipo y bodega
+curl 'http://localhost:3333/reportes/vinos-sin-stock?sala=3'
+```
+
 ## Errores (SQLSTATE → HTTP)
 
 | SQLSTATE | Significado | HTTP |

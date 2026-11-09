@@ -319,6 +319,64 @@ func TestQuitarRenglonTransferencia(t *testing.T) {
 	}
 }
 
+// TestTableroIgualQueSeccion8: las rutas del tablero devuelven los mismos
+// vinos/salas y cantidades que S1, S8 y S6 (solo suman columnas para mostrar).
+func TestTableroIgualQueSeccion8(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	lista := func(ruta string) []map[string]any {
+		t.Helper()
+		code, body := doJSON(t, http.MethodGet, srv.URL+ruta, nil)
+		if code != http.StatusOK {
+			t.Fatalf("%s: esperaba 200, obtuve %d: %s", ruta, code, body)
+		}
+		var filas []map[string]any
+		if err := json.Unmarshal([]byte(body), &filas); err != nil {
+			t.Fatalf("%s: %v", ruta, err)
+		}
+		return filas
+	}
+	iguales := func(nombre string, a, b []map[string]any, clave, valor string) {
+		t.Helper()
+		if len(a) != len(b) {
+			t.Fatalf("%s: %d filas contra %d", nombre, len(a), len(b))
+		}
+		for i := range a {
+			if a[i][clave] != b[i][clave] || a[i][valor] != b[i][valor] {
+				t.Fatalf("%s fila %d: %v/%v contra %v/%v", nombre, i, a[i][clave], a[i][valor], b[i][clave], b[i][valor])
+			}
+		}
+	}
+
+	iguales("top-vinos vs S1", lista("/reportes/top-vinos"), lista("/reportes/s1"), "cod_vino", "botellas")
+
+	code, body := doJSON(t, http.MethodGet, srv.URL+"/reportes/ventas-por-sala", nil)
+	if code != http.StatusOK {
+		t.Fatalf("ventas-por-sala: esperaba 200, obtuve %d: %s", code, body)
+	}
+	var ventas struct {
+		Desde, Hasta string
+		Salas        []map[string]any
+	}
+	if err := json.Unmarshal([]byte(body), &ventas); err != nil || ventas.Desde == "" {
+		t.Fatalf("ventas-por-sala: respuesta inválida (%v): %s", err, body)
+	}
+	iguales("ventas-por-sala vs S8", ventas.Salas, lista("/reportes/s8"), "id_sala", "monto_total")
+
+	sinStock := lista("/reportes/vinos-sin-stock?sala=3")
+	iguales("vinos-sin-stock vs S6", sinStock, lista("/reportes/s6?sala=3"), "cod_vino", "stock_deposito")
+	for _, f := range sinStock {
+		if f["stock_sala"] != float64(0) {
+			t.Fatalf("vinos-sin-stock: el vino %v tiene stock en sala %v", f["cod_vino"], f["stock_sala"])
+		}
+	}
+
+	if code, _ := doJSON(t, http.MethodGet, srv.URL+"/reportes/vinos-sin-stock?sala=abc", nil); code != http.StatusBadRequest {
+		t.Fatalf("sala inválida: esperaba 400, obtuve %d", code)
+	}
+}
+
 // TestTransferenciaInexistente: GET de una transferencia que no existe -> 404.
 func TestTransferenciaInexistente(t *testing.T) {
 	srv := nuevoServer(t)
