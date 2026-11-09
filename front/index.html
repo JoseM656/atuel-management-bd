@@ -54,7 +54,6 @@
       <div class="titulo-pantalla con-acciones">
         <div>
           <h2>Catálogo de vinos</h2>
-          <div class="ruta-api">GET /vinos?nombre=&amp;tipo=&amp;cepa=&amp;bodega=&amp;anada=&amp;limit=&amp;offset=</div>
         </div>
         <div class="acciones">
           <a class="boton primario" href="#vino/nuevo">+ Nuevo vino</a>
@@ -184,7 +183,7 @@
               <div class="titulo-pantalla con-acciones">
                 <div>
                   <h2 x-text="vino.nombre"></h2>
-                  <div class="ruta-api">Cód <span x-text="vino.cod_vino"></span> · GET /vinos/{cod}</div>
+                  <div class="subtitulo">Cód <span x-text="vino.cod_vino"></span></div>
                 </div>
                 <div class="acciones">
                   <button type="button" class="boton peligro" @click="pedirEliminar()" :disabled="eliminando">Eliminar</button>
@@ -248,7 +247,6 @@
         <form @submit.prevent="guardar()">
           <div class="titulo-pantalla">
             <h2 x-text="modo === 'nuevo' ? 'Nuevo vino' : 'Editar vino · Cód ' + cod"></h2>
-            <div class="ruta-api">Alta: POST /vinos · Edición: PUT /vinos/{cod} · Baja: DELETE /vinos/{cod}</div>
           </div>
 
           <p class="cargando" x-show="cargando">Cargando vino…</p>
@@ -379,7 +377,6 @@
     <section x-show="pantalla === 'venta'" x-data="venta">
       <div class="titulo-pantalla">
         <h2>Nueva venta</h2>
-        <div class="ruta-api">POST /comprobantes/simular (cálculo) · POST /comprobantes → GET /comprobantes/{nro}</div>
       </div>
 
       <!-- ---------- Venta registrada ---------- -->
@@ -389,7 +386,6 @@
             <span class="icono" aria-hidden="true">✓</span>
             <div>
               <strong>Venta registrada · Comprobante N° <span x-text="comprobante.nro"></span></strong>
-              <div>Datos leídos de la base con <code>GET /comprobantes/<span x-text="comprobante.nro"></span></code>.</div>
             </div>
           </div>
 
@@ -477,7 +473,6 @@
                   </ul>
                   <div class="pie-desplegable">
                     <span x-text="buscandoClientes ? 'Buscando…' : `${clientes.length} de ${totalClientes} clientes`"></span>
-                    <code>GET /clientes?q=&amp;tipo=&amp;limit=20</code>
                   </div>
                 </div>
               </div>
@@ -518,7 +513,6 @@
                   </ul>
                   <div class="pie-desplegable">
                     <span x-text="`${salasFiltradas.length} de ${salas.length} salas`"></span>
-                    <code>GET /salas</code>
                   </div>
                 </div>
               </div>
@@ -564,7 +558,6 @@
                     </ul>
                     <div class="pie-desplegable">
                       <span x-text="buscandoVinos ? 'Buscando…' : `${vinos.length} resultados`"></span>
-                      <code>GET /vinos?nombre=&amp;limit=10</code>
                     </div>
                   </div>
                 </div>
@@ -633,7 +626,6 @@
     <section x-show="pantalla === 'transferencias'" x-data="transferencias" @ruta.window="alCambiarRuta($event.detail)">
       <div class="titulo-pantalla">
         <h2>Transferencias depósito → sala</h2>
-        <div class="ruta-api">POST /transferencias · POST /transferencias/{nro}/renglones · POST /transferencias/{nro}/terminar · POST /transferencias/{nro}/procesar</div>
       </div>
 
       <div class="grilla-transferencias">
@@ -756,7 +748,6 @@
                         </ul>
                         <div class="pie-desplegable">
                           <span x-text="buscandoVinos ? 'Buscando…' : `${vinos.length} resultados`"></span>
-                          <code>GET /vinos?nombre=&amp;limit=10</code>
                         </div>
                       </div>
                     </div>
@@ -831,7 +822,6 @@
     <section x-show="pantalla === 'tablero'" x-data="tablero" @ruta.window="alCambiarRuta($event.detail)">
       <div class="titulo-pantalla">
         <h2>Tablero</h2>
-        <div class="ruta-api">GET /reportes/top-vinos · GET /reportes/ventas-por-sala · GET /reportes/transportista-activo · GET /reportes/vinos-sin-stock?sala=</div>
       </div>
 
       <div class="grilla-tablero">

@@ -30,7 +30,7 @@ body {
 
 [x-cloak] { display: none !important; }
 
-code, .ruta-api { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
 
 /* ---------- Layout ---------- */
 .layout { display: flex; min-height: 100vh; }
@@ -72,7 +72,7 @@ main { flex: 1; min-width: 0; padding: 2rem 2rem 3rem; }
 
 .titulo-pantalla { margin-bottom: 1.5rem; }
 .titulo-pantalla h2 { margin: 0; font-size: 1.6rem; font-weight: 700; }
-.titulo-pantalla .ruta-api { margin-top: 0.35rem; font-size: 0.75rem; color: var(--texto-suave); }
+.titulo-pantalla .subtitulo { margin-top: 0.35rem; font-size: 0.85rem; color: var(--texto-suave); }
 
 /* ---------- Tarjetas y formularios ---------- */
 .tarjeta {
