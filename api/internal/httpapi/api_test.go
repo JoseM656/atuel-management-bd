@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/JoseM656/atuel-management-bd/internal/httperr"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -137,6 +138,128 @@ func TestPrecioNegativo(t *testing.T) {
 	})
 	if code != http.StatusUnprocessableEntity {
 		t.Fatalf("esperaba 422, obtuve %d: %s", code, body)
+	}
+}
+
+// errorAPI decodifica el cuerpo de error {"error","codigo","restriccion"} (#88).
+func errorAPI(t *testing.T, body string) httperr.Respuesta {
+	t.Helper()
+	var r httperr.Respuesta
+	if err := json.Unmarshal([]byte(body), &r); err != nil {
+		t.Fatalf("el error no es JSON válido (%v): %s", err, body)
+	}
+	return r
+}
+
+// TestMensajesRestriccionesExisten: cada restricción con mensaje propio en
+// httperr/mensajes.go existe en la base. Si alguien renombra o borra un
+// CHECK/UNIQUE/FK, este test falla y el mensaje no queda desactualizado (#88).
+func TestMensajesRestriccionesExisten(t *testing.T) {
+	if testPool == nil {
+		t.Skip("sin TEST_DATABASE_URL/DATABASE_URL: se omiten los tests de integración")
+	}
+	for _, nombre := range httperr.Restricciones() {
+		var existe bool
+		err := testPool.QueryRow(context.Background(), `
+			SELECT EXISTS (
+			    SELECT 1 FROM pg_constraint
+			    WHERE conname = $1 AND connamespace = 'public'::regnamespace)`, nombre).Scan(&existe)
+		if err != nil {
+			t.Fatalf("consultar pg_constraint: %v", err)
+		}
+		if !existe {
+			t.Errorf("la restricción %q tiene mensaje en httperr/mensajes.go pero no existe en la base", nombre)
+		}
+	}
+}
+
+// TestMensajeAnada: añada 1920 viola ck_vino_anada → 422 con el mensaje en
+// castellano, el SQLSTATE y el nombre de la restricción (#88).
+func TestMensajeAnada(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/vinos", map[string]any{
+		"nombre": "Vino Test Añada", "tipo": "tinto", "anada": 1920,
+		"volumen_ml": 750, "graduacion": 13, "precio": 9000,
+		"cuit_bodega": "30700000019",
+		"cepas":       []map[string]any{{"id_cepa": 1, "porcentaje": 100}},
+		"maridajes":   []int{1},
+	})
+	if code != http.StatusUnprocessableEntity {
+		t.Fatalf("esperaba 422, obtuve %d: %s", code, body)
+	}
+	e := errorAPI(t, body)
+	if e.Error != "La añada debe estar entre 1990 y 2100." || e.Codigo != "23514" || e.Restriccion != "ck_vino_anada" {
+		t.Fatalf("respuesta inesperada: %+v", e)
+	}
+}
+
+// TestMensajeVinoDuplicado: un segundo vino con el mismo nombre, añada y
+// volumen viola uq_vino_nombre_anada_volumen → 409 en castellano (#88).
+func TestMensajeVinoDuplicado(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	vino := map[string]any{
+		"nombre": "Vino Test Duplicado " + strconv.FormatInt(time.Now().UnixNano(), 36), "tipo": "tinto",
+		"anada": 2022, "volumen_ml": 750, "graduacion": 13, "precio": 9000,
+		"cuit_bodega": "30700000019",
+		"cepas":       []map[string]any{{"id_cepa": 1, "porcentaje": 100}},
+		"maridajes":   []int{1},
+	}
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/vinos", vino)
+	if code != http.StatusCreated {
+		t.Fatalf("alta: esperaba 201, obtuve %d: %s", code, body)
+	}
+	defer doJSON(t, http.MethodDelete, srv.URL+"/vinos/"+fstr(decodeJSON(t, body)["cod_vino"].(float64)), nil)
+
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/vinos", vino)
+	if code != http.StatusConflict {
+		t.Fatalf("duplicado: esperaba 409, obtuve %d: %s", code, body)
+	}
+	e := errorAPI(t, body)
+	if e.Error != "Ya existe un vino con ese nombre, añada y volumen." || e.Codigo != "23505" || e.Restriccion != "uq_vino_nombre_anada_volumen" {
+		t.Fatalf("respuesta inesperada: %+v", e)
+	}
+}
+
+// TestMensajeBorradoRN14: borrar un vino con ventas lo impide una FK (RN-14)
+// → 409 con el mensaje de RN-14, no el de «vino inexistente» (#88).
+func TestMensajeBorradoRN14(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodDelete, srv.URL+"/vinos/1", nil)
+	if code != http.StatusConflict {
+		t.Fatalf("esperaba 409, obtuve %d: %s", code, body)
+	}
+	e := errorAPI(t, body)
+	if !strings.HasPrefix(e.Error, "No se puede eliminar el vino") || e.Codigo != "23503" || e.Restriccion == "" {
+		t.Fatalf("respuesta inesperada: %+v", e)
+	}
+}
+
+// TestMensajeP0001SinEnvoltorio: un RAISE EXCEPTION llega con su texto, sin
+// «ERROR: …» ni «(SQLSTATE P0001)» (#88).
+func TestMensajeP0001SinEnvoltorio(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/transferencias", map[string]any{"id_sala": 1})
+	if code != http.StatusCreated {
+		t.Fatalf("crear transferencia: esperaba 201, obtuve %d: %s", code, body)
+	}
+	nro := fstr(decodeJSON(t, body)["nro"].(float64))
+
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/transferencias/"+nro+"/procesar", nil)
+	if code != http.StatusConflict {
+		t.Fatalf("esperaba 409, obtuve %d: %s", code, body)
+	}
+	e := errorAPI(t, body)
+	if e.Codigo != "P0001" || strings.Contains(e.Error, "ERROR:") || strings.Contains(e.Error, "SQLSTATE") ||
+		!strings.Contains(e.Error, "solo se procesa terminado") {
+		t.Fatalf("respuesta inesperada: %+v", e)
 	}
 }
 

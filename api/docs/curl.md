@@ -357,3 +357,29 @@ curl 'http://localhost:3333/reportes/vinos-sin-stock?sala=3'
 | `22P02` | invalid_text_representation | 400 |
 | `40001` / `40P01` | serialization / deadlock | 503 |
 | `P0001` | RAISE EXCEPTION (reglas RN/RI) | 409 |
+
+### Mensajes en castellano (#88)
+
+El cuerpo es `{"error": "...", "codigo": "<SQLSTATE>", "restriccion": "<nombre>"}`. La regla la aplica la base;
+la API solo traduce el texto por nombre de restricción (`api/internal/httperr/mensajes.go`).
+
+```bash
+# CHECK: añada fuera de rango → 422
+curl -s -X POST http://localhost:3333/vinos -H 'Content-Type: application/json' \
+  -d '{"nombre":"Prueba","tipo":"tinto","anada":1920,"volumen_ml":750,"graduacion":13,"precio":9000,
+       "cuit_bodega":"30700000019","cepas":[{"id_cepa":1,"porcentaje":100}],"maridajes":[1]}'
+# → {"error":"La añada debe estar entre 1990 y 2100.","codigo":"23514","restriccion":"ck_vino_anada"}
+
+# FK al borrar un vino con ventas (RN-14) → 409
+curl -s -X DELETE http://localhost:3333/vinos/1
+# → {"error":"No se puede eliminar el vino porque tiene ventas, stock, transferencias, ingresos o historial de precios.",
+#    "codigo":"23503","restriccion":"fk_auditoria_vino"}
+
+# RAISE EXCEPTION (P0001): el texto del trigger, sin «ERROR: … (SQLSTATE P0001)» → 409
+curl -s -X POST http://localhost:3333/transferencias/1/renglones -H 'Content-Type: application/json' \
+  -d '[{"cod_vino":1,"cantidad":1}]'
+# → {"error":"la transferencia 1 no está en confección, no se pueden modificar sus renglones","codigo":"P0001"}
+```
+
+Una restricción sin mensaje propio devuelve un texto genérico con su nombre (por ejemplo «El dato no cumple la
+restricción ck_xxx.»). Si se renombra o borra una restricción de la tabla, `TestMensajesRestriccionesExisten` falla.

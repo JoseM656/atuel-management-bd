@@ -3,9 +3,12 @@ info:
   title: Bodegas del Atuel — API
   version: 0.2.0
   description: |
-    API REST de la capa de datos (Etapa 6). Hoy expone `/salud` y el CRUD de
-    `/vinos`; se irán agregando clientes, comprobantes, transferencias,
-    ingresos y reportes (S1–S12).
+    API REST de la capa de datos (Etapa 6): vinos, clientes, comprobantes,
+    transferencias, ingresos, catálogos y reportes (S1–S12 y tablero).
+
+    Todos los errores responden `{"error": "...", "codigo": "<SQLSTATE>",
+    "restriccion": "<nombre>"}` (esquema `Error`); `codigo` y `restriccion`
+    aparecen solo cuando el error lo generó la base.
 servers:
   - url: http://localhost:3333
     description: Local
@@ -1096,5 +1099,14 @@ components:
         cantidad: { type: integer }
     Error:
       type: object
+      description: |
+        Error de la API. Si viene de la base (#88), `error` está en castellano:
+        el texto del RAISE EXCEPTION para P0001, el mensaje de
+        httperr/mensajes.go para las restricciones conocidas, o uno genérico
+        con el nombre de la restricción. El código HTTP sigue la tabla
+        SQLSTATE → HTTP del enunciado.
+      required: [error]
       properties:
-        error: { type: string }
+        error: { type: string, example: "La añada debe estar entre 1990 y 2100." }
+        codigo: { type: string, description: "SQLSTATE (solo si el error vino de la base)", example: "23514" }
+        restriccion: { type: string, description: "Nombre del CHECK/UNIQUE/FK violado, si lo hay", example: "ck_vino_anada" }
