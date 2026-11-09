@@ -139,6 +139,43 @@ curl -i -X PUT http://localhost:3333/clientes/20002 \
 curl -i -X DELETE http://localhost:3333/clientes/366
 ```
 
+## Comprobantes — venta (`POST /comprobantes`)
+
+```bash
+# Venta transaccional: cabecera + renglones en una sola operación.
+# La API NO envía precios; la base calcula descuento, precios y totales,
+# valida el stock (RN-09) y lo descuenta.
+curl -i -X POST http://localhost:3333/comprobantes \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "id_cliente": 1,
+    "id_sala": 1,
+    "renglones": [
+      {"cod_vino": 1, "cantidad": 2},
+      {"cod_vino": 2, "cantidad": 1}
+    ]
+  }'
+# → 201 {"nro": N}
+
+# Venta sin stock → 409 (no deja datos a medias)
+curl -i -X POST http://localhost:3333/comprobantes \
+  -H 'Content-Type: application/json' \
+  -d '{"id_cliente": 1, "id_sala": 1, "renglones": [{"cod_vino": 1, "cantidad": 999999}]}'
+```
+
+## Comprobantes — detalle (`GET /comprobantes/{nro}`)
+
+```bash
+# Cabecera (cliente, sala, subtotal, descuento, total) + renglones
+curl http://localhost:3333/comprobantes/1
+
+# No existe → 404
+curl -i http://localhost:3333/comprobantes/99999999
+
+# Número inválido → 400
+curl -i http://localhost:3333/comprobantes/abc
+```
+
 ## Errores (SQLSTATE → HTTP)
 
 | SQLSTATE | Significado | HTTP |

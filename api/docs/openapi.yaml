@@ -232,6 +232,50 @@ paths:
         "409":
           description: Tiene comprobantes (RN-14)
 
+  /comprobantes:
+    post:
+      summary: Venta transaccional (cabecera + renglones)
+      description: |
+        Crea un comprobante con sus renglones en una sola transacción. La API
+        no envía ni calcula precios: descuento, precio unitario, subtotal y
+        total los resuelve la base con sus funciones y triggers (RN-08, RN-09,
+        RI-03). Vender sin stock devuelve 409 y no deja datos a medias.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ComprobanteNuevo" }
+      responses:
+        "201":
+          description: Comprobante creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nro: { type: integer }
+        "409":
+          description: Sin stock (RN-09) u otra regla violada
+        "422":
+          description: CHECK violado (cantidad <= 0, etc.)
+
+  /comprobantes/{nro}:
+    get:
+      summary: Comprobante con sus renglones
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Comprobante
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComprobanteDetalle" }
+        "404":
+          description: No encontrado
+
 components:
   schemas:
     Vino:
@@ -376,6 +420,44 @@ components:
         zona_cobertura: { type: string }
         nro_habilitacion: { type: string }
         pais_destino: { type: string }
+    ComprobanteNuevo:
+      type: object
+      required: [id_cliente, id_sala, renglones]
+      properties:
+        id_cliente: { type: integer }
+        id_sala: { type: integer }
+        renglones:
+          type: array
+          items: { $ref: "#/components/schemas/RenglonComprobanteInput" }
+    RenglonComprobanteInput:
+      type: object
+      required: [cod_vino, cantidad]
+      properties:
+        cod_vino: { type: integer }
+        cantidad: { type: integer }
+    ComprobanteDetalle:
+      type: object
+      properties:
+        nro: { type: integer }
+        fecha: { type: string }
+        id_cliente: { type: integer }
+        cliente: { type: string }
+        id_sala: { type: integer }
+        subtotal: { type: number }
+        porcentaje_descuento: { type: number }
+        total: { type: number }
+        renglones:
+          type: array
+          items: { $ref: "#/components/schemas/RenglonComprobante" }
+    RenglonComprobante:
+      type: object
+      properties:
+        cod_vino: { type: integer }
+        vino: { type: string }
+        cantidad: { type: integer }
+        precio_unitario: { type: number }
+        importe_descuento: { type: number }
+        subtotal: { type: number }
     Error:
       type: object
       properties:
