@@ -4,19 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bodegas del Atuel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/estilos.css">
 
-  <!-- Orden de carga: primero la capa de API y la app (registran sus datos en
-       el evento alpine:init) y al final Alpine, que con `defer` arranca cuando
-       el HTML ya está listo. -->
+  <!-- Orden de carga: primero la capa de API y los componentes (registran sus
+       datos en el evento alpine:init) y al final Alpine, que con `defer`
+       arranca cuando el HTML ya está listo. -->
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/catalogo.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body x-data="app" x-cloak>
+<div class="layout">
 
-  <header>
-    <h1>Bodegas del Atuel</h1>
+  <!-- ===================== Barra lateral ===================== -->
+  <aside class="sidebar">
+    <div class="marca">
+      <h1>Bodegas del Atuel</h1>
+      <p>Sistema de gestión</p>
+    </div>
 
     <nav>
       <template x-for="p in pantallas" :key="p.id">
@@ -24,30 +34,176 @@
       </template>
     </nav>
 
-    <span class="salud" :title="salud">
-      <span class="punto" :class="{ ok: salud === 'ok', error: salud !== 'ok' && salud !== 'consultando' }"></span>
-      API: <span x-text="salud === 'ok' ? 'conectada' : (salud === 'consultando' ? 'consultando…' : salud)"></span>
-    </span>
-  </header>
+    <div class="pie">
+      <div>API: <code x-text="apiBase"></code> (configurable)</div>
+      <div class="salud" :title="salud">
+        <span class="punto" :class="{ ok: salud === 'ok', error: salud !== 'ok' && salud !== 'consultando' }"></span>
+        <span x-text="salud === 'ok' ? 'conectada' : (salud === 'consultando' ? 'consultando…' : salud)"></span>
+      </div>
+    </div>
+  </aside>
 
   <main>
 
-    <!-- #52 Catálogo de vinos -->
-    <section x-show="pantalla === 'catalogo'">
-      <h2>Catálogo de vinos</h2>
-      <div class="boceto">
-        Boceto — se implementa en #52.
-        <ul>
-          <li>Filtros: tipo, cepa, bodega, añada.</li>
-          <li>Listado paginado (<code>GET /vinos</code>).</li>
-          <li>Detalle con composición y maridajes (<code>GET /vinos/{cod}</code>).</li>
-        </ul>
+    <!-- ===================== #52 Catálogo de vinos ===================== -->
+    <section x-show="pantalla === 'catalogo'" x-data="catalogo">
+      <div class="titulo-pantalla">
+        <h2>Catálogo de vinos</h2>
+        <div class="ruta-api">GET /vinos?tipo=&amp;cepa=&amp;bodega=&amp;anada=&amp;limit=&amp;offset=</div>
       </div>
+
+      <!-- Filtros: se envían a la API al apretar «Aplicar filtros» -->
+      <form class="tarjeta" @submit.prevent="aplicarFiltros()">
+        <h3>Filtros</h3>
+        <div class="filtros">
+          <div class="campo">
+            <label for="f-tipo">Tipo</label>
+            <select id="f-tipo" x-model="filtros.tipo">
+              <option value="">Todos</option>
+              <template x-for="t in tipos" :key="t">
+                <option :value="t" x-text="t"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="f-cepa">Cepa</label>
+            <select id="f-cepa" x-model="filtros.cepa">
+              <option value="">Todas</option>
+              <template x-for="c in cepas" :key="c.id_cepa">
+                <option :value="c.nombre" x-text="c.nombre"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="f-bodega">Bodega</label>
+            <select id="f-bodega" x-model="filtros.bodega">
+              <option value="">Todas</option>
+              <template x-for="b in bodegas" :key="b.cuit">
+                <option :value="b.razon_social" x-text="b.razon_social"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="f-anada">Añada</label>
+            <input id="f-anada" type="number" min="1900" max="2100" step="1" placeholder="Todas" x-model="filtros.anada">
+          </div>
+
+          <button type="submit" class="boton primario" :disabled="cargando">Aplicar filtros</button>
+          <button type="button" class="boton" @click="limpiar()" :disabled="cargando">Limpiar</button>
+        </div>
+      </form>
+
+      <!-- Error de la API, tal cual -->
+      <div class="error-api" x-show="error" x-text="error"></div>
+
+      <div class="tabla-contenedor">
+        <table>
+          <thead>
+            <tr>
+              <th>Cód</th>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Cepa</th>
+              <th>Añada</th>
+              <th>Bodega</th>
+              <th>Volumen</th>
+              <th class="num">Precio</th>
+              <th class="num">Stock total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="v in vinos" :key="v.cod_vino">
+              <tr :class="{ seleccionada: detalle && detalle.cod_vino === v.cod_vino }">
+                <td x-text="v.cod_vino"></td>
+                <td class="texto-largo" x-text="v.nombre"></td>
+                <td x-text="v.tipo"></td>
+                <td class="texto-largo" x-text="v.cepas"></td>
+                <td x-text="v.anada"></td>
+                <td class="texto-largo" x-text="v.bodega"></td>
+                <td x-text="v.volumen_ml + ' ml'"></td>
+                <td class="num" x-text="precio(v.precio)"></td>
+                <td class="num" :class="claseStock(v.stock_total)" x-text="v.stock_total"></td>
+                <td><button type="button" class="enlace" @click="verDetalle(v.cod_vino)">Ver detalle →</button></td>
+              </tr>
+            </template>
+            <tr x-show="cargando && vinos.length === 0"><td colspan="10" class="vacio">Cargando…</td></tr>
+            <tr x-show="!cargando && !error && vinos.length === 0"><td colspan="10" class="vacio">No hay vinos que cumplan los filtros.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="paginacion">
+        <span>
+          Mostrando <span x-text="desde"></span>–<span x-text="hasta"></span>
+          de <span x-text="total"></span> vinos
+        </span>
+        <div class="controles">
+          <button type="button" class="boton" @click="irA(pagina - 1)" :disabled="pagina <= 1 || cargando">← Anterior</button>
+          <span>Página <span x-text="pagina"></span> de <span x-text="totalPaginas"></span></span>
+          <button type="button" class="boton" @click="irA(pagina + 1)" :disabled="pagina >= totalPaginas || cargando">Siguiente →</button>
+        </div>
+      </div>
+
+      <p class="nota">
+        <strong>Nota de diseño:</strong> la paginación y los filtros los resuelve la API (WHERE y LIMIT/OFFSET en SQL).
+        «Stock total» = depósito + salas, viene de la vista <code>v_stock_total_vino</code>; el front no lo suma.
+      </p>
+
+      <!-- Panel de detalle: GET /vinos/{cod} (S9) -->
+      <template x-if="detalle">
+        <div>
+          <div class="fondo-panel" @click="cerrarDetalle()"></div>
+          <aside class="panel" @keydown.escape.window="cerrarDetalle()">
+            <div class="cabecera">
+              <div>
+                <h3 x-text="detalle.nombre || ('Vino ' + detalle.cod_vino)"></h3>
+                <p class="subtitulo" x-show="detalle.bodega" x-text="detalle.bodega"></p>
+              </div>
+              <button type="button" class="cerrar" @click="cerrarDetalle()" aria-label="Cerrar">×</button>
+            </div>
+
+            <p class="cargando" x-show="cargandoDetalle">Cargando ficha…</p>
+            <div class="error-api" x-show="errorDetalle" x-text="errorDetalle"></div>
+
+            <template x-if="!cargandoDetalle && !errorDetalle && detalle.cepas">
+              <div>
+                <dl>
+                  <dt>Código</dt>      <dd x-text="detalle.cod_vino"></dd>
+                  <dt>Tipo</dt>        <dd x-text="detalle.tipo"></dd>
+                  <dt>Añada</dt>       <dd x-text="detalle.anada"></dd>
+                  <dt>Volumen</dt>     <dd x-text="detalle.volumen_ml + ' ml'"></dd>
+                  <dt>Graduación</dt>  <dd x-text="detalle.graduacion + ' %'"></dd>
+                  <dt>Precio</dt>      <dd x-text="precio(detalle.precio)"></dd>
+                  <dt>Stock total</dt> <dd :class="claseStock(detalle.stock_total)" x-text="detalle.stock_total"></dd>
+                </dl>
+
+                <h4>Composición</h4>
+                <ul class="lista">
+                  <template x-for="c in detalle.cepas" :key="c.nombre">
+                    <li><span x-text="c.nombre"></span><span x-text="c.porcentaje + ' %'"></span></li>
+                  </template>
+                </ul>
+
+                <h4>Maridajes</h4>
+                <ul class="lista">
+                  <template x-for="m in detalle.maridajes" :key="m.nombre">
+                    <li><span x-text="m.nombre"></span><span x-text="m.temperatura_servicio + ' °C'"></span></li>
+                  </template>
+                </ul>
+              </div>
+            </template>
+          </aside>
+        </div>
+      </template>
     </section>
 
-    <!-- #53 Alta / edición de vino -->
+    <!-- ===================== #53 Alta / edición de vino ===================== -->
     <section x-show="pantalla === 'vino'">
-      <h2>Alta / edición de vino</h2>
+      <div class="titulo-pantalla"><h2>Alta / edición de vino</h2></div>
       <div class="boceto">
         Boceto — se implementa en #53.
         <ul>
@@ -58,9 +214,9 @@
       </div>
     </section>
 
-    <!-- #54 Nueva venta -->
+    <!-- ===================== #54 Nueva venta ===================== -->
     <section x-show="pantalla === 'venta'">
-      <h2>Nueva venta</h2>
+      <div class="titulo-pantalla"><h2>Nueva venta</h2></div>
       <div class="boceto">
         Boceto — se implementa en #54.
         <ul>
@@ -72,9 +228,9 @@
       </div>
     </section>
 
-    <!-- #55 Transferencias -->
+    <!-- ===================== #55 Transferencias ===================== -->
     <section x-show="pantalla === 'transferencias'">
-      <h2>Transferencias</h2>
+      <div class="titulo-pantalla"><h2>Transferencias</h2></div>
       <div class="boceto">
         Boceto — se implementa en #55.
         <ul>
@@ -84,9 +240,9 @@
       </div>
     </section>
 
-    <!-- #56 Tablero -->
+    <!-- ===================== #56 Tablero ===================== -->
     <section x-show="pantalla === 'tablero'">
-      <h2>Tablero</h2>
+      <div class="titulo-pantalla"><h2>Tablero</h2></div>
       <div class="boceto">
         Boceto — se implementa en #56.
         <ul>
@@ -98,5 +254,6 @@
     </section>
 
   </main>
+</div>
 </body>
 </html>

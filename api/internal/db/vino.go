@@ -9,7 +9,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Vino es la proyección de vino + bodega que devuelve GET /vinos.
+// Vino es la proyección de vino + bodega que devuelve GET /vinos. stock_total
+// (depósito + salas) sale de la vista v_stock_total_vino, la misma que usa la
+// ficha: el front lo muestra tal cual, no lo suma. cepas es el corte como
+// texto, de mayor a menor porcentaje ("Merlot, Syrah, Bonarda"); el detalle
+// con porcentajes está en GET /vinos/{cod}.
 type Vino struct {
 	CodVino    int     `json:"cod_vino"`
 	Nombre     string  `json:"nombre"`
@@ -19,6 +23,8 @@ type Vino struct {
 	Graduacion float64 `json:"graduacion"`
 	Precio     float64 `json:"precio"`
 	Bodega     string  `json:"bodega"`
+	Cepas      string  `json:"cepas"`
+	StockTotal int     `json:"stock_total"`
 }
 
 // VinoFiltro reúne los filtros opcionales y la paginación de GET /vinos.
@@ -34,9 +40,15 @@ type VinoFiltro struct {
 
 const vinoSelect = `
 	SELECT v.cod_vino, v.nombre, v.tipo, v.anada, v.volumen_ml,
-	       v.graduacion, v.precio, b.razon_social
+	       v.graduacion, v.precio, b.razon_social,
+	       COALESCE((SELECT string_agg(c.nombre, ', ' ORDER BY co.porcentaje DESC, c.nombre)
+	                 FROM composicion co
+	                 JOIN cepa c ON c.id_cepa = co.id_cepa
+	                 WHERE co.cod_vino = v.cod_vino), '') AS cepas,
+	       st.stock_total
 	FROM vino v
-	JOIN bodega b ON b.cuit = v.cuit_bodega`
+	JOIN bodega b ON b.cuit = v.cuit_bodega
+	JOIN v_stock_total_vino st ON st.cod_vino = v.cod_vino`
 
 // buildVinoWhere arma la cláusula WHERE (y sus argumentos) según los filtros.
 // Solo el valor viaja como parámetro ($n); el texto del usuario nunca se
@@ -90,7 +102,7 @@ func ListarVinos(ctx context.Context, pool *pgxpool.Pool, f VinoFiltro) ([]Vino,
 	vinos := make([]Vino, 0)
 	for rows.Next() {
 		var v Vino
-		if err := rows.Scan(&v.CodVino, &v.Nombre, &v.Tipo, &v.Anada, &v.VolumenMl, &v.Graduacion, &v.Precio, &v.Bodega); err != nil {
+		if err := rows.Scan(&v.CodVino, &v.Nombre, &v.Tipo, &v.Anada, &v.VolumenMl, &v.Graduacion, &v.Precio, &v.Bodega, &v.Cepas, &v.StockTotal); err != nil {
 			return nil, err
 		}
 		vinos = append(vinos, v)

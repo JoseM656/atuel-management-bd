@@ -7,7 +7,7 @@ document.addEventListener('alpine:init', () => {
   // (#catalogo, #venta, ...), así recargar la página o compartir el link
   // abre la misma pantalla y funcionan los botones atrás/adelante.
   const PANTALLAS = [
-    { id: 'catalogo',       titulo: 'Catálogo' },
+    { id: 'catalogo',       titulo: 'Catálogo de vinos' },
     { id: 'vino',           titulo: 'Alta / edición de vino' },
     { id: 'venta',          titulo: 'Nueva venta' },
     { id: 'transferencias', titulo: 'Transferencias' },
@@ -17,6 +17,7 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('app', () => ({
     pantallas: PANTALLAS,
     pantalla: 'catalogo',
+    apiBase: api.base,
     salud: 'consultando',   // 'consultando' | 'ok' | mensaje de error
 
     init() {

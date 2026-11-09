@@ -71,6 +71,8 @@ async function request(metodo, ruta, { query, body } = {}) {
 
 // Una función por ruta de la API (api/internal/httpapi/router.go).
 const api = {
+  base: API_BASE, // se muestra en el pie de la barra lateral
+
   salud: () => request('GET', '/salud'),
 
   // Catálogos para los desplegables (#87): listas completas, ordenadas por nombre.

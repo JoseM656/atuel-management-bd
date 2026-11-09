@@ -665,6 +665,8 @@ components:
         graduacion: { type: number }
         precio: { type: number }
         bodega: { type: string }
+        cepas: { type: string, description: "Corte, de mayor a menor porcentaje (ej. \"Merlot, Syrah, Bonarda\")" }
+        stock_total: { type: integer, description: "Depósito + salas (vista v_stock_total_vino)" }
     VinosPagina:
       type: object
       properties:

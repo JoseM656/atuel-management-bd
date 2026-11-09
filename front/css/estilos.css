@@ -1,79 +1,247 @@
-/* Estilos base del front. Sin frameworks: CSS plano. */
+/* Estilos del front. CSS plano, sin frameworks.
+   Layout: barra lateral fija (navegación) + contenido. */
 
 :root {
   --vino: #7b1e3a;
-  --vino-claro: #f6e9ed;
-  --texto: #222;
-  --gris: #666;
-  --borde: #ddd;
-  --fondo: #fafafa;
+  --vino-oscuro: #2b1218;
+  --vino-claro: #f8ecef;
+  --fondo: #f6f4f1;
+  --superficie: #ffffff;
+  --cabecera-tabla: #f1ece8;
+  --texto: #1f1f1f;
+  --texto-suave: #6b6b6b;
+  --borde: #e6e1dc;
   --ok: #1f7a3a;
+  --alerta: #a86200;
   --error: #b3261e;
   --error-fondo: #fdecea;
+  --nota-fondo: #fdf6d8;
+  --nota-texto: #5c4a00;
+  --radio: 10px;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
   color: var(--texto);
   background: var(--fondo);
 }
 
 [x-cloak] { display: none !important; }
 
-/* Cabecera y navegación */
-header {
+code, .ruta-api { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+
+/* ---------- Layout ---------- */
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 240px;
+  flex-shrink: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1.5rem;
-  background: var(--vino);
+  flex-direction: column;
+  padding: 1.5rem 1rem 1.25rem;
+  background: var(--vino-oscuro);
   color: #fff;
 }
-header h1 { margin: 0; font-size: 1.25rem; }
+.sidebar .marca { padding: 0 0.25rem 1.75rem; }
+.sidebar .marca h1 { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.sidebar .marca p { margin: 0.15rem 0 0; font-size: 0.8rem; opacity: 0.85; }
 
-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-nav a {
+.sidebar nav { display: flex; flex-direction: column; gap: 0.35rem; }
+.sidebar nav a {
+  padding: 0.7rem 0.75rem;
+  border-radius: 8px;
   color: #fff;
   text-decoration: none;
-  padding: 0.4rem 0.75rem;
-  border-radius: 4px;
+  font-weight: 500;
 }
-nav a:hover { background: rgba(255, 255, 255, 0.15); }
-nav a.activa { background: #fff; color: var(--vino); font-weight: 600; }
+.sidebar nav a:hover { background: rgba(255, 255, 255, 0.08); }
+.sidebar nav a.activa { background: var(--vino); font-weight: 600; }
 
-.salud { margin-left: auto; font-size: 0.85rem; }
-.salud .punto {
-  display: inline-block;
-  width: 0.6rem; height: 0.6rem;
-  border-radius: 50%;
-  margin-right: 0.3rem;
-  background: #ccc;
+.sidebar .pie { margin-top: auto; font-size: 0.75rem; opacity: 0.85; }
+.sidebar .pie .salud { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.35rem; }
+.punto { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #999; flex-shrink: 0; }
+.punto.ok { background: #6fdc8c; }
+.punto.error { background: #ff8a80; }
+
+main { flex: 1; min-width: 0; padding: 2rem 2rem 3rem; }
+
+.titulo-pantalla { margin-bottom: 1.5rem; }
+.titulo-pantalla h2 { margin: 0; font-size: 1.6rem; font-weight: 700; }
+.titulo-pantalla .ruta-api { margin-top: 0.35rem; font-size: 0.75rem; color: var(--texto-suave); }
+
+/* ---------- Tarjetas y formularios ---------- */
+.tarjeta {
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
 }
-.salud .punto.ok { background: #6fdc8c; }
-.salud .punto.error { background: #ff8a80; }
+.tarjeta h3 { margin: 0 0 0.9rem; font-size: 1rem; font-weight: 600; }
 
-/* Contenido */
-main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
-main h2 { margin-top: 0; color: var(--vino); }
+.filtros {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr 0.5fr auto auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+.campo { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.campo label { font-size: 0.78rem; color: var(--texto-suave); }
+
+input, select {
+  width: 100%;
+  height: 2.6rem;
+  padding: 0 0.75rem;
+  font: inherit;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+input:focus, select:focus { outline: 2px solid var(--vino); outline-offset: -1px; }
+
+.boton {
+  height: 2.6rem;
+  padding: 0 1rem;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  cursor: pointer;
+}
+.boton:hover:not(:disabled) { background: var(--fondo); }
+.boton.primario { background: var(--vino); border-color: var(--vino); color: #fff; }
+.boton.primario:hover:not(:disabled) { background: #651830; }
+.boton:disabled { cursor: not-allowed; background: #ebe7e3; color: var(--texto-suave); border-color: #ebe7e3; }
+
+.enlace {
+  padding: 0;
+  font: inherit;
+  font-weight: 500;
+  color: var(--vino);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.enlace:hover { text-decoration: underline; }
+
+/* ---------- Tablas ---------- */
+.tabla-contenedor {
+  overflow-x: auto;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 0.75rem 0.65rem; text-align: left; white-space: nowrap; }
+th:first-child, td:first-child { padding-left: 1rem; }
+th:last-child, td:last-child { padding-right: 1rem; }
+th { font-weight: 500; color: var(--texto-suave); background: var(--cabecera-tabla); }
+td { border-top: 1px solid var(--borde); }
+tbody tr:hover { background: #faf7f5; }
+tbody tr.seleccionada { background: var(--vino-claro); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+/* Nombre, cepas del corte y bodega pueden ser largos: se dejan partir en
+   líneas para que la tabla entre a lo ancho sin esconder información. */
+td.texto-largo { white-space: normal; min-width: 130px; max-width: 180px; line-height: 1.35; }
+.vacio { padding: 2rem; text-align: center; color: var(--texto-suave); }
+
+.stock-ok     { color: var(--ok); font-weight: 600; }
+.stock-bajo   { color: var(--alerta); font-weight: 600; }
+.stock-cero   { color: var(--error); font-weight: 600; }
+
+/* ---------- Paginación ---------- */
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  color: var(--texto-suave);
+}
+.paginacion .controles { display: flex; align-items: center; gap: 0.75rem; color: var(--texto); }
+
+/* ---------- Mensajes ---------- */
+/* Errores de la API: se muestran tal cual llegan (regla de oro). */
+.error-api {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  border-left: 4px solid var(--error);
+  border-radius: 6px;
+  background: var(--error-fondo);
+  color: var(--error);
+  white-space: pre-wrap;
+}
+.nota {
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  background: var(--nota-fondo);
+  color: var(--nota-texto);
+}
+.cargando { color: var(--texto-suave); }
 
 .boceto {
   padding: 1rem;
   border: 1px dashed var(--borde);
-  border-radius: 6px;
-  background: #fff;
-  color: var(--gris);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--texto-suave);
 }
 .boceto ul { margin: 0.5rem 0 0; }
 
-/* Mensajes de error de la API: se muestran tal cual llegan. */
-.error-api {
-  padding: 0.75rem 1rem;
-  border-left: 4px solid var(--error);
-  background: var(--error-fondo);
-  color: var(--error);
-  white-space: pre-wrap;
+/* ---------- Panel de detalle (lateral derecho) ---------- */
+.fondo-panel {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 10, 12, 0.35);
+  z-index: 10;
+}
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100%);
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: var(--superficie);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 11;
+}
+.panel .cabecera { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+.panel h3 { margin: 0; font-size: 1.25rem; }
+.panel .subtitulo { margin: 0.25rem 0 0; color: var(--texto-suave); }
+.panel h4 { margin: 1.5rem 0 0.6rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); }
+.panel dl { display: grid; grid-template-columns: auto 1fr; gap: 0.45rem 1rem; margin: 1.25rem 0 0; }
+.panel dt { color: var(--texto-suave); }
+.panel dd { margin: 0; }
+.panel ul.lista { list-style: none; margin: 0; padding: 0; }
+.panel ul.lista li { display: flex; justify-content: space-between; padding: 0.55rem 0; border-top: 1px solid var(--borde); }
+.cerrar { font-size: 1.4rem; line-height: 1; padding: 0.1rem 0.4rem; background: none; border: 0; cursor: pointer; color: var(--texto-suave); }
+
+/* ---------- Pantallas angostas ---------- */
+@media (max-width: 1000px) {
+  .filtros { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 760px) {
+  .layout { flex-direction: column; }
+  .sidebar { position: static; height: auto; width: 100%; padding: 1rem; }
+  .sidebar .marca { padding-bottom: 0.75rem; }
+  .sidebar nav { flex-direction: row; flex-wrap: wrap; }
+  .sidebar .pie { margin-top: 0.75rem; }
+  main { padding: 1.25rem 1rem 2rem; }
+  .filtros { grid-template-columns: 1fr; }
 }
