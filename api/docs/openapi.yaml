@@ -358,6 +358,90 @@ paths:
         "409":
           description: Estado inválido, no existe o stock insuficiente
 
+  /ingresos:
+    post:
+      summary: Alta de un ingreso (en_confeccion)
+      description: |
+        Crea un ingreso para un transportista y una bodega. La base valida que
+        el transportista cubra la localidad del depósito (RI-05) y pone
+        fecha/estado (RN-10).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cod_transportista, cuit_bodega]
+              properties:
+                cod_transportista: { type: integer }
+                cuit_bodega: { type: string }
+      responses:
+        "201":
+          description: Ingreso creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cod_ingreso: { type: integer }
+        "409":
+          description: Transportista no cubre el depósito (RI-05)
+
+  /ingresos/{cod}/renglones:
+    post:
+      summary: Carga renglones a un ingreso en confección
+      description: |
+        Agrega renglones mientras el ingreso está en_confeccion (RN-12). Los
+        vinos deben ser de la bodega de origen (RI-04).
+      parameters:
+        - name: cod
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: "#/components/schemas/RenglonIngresoInput" }
+      responses:
+        "204":
+          description: Renglones agregados
+        "409":
+          description: No en confección (RN-12) o vino ajeno (RI-04)
+
+  /ingresos/{cod}/terminar:
+    post:
+      summary: Pasa el ingreso de en_confeccion a terminado
+      parameters:
+        - name: cod
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Terminado
+        "409":
+          description: Estado inválido o no existe
+
+  /ingresos/{cod}/procesar:
+    post:
+      summary: Procesa el ingreso (impacta el depósito)
+      description: |
+        Invoca sp_procesar_ingreso: suma los renglones al stock del depósito y
+        pasa a procesado. Solo un ingreso terminado impacta el depósito (RN-10).
+      parameters:
+        - name: cod
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Procesado
+        "409":
+          description: Estado inválido o no existe
+
 components:
   schemas:
     Vino:
@@ -541,6 +625,12 @@ components:
         importe_descuento: { type: number }
         subtotal: { type: number }
     RenglonTransferenciaInput:
+      type: object
+      required: [cod_vino, cantidad]
+      properties:
+        cod_vino: { type: integer }
+        cantidad: { type: integer }
+    RenglonIngresoInput:
       type: object
       required: [cod_vino, cantidad]
       properties:

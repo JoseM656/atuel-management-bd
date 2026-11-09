@@ -203,6 +203,33 @@ curl -i -X POST http://localhost:3333/transferencias/N/procesar
 # Procesar sin stock suficiente → 409 (RN-11)
 ```
 
+## Ingresos (`POST /ingresos` y sub-recursos)
+
+```bash
+# 1. Alta (nace en_confeccion; transportista debe cubrir el depósito, RI-05)
+curl -i -X POST http://localhost:3333/ingresos \
+  -H 'Content-Type: application/json' \
+  -d '{"cod_transportista": 1, "cuit_bodega": "30700000019"}'
+# → 201 {"cod_ingreso": N}
+
+# 2. Cargar renglones (vinos de la bodega de origen, RI-04)
+curl -i -X POST http://localhost:3333/ingresos/N/renglones \
+  -H 'Content-Type: application/json' \
+  -d '[{"cod_vino": 1, "cantidad": 120}]'
+# → 204
+
+# 3. Terminar (en_confeccion -> terminado)
+curl -i -X POST http://localhost:3333/ingresos/N/terminar
+# → 204
+
+# 4. Procesar (suma al depósito, -> procesado)
+curl -i -X POST http://localhost:3333/ingresos/N/procesar
+# → 204
+
+# Procesar un ingreso que no está terminado → 409 (RN-10)
+# Vino ajeno a la bodega → 409 (RI-04)
+```
+
 ## Errores (SQLSTATE → HTTP)
 
 | SQLSTATE | Significado | HTTP |
