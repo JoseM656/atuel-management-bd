@@ -163,11 +163,6 @@
         </div>
       </div>
 
-      <p class="nota">
-        <strong>Nota de diseño:</strong> la paginación y los filtros los resuelve la API (WHERE y LIMIT/OFFSET en SQL);
-        la búsqueda por nombre es parcial y sin distinguir mayúsculas (<code>ILIKE</code>).
-        «Stock total» = depósito + salas, viene de la vista <code>v_stock_total_vino</code>; el front no lo suma.
-      </p>
     </section>
 
     <!-- ===================== #53 Ficha y alta/edición de vino ===================== -->
@@ -243,11 +238,6 @@
                 </div>
               </div>
 
-              <p class="nota">
-                <strong>Nota de diseño:</strong> Editar lleva al formulario con los datos cargados. Eliminar pide confirmación
-                y llama a <code>DELETE /vinos/{cod}</code>; si la base lo impide (el vino tiene ventas o stock, RN-14),
-                se muestra el mensaje de la API tal cual.
-              </p>
             </div>
           </template>
         </div>
@@ -317,10 +307,6 @@
                   </select>
                 </div>
               </div>
-              <p class="nota">
-                <strong>Nota de diseño:</strong> Volumen: 187 / 375 / 750 / 1500 / 3000 ml. Graduación entre 5 y 20.
-                Añada entre 1990 y 2100 (CHECK de la base). Un cambio de precio queda auditado por trigger (RN-13).
-              </p>
             </div>
 
             <!-- Composición y maridajes -->
@@ -369,11 +355,6 @@
             </div>
           </div>
 
-          <p class="nota">
-            <strong>Nota de diseño:</strong> el vino, su composición y sus maridajes se envían juntos en un solo request.
-            Si la base rechaza la suma ≠ 100 %, no se guarda nada y se muestra la alerta de arriba con el texto exacto de la API.
-            El front no suma los porcentajes.
-          </p>
         </form>
       </template>
 
@@ -645,13 +626,6 @@
           </aside>
         </div>
 
-        <p class="nota">
-          <strong>Nota de diseño:</strong> el front no calcula importes. Cada vez que cambian cliente, sala o vinos se llama a
-          <code>POST /comprobantes/simular</code>, que hace los mismos INSERT que la venta real (precio de lista RI-03,
-          descuento RN-08, control de stock RN-09) y termina en ROLLBACK: no se guarda nada ni se mueve stock.
-          Si falta stock, el renglón no se agrega y se muestra el mensaje de la base tal cual.
-          «Confirmar venta» hace <code>POST /comprobantes</code> y muestra lo que devuelve <code>GET /comprobantes/{nro}</code>.
-        </p>
       </div>
     </section>
 
@@ -817,11 +791,6 @@
                     </table>
                   </div>
 
-                  <p class="nota">
-                    <strong>Nota de diseño:</strong> «Stock en depósito» es un dato informativo de la API (tabla
-                    <code>stock_deposito</code>). Si al procesar no alcanza, la base rechaza todo con
-                    «stock insuficiente del vino …: hay … y se piden …» y la transferencia queda en terminado.
-                  </p>
                 </div>
 
                 <div class="acciones derecha">
@@ -854,11 +823,6 @@
             </div>
           </div>
 
-          <p class="nota">
-            <strong>Nota de diseño:</strong> Procesar invoca el procedimiento de la base, que mueve el stock del depósito a la sala.
-            El front solo cambia qué botones se habilitan según el estado que devuelve la API; si la base rechaza el cambio,
-            se muestra su mensaje.
-          </p>
         </div>
       </div>
     </section>
@@ -999,16 +963,8 @@
           </div>
         </div>
 
-        <p class="nota">
-          <strong>Nota de diseño:</strong> sirve para decidir qué transferir: estos vinos se pueden reponer desde el depósito
-          (pantalla <a href="#transferencias">Transferencias</a>).
-        </p>
       </div>
 
-      <p class="nota">
-        <strong>Nota de diseño:</strong> los reportes son de solo lectura y vienen ya calculados por las consultas de la sección 8
-        (S1, S8, S7 y S6). El front solo dibuja el ranking, el gráfico y la tabla con lo que devuelve la API.
-      </p>
     </section>
 
   </main>

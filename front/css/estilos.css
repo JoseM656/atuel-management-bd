@@ -15,8 +15,6 @@
   --alerta: #a86200;
   --error: #b3261e;
   --error-fondo: #fdecea;
-  --nota-fondo: #fdf6d8;
-  --nota-texto: #5c4a00;
   --radio: 10px;
 }
 
@@ -184,14 +182,6 @@ td.texto-largo { white-space: normal; min-width: 130px; max-width: 180px; line-h
   color: var(--error);
   white-space: pre-wrap;
 }
-.nota {
-  padding: 0.65rem 1rem;
-  border-radius: 6px;
-  font-size: 0.78rem;
-  background: var(--nota-fondo);
-  color: var(--nota-texto);
-}
-.nota a { color: inherit; font-weight: 600; }
 .cargando { color: var(--texto-suave); }
 
 .boceto {
