@@ -46,6 +46,7 @@ document.addEventListener('alpine:init', () => {
     error: '',         // error al cargar la ficha
     errorAccion: '',   // error al eliminar desde la ficha
     eliminando: false,
+    confirmando: false, // ventana «¿Estás seguro…?» abierta
 
     // Formulario
     form: formVacio(),
@@ -60,6 +61,7 @@ document.addEventListener('alpine:init', () => {
 
     // Se llama al entrar a la pantalla y cada vez que cambia el hash.
     async alCambiarRuta({ pantalla, params }) {
+      this.confirmando = false;
       if (pantalla !== 'vino') return;
       this.error = this.errorAccion = this.errorForm = '';
 
@@ -164,16 +166,28 @@ document.addEventListener('alpine:init', () => {
     },
 
     // --- Eliminar (desde la ficha o el formulario) ---
-    async eliminar() {
-      const nombre = this.hayVino ? this.vino.nombre : `el vino ${this.cod}`;
-      if (!confirm(`¿Eliminar «${nombre}»? Esta acción no se puede deshacer.`)) return;
-      this.eliminando = true;
+    // Primero se abre la ventana de confirmación; «Borrar vino» llama a eliminar().
+    pedirEliminar() {
       this.errorAccion = this.errorForm = '';
+      this.confirmando = true;
+      // Foco en «Cancelar»: si se aprieta Enter sin querer, no se borra nada.
+      this.$nextTick(() => this.$refs.cancelarBorrado && this.$refs.cancelarBorrado.focus());
+    },
+
+    cancelarEliminar() {
+      if (!this.eliminando) this.confirmando = false;
+    },
+
+    async eliminar() {
+      this.eliminando = true;
       try {
         await api.borrarVino(this.cod);
+        this.confirmando = false;
         location.hash = '#catalogo';
       } catch (e) {
-        // Si tiene ventas, stock o auditoría, la base lo impide (RN-14): se muestra su mensaje.
+        // Si tiene ventas, stock o auditoría, la base lo impide (RN-14): se
+        // cierra la ventana y se muestra el mensaje de la API tal cual.
+        this.confirmando = false;
         if (this.modo === 'ficha') this.errorAccion = e.message; else this.errorForm = e.message;
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } finally {

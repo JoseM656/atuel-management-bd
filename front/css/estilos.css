@@ -291,6 +291,31 @@ h3.separado { margin-top: 1.5rem; }
   margin: 1.25rem 0;
 }
 
+/* ---------- Ventana de confirmación (centrada) ---------- */
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(20, 10, 12, 0.45);
+}
+.modal {
+  width: min(420px, 100%);
+  padding: 1.5rem;
+  text-align: center;
+  background: var(--superficie);
+  border-radius: var(--radio);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+.modal h3 { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.modal p { margin: 0.5rem 0 1.5rem; color: var(--texto-suave); }
+.modal .acciones { justify-content: center; }
+.boton.borrar { background: var(--error); border-color: var(--error); color: #fff; }
+.boton.borrar:hover:not(:disabled) { background: #8f1e18; }
+
 /* ---------- Pantallas angostas ---------- */
 @media (max-width: 1000px) {
   .filtros { grid-template-columns: 1fr 1fr; }

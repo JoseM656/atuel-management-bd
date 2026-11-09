@@ -182,7 +182,7 @@
                   <div class="ruta-api">Cód <span x-text="vino.cod_vino"></span> · GET /vinos/{cod}</div>
                 </div>
                 <div class="acciones">
-                  <button type="button" class="boton peligro" @click="eliminar()" :disabled="eliminando">Eliminar</button>
+                  <button type="button" class="boton peligro" @click="pedirEliminar()" :disabled="eliminando">Eliminar</button>
                   <a class="boton primario" :href="'#vino/' + vino.cod_vino + '/editar'">Editar</a>
                 </div>
               </div>
@@ -350,7 +350,7 @@
 
           <div class="barra-acciones" x-show="!cargando && !error">
             <div>
-              <button type="button" class="boton peligro" x-show="modo === 'editar'" @click="eliminar()" :disabled="eliminando || guardando">Eliminar vino</button>
+              <button type="button" class="boton peligro" x-show="modo === 'editar'" @click="pedirEliminar()" :disabled="eliminando || guardando">Eliminar vino</button>
             </div>
             <div class="acciones">
               <button type="button" class="boton" @click="cancelar()" :disabled="guardando">Cancelar</button>
@@ -366,6 +366,22 @@
           </p>
         </form>
       </template>
+
+      <!-- ---------- Confirmación de borrado (DELETE /vinos/{cod}) ---------- -->
+      <div class="modal-fondo" x-show="confirmando" x-transition.opacity
+           @click.self="cancelarEliminar()" @keydown.escape.window="cancelarEliminar()">
+        <div class="modal" role="alertdialog" aria-modal="true"
+             aria-labelledby="modal-borrar-titulo" aria-describedby="modal-borrar-subtitulo">
+          <h3 id="modal-borrar-titulo">¿Estás seguro que quieres eliminar este vino?</h3>
+          <p id="modal-borrar-subtitulo">Esta acción es irreversible.</p>
+          <div class="acciones">
+            <button type="button" class="boton" x-ref="cancelarBorrado"
+                    @click="cancelarEliminar()" :disabled="eliminando">Cancelar</button>
+            <button type="button" class="boton borrar" @click="eliminar()" :disabled="eliminando"
+                    x-text="eliminando ? 'Borrando…' : 'Borrar vino'"></button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ===================== #54 Nueva venta ===================== -->
