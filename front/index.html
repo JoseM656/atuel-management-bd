@@ -17,6 +17,7 @@
   <script src="js/app.js"></script>
   <script src="js/catalogo.js"></script>
   <script src="js/vino.js"></script>
+  <script src="js/venta.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body x-data="app" x-cloak>
@@ -392,16 +393,263 @@
     </section>
 
     <!-- ===================== #54 Nueva venta ===================== -->
-    <section x-show="pantalla === 'venta'">
-      <div class="titulo-pantalla"><h2>Nueva venta</h2></div>
-      <div class="boceto">
-        Boceto — se implementa en #54.
-        <ul>
-          <li>Elegir cliente y sala.</li>
-          <li>Agregar vinos y cantidades.</li>
-          <li>Total calculado por la base (<code>POST /comprobantes</code> → <code>GET /comprobantes/{nro}</code>).</li>
-          <li>Error de stock insuficiente (RN-09) visible tal cual.</li>
-        </ul>
+    <section x-show="pantalla === 'venta'" x-data="venta">
+      <div class="titulo-pantalla">
+        <h2>Nueva venta</h2>
+        <div class="ruta-api">POST /comprobantes/simular (cálculo) · POST /comprobantes → GET /comprobantes/{nro}</div>
+      </div>
+
+      <!-- ---------- Venta registrada ---------- -->
+      <template x-if="comprobante">
+        <div>
+          <div class="aviso-ok">
+            <span class="icono" aria-hidden="true">✓</span>
+            <div>
+              <strong>Venta registrada · Comprobante N° <span x-text="comprobante.nro"></span></strong>
+              <div>Datos leídos de la base con <code>GET /comprobantes/<span x-text="comprobante.nro"></span></code>.</div>
+            </div>
+          </div>
+
+          <div class="tarjeta">
+            <div class="datos">
+              <div class="dato"><span>Fecha</span><strong x-text="comprobante.fecha"></strong></div>
+              <div class="dato"><span>Cliente</span><strong x-text="'#' + comprobante.id_cliente + ' · ' + comprobante.cliente"></strong></div>
+              <div class="dato"><span>Sala</span><strong x-text="'#' + comprobante.id_sala"></strong></div>
+            </div>
+          </div>
+
+          <div class="tabla-contenedor">
+            <table>
+              <thead>
+                <tr><th>Vino</th><th class="num">Cant.</th><th class="num">Precio unit.</th><th class="num">Descuento</th><th class="num">Subtotal</th></tr>
+              </thead>
+              <tbody>
+                <template x-for="r in comprobante.renglones" :key="r.cod_vino">
+                  <tr>
+                    <td class="texto-largo" x-text="r.vino"></td>
+                    <td class="num" x-text="r.cantidad"></td>
+                    <td class="num" x-text="precio(r.precio_unitario)"></td>
+                    <td class="num" x-text="'− ' + precio(r.importe_descuento)"></td>
+                    <td class="num" x-text="precio(r.subtotal)"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tarjeta resumen confirmado">
+            <div class="linea"><span>Subtotal</span><span x-text="precio(comprobante.subtotal)"></span></div>
+            <div class="linea"><span>Descuento del cliente</span><span x-text="porcentaje(comprobante.porcentaje_descuento)"></span></div>
+            <div class="linea total"><span>Total</span><span x-text="precio(comprobante.total)"></span></div>
+            <button type="button" class="boton primario ancho" @click="limpiar()">Nueva venta</button>
+          </div>
+        </div>
+      </template>
+
+      <!-- ---------- Formulario de venta ---------- -->
+      <div x-show="!comprobante">
+        <!-- Cabecera: cliente, sala y fecha -->
+        <div class="tarjeta">
+          <h3>Cabecera</h3>
+          <div class="cabecera-venta">
+
+            <!-- Cliente -->
+            <div class="campo" @click.outside="abiertoCliente = false">
+              <label for="vt-cliente">Cliente</label>
+              <template x-if="cliente">
+                <div class="elegido">
+                  <div>
+                    <strong x-text="'#' + cliente.id_cliente + ' · ' + cliente.nombre_razon_social"></strong>
+                    <span x-text="documento(cliente) + ' · ' + mayuscula(cliente.tipo)"></span>
+                  </div>
+                  <span class="insignia" x-text="'desc. ' + porcentaje(cliente.descuento)"></span>
+                  <button type="button" class="enlace" @click="cambiarCliente()">Cambiar</button>
+                </div>
+              </template>
+              <div x-show="!cliente" class="combo">
+                <input id="vt-cliente" type="search" x-ref="buscadorCliente" autocomplete="off"
+                       placeholder="Buscar por ID, documento o nombre…"
+                       x-model="qCliente" @input="escribirCliente()" @focus="abiertoCliente = true; clientes.length || buscarClientes()"
+                       @keydown.escape="abiertoCliente = false">
+                <div class="desplegable" x-show="abiertoCliente">
+                  <div class="chips tipos">
+                    <button type="button" class="chip" :class="{ activo: tipoCliente === '' }" @click="elegirTipo('')">Todos</button>
+                    <template x-for="t in tiposCliente" :key="t">
+                      <button type="button" class="chip" :class="{ activo: tipoCliente === t }" @click="elegirTipo(t)" x-text="mayuscula(t)"></button>
+                    </template>
+                  </div>
+                  <div class="error-api" x-show="errorCliente" x-text="errorCliente"></div>
+                  <ul>
+                    <template x-for="c in clientes" :key="c.id_cliente">
+                      <li><button type="button" class="opcion" @click="elegirCliente(c)">
+                        <span class="id" x-text="'#' + c.id_cliente"></span>
+                        <span class="texto">
+                          <strong x-text="c.nombre_razon_social"></strong>
+                          <span x-text="documento(c) + ' · ' + mayuscula(c.tipo)"></span>
+                        </span>
+                        <span class="insignia" x-text="'desc. ' + porcentaje(c.descuento)"></span>
+                      </button></li>
+                    </template>
+                    <li class="vacio" x-show="!buscandoClientes && !errorCliente && clientes.length === 0">Ningún cliente coincide.</li>
+                  </ul>
+                  <div class="pie-desplegable">
+                    <span x-text="buscandoClientes ? 'Buscando…' : `${clientes.length} de ${totalClientes} clientes`"></span>
+                    <code>GET /clientes?q=&amp;tipo=&amp;limit=20</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sala -->
+            <div class="campo" @click.outside="abiertoSala = false">
+              <label for="vt-sala">Sala de venta</label>
+              <template x-if="sala">
+                <div class="elegido">
+                  <div>
+                    <strong x-text="'#' + sala.id_sala + ' · ' + sala.direccion"></strong>
+                    <span x-text="sala.localidad + ', ' + sala.provincia + ' · CP ' + sala.codigo_postal"></span>
+                  </div>
+                  <span class="insignia gris" x-text="'cierra ' + sala.dia_cierre"></span>
+                  <button type="button" class="enlace" @click="cambiarSala()">Cambiar</button>
+                </div>
+              </template>
+              <div x-show="!sala" class="combo">
+                <input id="vt-sala" type="search" x-ref="buscadorSala" autocomplete="off"
+                       placeholder="Buscar por ID, dirección o localidad…"
+                       x-model="qSala" @focus="abiertoSala = true" @input="abiertoSala = true"
+                       @keydown.escape="abiertoSala = false">
+                <div class="desplegable" x-show="abiertoSala">
+                  <div class="error-api" x-show="errorSala" x-text="errorSala"></div>
+                  <ul>
+                    <template x-for="s in salasFiltradas" :key="s.id_sala">
+                      <li><button type="button" class="opcion" @click="elegirSala(s)">
+                        <span class="id" x-text="'#' + s.id_sala"></span>
+                        <span class="texto">
+                          <strong x-text="s.direccion"></strong>
+                          <span x-text="s.localidad + ', ' + s.provincia + ' · CP ' + s.codigo_postal"></span>
+                        </span>
+                        <span class="insignia gris" x-text="'cierra ' + s.dia_cierre"></span>
+                      </button></li>
+                    </template>
+                    <li class="vacio" x-show="!errorSala && salasFiltradas.length === 0">Ninguna sala coincide.</li>
+                  </ul>
+                  <div class="pie-desplegable">
+                    <span x-text="`${salasFiltradas.length} de ${salas.length} salas`"></span>
+                    <code>GET /salas</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fecha -->
+            <div class="campo">
+              <label>Fecha</label>
+              <div class="fecha"><strong x-text="hoy"></strong> <span>(la asigna la base)</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error de la API tal cual (p. ej. RN-09 stock insuficiente) -->
+        <div class="alerta-api" x-show="errorVenta">
+          <span class="icono" aria-hidden="true">⚠</span>
+          <div><strong>Error de la API</strong><div x-text="errorVenta"></div></div>
+        </div>
+
+        <div class="grilla-venta">
+          <div>
+            <!-- Agregar vino -->
+            <form class="tarjeta" @submit.prevent="agregar()">
+              <h3>Agregar vino</h3>
+              <div class="agregar-vino">
+                <div class="campo combo" @click.outside="abiertoVino = false">
+                  <label for="vt-vino">Vino</label>
+                  <input id="vt-vino" type="search" autocomplete="off" placeholder="Buscar vino por nombre…"
+                         x-model="qVino" @input="escribirVino()" @focus="abiertoVino = true; vinos.length || buscarVinos()"
+                         @keydown.escape="abiertoVino = false">
+                  <div class="desplegable" x-show="abiertoVino">
+                    <ul>
+                      <template x-for="v in vinos" :key="v.cod_vino">
+                        <li><button type="button" class="opcion" @click="elegirVino(v)">
+                          <span class="id" x-text="'#' + v.cod_vino"></span>
+                          <span class="texto">
+                            <strong x-text="v.nombre + ' ' + v.anada"></strong>
+                            <span x-text="v.volumen_ml + ' ml · ' + v.bodega"></span>
+                          </span>
+                        </button></li>
+                      </template>
+                      <li class="vacio" x-show="!buscandoVinos && vinos.length === 0">Ningún vino coincide.</li>
+                    </ul>
+                    <div class="pie-desplegable">
+                      <span x-text="buscandoVinos ? 'Buscando…' : `${vinos.length} resultados`"></span>
+                      <code>GET /vinos?nombre=&amp;limit=10</code>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo">
+                  <label for="vt-cantidad">Cantidad</label>
+                  <input id="vt-cantidad" type="number" step="1" x-ref="cantidad" x-model="cantidad">
+                </div>
+                <button type="submit" class="boton primario" :disabled="!vinoElegido || calculando">Agregar</button>
+              </div>
+              <p class="aclaracion" x-show="avisoVino" x-text="avisoVino"></p>
+            </form>
+
+            <!-- Renglones -->
+            <div class="tabla-contenedor">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Vino</th><th class="num">Cant.</th><th class="num">Precio unit.</th>
+                    <th class="num">Descuento</th><th class="num">Subtotal</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="r in renglones" :key="r.cod_vino">
+                    <tr>
+                      <td class="texto-largo" x-text="etiquetaVino(r)"></td>
+                      <td class="num" x-text="r.cantidad"></td>
+                      <template x-if="calculado(r.cod_vino)">
+                        <td class="num" x-text="precio(calculado(r.cod_vino).precio_unitario)"></td>
+                      </template>
+                      <template x-if="calculado(r.cod_vino)">
+                        <td class="num" x-text="'− ' + precio(calculado(r.cod_vino).importe_descuento)"></td>
+                      </template>
+                      <template x-if="calculado(r.cod_vino)">
+                        <td class="num" x-text="precio(calculado(r.cod_vino).subtotal)"></td>
+                      </template>
+                      <template x-if="!calculado(r.cod_vino)">
+                        <td class="num pendiente" colspan="3" x-text="calculando ? 'calculando…' : '— backend'"></td>
+                      </template>
+                      <td><button type="button" class="enlace peligro" @click="quitar(r.cod_vino)">Quitar</button></td>
+                    </tr>
+                  </template>
+                  <tr x-show="renglones.length === 0"><td colspan="6" class="vacio">Todavía no hay vinos en la venta.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Resumen -->
+          <aside class="tarjeta resumen">
+            <h3>Resumen</h3>
+            <div class="linea"><span>Subtotal</span><span x-text="calculo ? precio(calculo.subtotal) : '—'"></span></div>
+            <div class="linea"><span>Descuento del cliente</span><span x-text="calculo ? porcentaje(calculo.porcentaje_descuento) : '—'"></span></div>
+            <div class="linea total"><span>Total</span><span x-text="calculo ? precio(calculo.total) : '—'"></span></div>
+            <p class="aclaracion" x-text="calculando ? 'Calculando en la base…' : 'Calculado por el backend'"></p>
+            <button type="button" class="boton primario ancho" @click="confirmar()" :disabled="!puedeConfirmar"
+                    x-text="confirmando ? 'Confirmando…' : 'Confirmar venta'"></button>
+            <button type="button" class="boton ancho" @click="limpiar()" :disabled="confirmando">Cancelar</button>
+            <p class="aclaracion" x-show="!cliente || !sala">Elegí cliente y sala para calcular la venta.</p>
+          </aside>
+        </div>
+
+        <p class="nota">
+          <strong>Nota de diseño:</strong> el front no calcula importes. Cada vez que cambian cliente, sala o vinos se llama a
+          <code>POST /comprobantes/simular</code>, que hace los mismos INSERT que la venta real (precio de lista RI-03,
+          descuento RN-08, control de stock RN-09) y termina en ROLLBACK: no se guarda nada ni se mueve stock.
+          Si falta stock, el renglón no se agrega y se muestra el mensaje de la base tal cual.
+          «Confirmar venta» hace <code>POST /comprobantes</code> y muestra lo que devuelve <code>GET /comprobantes/{nro}</code>.
+        </p>
       </div>
     </section>
 

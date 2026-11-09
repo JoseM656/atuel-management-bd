@@ -76,7 +76,7 @@ const api = {
   salud: () => request('GET', '/salud'),
 
   // Catálogos para los desplegables (#87): listas completas, ordenadas por nombre.
-  listarSalas:     () => request('GET', '/salas'),      // [{ id_sala, descripcion, localidad }]
+  listarSalas:     () => request('GET', '/salas'),      // [{ id_sala, descripcion, direccion, localidad, provincia, codigo_postal, dia_cierre }]
   listarCepas:     () => request('GET', '/cepas'),      // [{ id_cepa, nombre, tipo }]
   listarBodegas:   () => request('GET', '/bodegas'),    // [{ cuit, razon_social }]
   listarMaridajes: () => request('GET', '/maridajes'),  // [{ id_maridaje, nombre, temperatura_servicio }]
@@ -90,6 +90,7 @@ const api = {
   borrarVino:    (cod)         => request('DELETE', `/vinos/${encodeURIComponent(cod)}`),
 
   // Clientes — para elegir cliente en la venta (#54)
+  // filtros: { q, tipo, limit, offset } → { total, limit, offset, clientes }
   listarClientes:(filtros)     => request('GET', '/clientes', { query: filtros }),
   obtenerCliente:(id)          => request('GET', `/clientes/${encodeURIComponent(id)}`),
 
@@ -97,6 +98,8 @@ const api = {
   // descuento y total; si falta stock (RN-09) responde 409 y no guarda nada.
   // venta: { id_cliente, id_sala, renglones: [{ cod_vino, cantidad }] } → { nro }
   crearComprobante: (venta)    => request('POST', '/comprobantes', { body: venta }),
+  // Mismo cuerpo, pero la base hace ROLLBACK: devuelve los importes sin guardar nada.
+  simularComprobante: (venta)  => request('POST', '/comprobantes/simular', { body: venta }),
   obtenerComprobante: (nro)    => request('GET', `/comprobantes/${encodeURIComponent(nro)}`),
 
   // Transferencias (#55): en_confeccion → terminado → procesado

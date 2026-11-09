@@ -317,13 +317,124 @@ h3.separado { margin-top: 1.5rem; }
 .boton.borrar { background: var(--error); border-color: var(--error); color: #fff; }
 .boton.borrar:hover:not(:disabled) { background: #8f1e18; }
 
+/* ---------- Nueva venta ---------- */
+.cabecera-venta { display: grid; grid-template-columns: 1.3fr 1.3fr 0.7fr; gap: 1rem; align-items: start; }
+.combo { position: relative; }
+.desplegable {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  min-width: 300px;
+  padding: 0.6rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+.desplegable .tipos { margin-bottom: 0.5rem; }
+.desplegable .tipos .chip { padding: 0.3rem 0.7rem; }
+.desplegable .error-api { margin: 0 0 0.5rem; }
+.desplegable ul { list-style: none; margin: 0; padding: 0; max-height: 290px; overflow-y: auto; }
+.desplegable li.vacio { padding: 1rem; }
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  font: inherit;
+  text-align: left;
+  color: var(--texto);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.opcion:hover, .opcion:focus-visible { background: var(--vino-claro); outline: none; }
+.opcion .id { min-width: 3.2rem; font-size: 0.78rem; color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+.opcion .texto, .elegido > div { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.opcion .texto span, .elegido > div span { font-size: 0.78rem; color: var(--texto-suave); }
+.pie-desplegable {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.55rem 0.1rem;
+  margin-top: 0.4rem;
+  border-top: 1px solid var(--borde);
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+.insignia {
+  flex-shrink: 0;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: var(--vino-claro);
+  color: var(--vino);
+}
+.insignia.gris { background: var(--fondo); color: var(--texto-suave); font-weight: 500; }
+.elegido {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--vino-claro);
+  border-radius: 8px;
+  background: #fdf8f9;
+}
+.fecha { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; min-height: 2.6rem; }
+.fecha span { font-size: 0.78rem; color: var(--texto-suave); }
+
+.grilla-venta { display: grid; grid-template-columns: 1fr 300px; gap: 1.25rem; align-items: start; margin-bottom: 1.25rem; }
+/* Sin esto la columna no se achica más que la tabla y desborda en móvil. */
+.grilla-venta > * { min-width: 0; }
+.agregar-vino { display: grid; grid-template-columns: 1fr 110px auto; gap: 0.75rem; align-items: end; }
+.pendiente { color: var(--texto-suave); font-style: italic; text-align: center; }
+.enlace.peligro { color: var(--error); }
+
+.resumen { position: sticky; top: 1rem; margin-bottom: 0; }
+.resumen .linea { display: flex; justify-content: space-between; gap: 1rem; padding: 0.4rem 0; font-variant-numeric: tabular-nums; }
+.resumen .linea.total { margin-top: 0.4rem; padding-top: 0.8rem; border-top: 1px solid var(--borde); font-size: 1.25rem; font-weight: 700; }
+.resumen .linea.total span:last-child { color: var(--vino); }
+.resumen .aclaracion { margin: 0.4rem 0 1rem; }
+.resumen .boton.ancho + .boton.ancho { margin-top: 0.6rem; }
+.resumen.confirmado { position: static; max-width: 360px; margin: 1.25rem 0 0 auto; }
+.resumen.confirmado .boton { margin-top: 1rem; }
+.boton.ancho { width: 100%; }
+
+.aviso-ok {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--ok);
+  border-radius: var(--radio);
+  background: #e9f6ed;
+  color: var(--ok);
+}
+.aviso-ok .icono { font-size: 1.1rem; line-height: 1.2; }
+.aviso-ok strong { display: block; margin-bottom: 0.15rem; }
+
 /* ---------- Pantallas angostas ---------- */
 @media (max-width: 1000px) {
   .filtros { grid-template-columns: 1fr 1fr; }
   .form-vino { grid-template-columns: 1fr; }
+  .cabecera-venta { grid-template-columns: 1fr 1fr; }
+  .grilla-venta { grid-template-columns: 1fr; }
+  .resumen { position: static; }
 }
 @media (max-width: 640px) {
   .datos, .grilla-form { grid-template-columns: 1fr; }
+  .cabecera-venta, .agregar-vino { grid-template-columns: 1fr; }
+  .desplegable { min-width: 0; }
+  .elegido { flex-wrap: wrap; }
 }
 @media (max-width: 760px) {
   .layout { flex-direction: column; }
