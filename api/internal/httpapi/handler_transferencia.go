@@ -56,6 +56,31 @@ func (h *TransferenciasHandler) AgregarRenglones(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// QuitarRenglon responde DELETE /transferencias/{nro}/renglones/{cod}: borra el
+// renglón de ese vino mientras la transferencia está en_confeccion. Fuera de
+// confección el trigger RN-12 lo rechaza (409). 404 si el renglón no existe.
+func (h *TransferenciasHandler) QuitarRenglon(w http.ResponseWriter, r *http.Request) {
+	nro, err := strconv.Atoi(chi.URLParam(r, "nro"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "nro inválido"})
+		return
+	}
+	cod, err := strconv.Atoi(chi.URLParam(r, "cod"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "cod inválido"})
+		return
+	}
+	if err := db.QuitarRenglon(r.Context(), h.Pool, nro, cod); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "renglón no encontrado"})
+			return
+		}
+		httperr.Write(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Listar responde GET /transferencias con filtros opcionales (estado, id_sala)
 // y paginación (limit, offset). Devuelve {total, limit, offset, transferencias}.
 // Un estado inexistente lo rechaza la base al castear al ENUM (22P02 → 400).

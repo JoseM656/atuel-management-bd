@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -46,6 +47,22 @@ func AgregarRenglones(ctx context.Context, pool *pgxpool.Pool, nro int, renglone
 	return tx.Commit(ctx)
 }
 
+// QuitarRenglon borra el renglón de un vino de una transferencia. El trigger
+// trg_renglon_transferencia_doc (RN-12) lo rechaza si la transferencia ya no
+// está en_confeccion. Devuelve pgx.ErrNoRows si el renglón no existe.
+func QuitarRenglon(ctx context.Context, pool *pgxpool.Pool, nro, codVino int) error {
+	tag, err := pool.Exec(ctx, `
+		DELETE FROM renglon_transferencia
+		WHERE nro = $1 AND cod_vino = $2`, nro, codVino)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
 // TerminarTransferencia pasa la transferencia de en_confeccion a terminado
 // (RN-11) invocando el procedimiento sp_terminar_transferencia (SECURITY
 // DEFINER, ya que la API no tiene UPDATE sobre la columna estado).
@@ -61,16 +78,22 @@ type TransferenciaDetalle struct {
 	Nro             int                    `json:"nro"`
 	IDSala          int                    `json:"id_sala"`
 	Sala            string                 `json:"sala"`
+	Localidad       string                 `json:"localidad"`
 	FechaConfeccion string                 `json:"fecha_confeccion"`
 	Estado          string                 `json:"estado"`
 	Renglones       []RenglonTransferencia `json:"renglones"`
 }
 
-// RenglonTransferencia es un renglón ya cargado: vino y cantidad.
+// RenglonTransferencia es un renglón ya cargado: vino y cantidad, más el stock
+// actual del depósito. Ese stock es informativo: quien decide si alcanza es
+// sp_procesar_transferencia al procesar.
 type RenglonTransferencia struct {
-	CodVino  int    `json:"cod_vino"`
-	Vino     string `json:"vino"`
-	Cantidad int    `json:"cantidad"`
+	CodVino       int    `json:"cod_vino"`
+	Vino          string `json:"vino"`
+	Anada         int    `json:"anada"`
+	VolumenML     int    `json:"volumen_ml"`
+	Cantidad      int    `json:"cantidad"`
+	StockDeposito int    `json:"stock_deposito"`
 }
 
 // salaDescripcion arma un texto legible de la sala (sala_venta no tiene
@@ -81,7 +104,7 @@ const salaDescripcion = `s.calle || ' ' || s.numero || ', ' || l.nombre`
 // transferencia. Devuelve pgx.ErrNoRows si el número no existe.
 func ObtenerTransferencia(ctx context.Context, pool *pgxpool.Pool, nro int) (*TransferenciaDetalle, error) {
 	cabecera := `
-		SELECT t.nro, t.id_sala, ` + salaDescripcion + `,
+		SELECT t.nro, t.id_sala, ` + salaDescripcion + `, l.nombre,
 		       t.fecha_confeccion::text, t.estado::text
 		FROM transferencia t
 		JOIN sala_venta s ON s.id_sala = t.id_sala
@@ -90,15 +113,18 @@ func ObtenerTransferencia(ctx context.Context, pool *pgxpool.Pool, nro int) (*Tr
 
 	d := &TransferenciaDetalle{Renglones: []RenglonTransferencia{}}
 	if err := pool.QueryRow(ctx, cabecera, nro).Scan(
-		&d.Nro, &d.IDSala, &d.Sala, &d.FechaConfeccion, &d.Estado,
+		&d.Nro, &d.IDSala, &d.Sala, &d.Localidad, &d.FechaConfeccion, &d.Estado,
 	); err != nil {
 		return nil, err
 	}
 
+	// LEFT JOIN: un vino sin fila en stock_deposito se muestra con 0.
 	rows, err := pool.Query(ctx, `
-		SELECT r.cod_vino, v.nombre, r.cantidad
+		SELECT r.cod_vino, v.nombre, v.anada, v.volumen_ml, r.cantidad,
+		       COALESCE(sd.cantidad, 0)
 		FROM renglon_transferencia r
 		JOIN vino v ON v.cod_vino = r.cod_vino
+		LEFT JOIN stock_deposito sd ON sd.cod_vino = r.cod_vino
 		WHERE r.nro = $1
 		ORDER BY r.cod_vino`, nro)
 	if err != nil {
@@ -108,7 +134,7 @@ func ObtenerTransferencia(ctx context.Context, pool *pgxpool.Pool, nro int) (*Tr
 
 	for rows.Next() {
 		var r RenglonTransferencia
-		if err := rows.Scan(&r.CodVino, &r.Vino, &r.Cantidad); err != nil {
+		if err := rows.Scan(&r.CodVino, &r.Vino, &r.Anada, &r.VolumenML, &r.Cantidad, &r.StockDeposito); err != nil {
 			return nil, err
 		}
 		d.Renglones = append(d.Renglones, r)
@@ -131,6 +157,7 @@ type TransferenciaResumen struct {
 	Nro             int    `json:"nro"`
 	IDSala          int    `json:"id_sala"`
 	Sala            string `json:"sala"`
+	Localidad       string `json:"localidad"`
 	FechaConfeccion string `json:"fecha_confeccion"`
 	Estado          string `json:"estado"`
 	CantRenglones   int    `json:"cant_renglones"`
@@ -147,7 +174,7 @@ const transferenciaWhere = `
 // reciente a la más antigua.
 func ListarTransferencias(ctx context.Context, pool *pgxpool.Pool, f TransferenciaFiltro) ([]TransferenciaResumen, error) {
 	query := `
-		SELECT t.nro, t.id_sala, ` + salaDescripcion + `,
+		SELECT t.nro, t.id_sala, ` + salaDescripcion + `, l.nombre,
 		       t.fecha_confeccion::text, t.estado::text,
 		       (SELECT count(*) FROM renglon_transferencia r WHERE r.nro = t.nro)
 		FROM transferencia t
@@ -166,7 +193,7 @@ func ListarTransferencias(ctx context.Context, pool *pgxpool.Pool, f Transferenc
 	lista := []TransferenciaResumen{}
 	for rows.Next() {
 		var t TransferenciaResumen
-		if err := rows.Scan(&t.Nro, &t.IDSala, &t.Sala, &t.FechaConfeccion, &t.Estado, &t.CantRenglones); err != nil {
+		if err := rows.Scan(&t.Nro, &t.IDSala, &t.Sala, &t.Localidad, &t.FechaConfeccion, &t.Estado, &t.CantRenglones); err != nil {
 			return nil, err
 		}
 		lista = append(lista, t)

@@ -211,6 +211,9 @@ curl -i -X POST http://localhost:3333/transferencias/N/renglones \
   -d '[{"cod_vino": 1, "cantidad": 5}]'
 # → 204
 
+# Quitar el renglón de un vino (solo en_confeccion) → 204 · no existe → 404
+curl -i -X DELETE http://localhost:3333/transferencias/N/renglones/1
+
 # 3. Terminar (en_confeccion -> terminado)
 curl -i -X POST http://localhost:3333/transferencias/N/terminar
 # → 204
@@ -228,7 +231,8 @@ curl -i -X POST http://localhost:3333/transferencias/N/procesar
 ```bash
 # Detalle: cabecera con el estado actual (RN-11) + renglones
 curl -i http://localhost:3333/transferencias/1
-# → 200 {"nro":1,"id_sala":1,"sala":"...","fecha_confeccion":"...","estado":"procesado","renglones":[...]}
+# → 200 {"nro":1,"id_sala":1,"sala":"...","localidad":"...","fecha_confeccion":"...","estado":"procesado",
+#        "renglones":[{"cod_vino":1,"vino":"...","anada":2020,"volumen_ml":750,"cantidad":5,"stock_deposito":254}]}
 
 # No existe → 404 · Número inválido → 400
 curl -i http://localhost:3333/transferencias/99999999

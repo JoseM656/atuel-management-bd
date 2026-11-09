@@ -274,6 +274,51 @@ func TestObtenerTransferencia(t *testing.T) {
 	}
 }
 
+// TestQuitarRenglonTransferencia: en confección se puede quitar un renglón y el
+// detalle trae el stock del depósito; ya terminada, el trigger RN-12 lo
+// rechaza (409) y el renglón sigue ahí.
+func TestQuitarRenglonTransferencia(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/transferencias", map[string]any{"id_sala": 1})
+	if code != http.StatusCreated {
+		t.Fatalf("crear transferencia: esperaba 201, obtuve %d: %s", code, body)
+	}
+	nro := fstr(decodeJSON(t, body)["nro"].(float64))
+	base := srv.URL + "/transferencias/" + nro
+
+	code, body = doJSON(t, http.MethodPost, base+"/renglones",
+		[]map[string]any{{"cod_vino": 1, "cantidad": 2}, {"cod_vino": 2, "cantidad": 3}})
+	if code != http.StatusNoContent {
+		t.Fatalf("agregar renglones: esperaba 204, obtuve %d: %s", code, body)
+	}
+
+	if code, body = doJSON(t, http.MethodDelete, base+"/renglones/2", nil); code != http.StatusNoContent {
+		t.Fatalf("quitar renglón: esperaba 204, obtuve %d: %s", code, body)
+	}
+	if code, _ = doJSON(t, http.MethodDelete, base+"/renglones/2", nil); code != http.StatusNotFound {
+		t.Fatalf("quitar renglón inexistente: esperaba 404, obtuve %d", code)
+	}
+
+	_, body = doJSON(t, http.MethodGet, base, nil)
+	renglones := decodeJSON(t, body)["renglones"].([]any)
+	if len(renglones) != 1 {
+		t.Fatalf("esperaba 1 renglón tras quitar, obtuve %d", len(renglones))
+	}
+	if _, ok := renglones[0].(map[string]any)["stock_deposito"]; !ok {
+		t.Fatalf("el renglón no trae stock_deposito: %v", renglones[0])
+	}
+
+	if code, body = doJSON(t, http.MethodPost, base+"/terminar", nil); code != http.StatusNoContent {
+		t.Fatalf("terminar: esperaba 204, obtuve %d: %s", code, body)
+	}
+	code, body = doJSON(t, http.MethodDelete, base+"/renglones/1", nil)
+	if code != http.StatusConflict || !strings.Contains(body, "no está en confección") {
+		t.Fatalf("quitar en terminado: esperaba 409 con el mensaje de RN-12, obtuve %d: %s", code, body)
+	}
+}
+
 // TestTransferenciaInexistente: GET de una transferencia que no existe -> 404.
 func TestTransferenciaInexistente(t *testing.T) {
 	srv := nuevoServer(t)

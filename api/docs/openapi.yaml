@@ -426,6 +426,30 @@ paths:
         "409":
           description: Transferencia no en confección (RN-12)
 
+  /transferencias/{nro}/renglones/{cod}:
+    delete:
+      summary: Quita el renglón de un vino de una transferencia en confección
+      description: |
+        Borra el renglón mientras la transferencia está en_confeccion. Fuera de
+        confección lo rechaza el trigger trg_renglon_transferencia_doc (RN-12).
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: cod
+          in: path
+          required: true
+          description: cod_vino del renglón
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Renglón quitado
+        "404":
+          description: El renglón no existe
+        "409":
+          description: Transferencia no en confección (RN-12)
+
   /transferencias/{nro}/terminar:
     post:
       summary: Pasa la transferencia de en_confeccion a terminado
@@ -904,6 +928,7 @@ components:
         nro: { type: integer }
         id_sala: { type: integer }
         sala: { type: string, description: "calle número, localidad" }
+        localidad: { type: string }
         fecha_confeccion: { type: string, format: date }
         estado: { type: string, enum: [en_confeccion, terminado, procesado] }
         renglones:
@@ -914,13 +939,19 @@ components:
       properties:
         cod_vino: { type: integer }
         vino: { type: string }
+        anada: { type: integer }
+        volumen_ml: { type: integer }
         cantidad: { type: integer }
+        stock_deposito:
+          type: integer
+          description: Stock actual del depósito (informativo; lo valida sp_procesar_transferencia al procesar)
     TransferenciaResumen:
       type: object
       properties:
         nro: { type: integer }
         id_sala: { type: integer }
         sala: { type: string }
+        localidad: { type: string }
         fecha_confeccion: { type: string, format: date }
         estado: { type: string, enum: [en_confeccion, terminado, procesado] }
         cant_renglones: { type: integer }

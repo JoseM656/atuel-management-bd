@@ -44,6 +44,7 @@ go run ./cmd/api
 | POST | `/transferencias` | Alta de una transferencia (en confección) |
 | GET | `/transferencias/{nro}` | Detalle con estado actual y renglones |
 | POST | `/transferencias/{nro}/renglones` | Carga renglones (solo en confección, RN-12) |
+| DELETE | `/transferencias/{nro}/renglones/{cod}` | Quita el renglón de un vino (solo en confección, RN-12) |
 | POST | `/transferencias/{nro}/terminar` | Pasa a terminado (`sp_terminar_transferencia`) |
 | POST | `/transferencias/{nro}/procesar` | Procesa y mueve stock (`sp_procesar_transferencia`) |
 | POST | `/ingresos` | Alta de un ingreso (en confección) |
