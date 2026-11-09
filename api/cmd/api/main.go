@@ -8,8 +8,6 @@ import (
 	"github.com/JoseM656/atuel-management-bd/internal/config"
 	"github.com/JoseM656/atuel-management-bd/internal/db"
 	"github.com/JoseM656/atuel-management-bd/internal/httpapi"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -24,38 +22,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	health := &httpapi.HealthHandler{Pool: pool}
-	vinos := &httpapi.VinosHandler{Pool: pool}
-	clientes := &httpapi.ClientesHandler{Pool: pool}
-	comprobantes := &httpapi.ComprobantesHandler{Pool: pool}
-	transferencias := &httpapi.TransferenciasHandler{Pool: pool}
-	ingresos := &httpapi.IngresosHandler{Pool: pool}
-	reportes := &httpapi.ReportesHandler{Pool: pool}
-
-	r := chi.NewRouter()
-	r.Use(middleware.Logger, middleware.Recoverer)
-	r.Get("/salud", health.Salud)
-	r.Get("/vinos", vinos.Listar)
-	r.Post("/vinos", vinos.Crear)
-	r.Get("/vinos/{cod}", vinos.Obtener)
-	r.Put("/vinos/{cod}", vinos.Actualizar)
-	r.Delete("/vinos/{cod}", vinos.Borrar)
-	r.Get("/clientes", clientes.Listar)
-	r.Post("/clientes", clientes.Crear)
-	r.Get("/clientes/{id}", clientes.Obtener)
-	r.Put("/clientes/{id}", clientes.Actualizar)
-	r.Delete("/clientes/{id}", clientes.Borrar)
-	r.Post("/comprobantes", comprobantes.Crear)
-	r.Get("/comprobantes/{nro}", comprobantes.Obtener)
-	r.Post("/transferencias", transferencias.Crear)
-	r.Post("/transferencias/{nro}/renglones", transferencias.AgregarRenglones)
-	r.Post("/transferencias/{nro}/terminar", transferencias.Terminar)
-	r.Post("/transferencias/{nro}/procesar", transferencias.Procesar)
-	r.Post("/ingresos", ingresos.Crear)
-	r.Post("/ingresos/{cod}/renglones", ingresos.AgregarRenglones)
-	r.Post("/ingresos/{cod}/terminar", ingresos.Terminar)
-	r.Post("/ingresos/{cod}/procesar", ingresos.Procesar)
-	reportes.Registrar(r)
+	r := httpapi.NewRouter(pool)
 
 	log.Printf("[API] escuchando en :%s", cfg.Port)
 	http.ListenAndServe(":"+cfg.Port, r)
