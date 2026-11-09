@@ -232,6 +232,321 @@ paths:
         "409":
           description: Tiene comprobantes (RN-14)
 
+  /comprobantes:
+    post:
+      summary: Venta transaccional (cabecera + renglones)
+      description: |
+        Crea un comprobante con sus renglones en una sola transacción. La API
+        no envía ni calcula precios: descuento, precio unitario, subtotal y
+        total los resuelve la base con sus funciones y triggers (RN-08, RN-09,
+        RI-03). Vender sin stock devuelve 409 y no deja datos a medias.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ComprobanteNuevo" }
+      responses:
+        "201":
+          description: Comprobante creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nro: { type: integer }
+        "409":
+          description: Sin stock (RN-09) u otra regla violada
+        "422":
+          description: CHECK violado (cantidad <= 0, etc.)
+
+  /comprobantes/{nro}:
+    get:
+      summary: Comprobante con sus renglones
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Comprobante
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComprobanteDetalle" }
+        "404":
+          description: No encontrado
+
+  /transferencias:
+    post:
+      summary: Alta de una transferencia (en_confeccion)
+      description: |
+        Crea una transferencia para una sala. La fecha de confección la fuerza
+        la base a la fecha actual y el estado nace en_confeccion (RN-11).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sala]
+              properties:
+                id_sala: { type: integer }
+      responses:
+        "201":
+          description: Transferencia creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nro: { type: integer }
+        "422":
+          description: NOT NULL violado (sala inexistente → 409 por FK)
+
+  /transferencias/{nro}/renglones:
+    post:
+      summary: Carga renglones a una transferencia en confección
+      description: |
+        Agrega renglones mientras la transferencia está en_confeccion (RN-12).
+        Fuera de confección devuelve 409.
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: "#/components/schemas/RenglonTransferenciaInput" }
+      responses:
+        "204":
+          description: Renglones agregados
+        "409":
+          description: Transferencia no en confección (RN-12)
+
+  /transferencias/{nro}/terminar:
+    post:
+      summary: Pasa la transferencia de en_confeccion a terminado
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Terminada
+        "409":
+          description: Estado inválido (no en_confeccion) o no existe
+
+  /transferencias/{nro}/procesar:
+    post:
+      summary: Procesa la transferencia (mueve stock)
+      description: |
+        Invoca sp_procesar_transferencia: descuenta del depósito, suma a la
+        sala y pasa a procesado. Stock insuficiente → 409 sin cambios a medias.
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Procesada
+        "409":
+          description: Estado inválido, no existe o stock insuficiente
+
+  /ingresos:
+    post:
+      summary: Alta de un ingreso (en_confeccion)
+      description: |
+        Crea un ingreso para un transportista y una bodega. La base valida que
+        el transportista cubra la localidad del depósito (RI-05) y pone
+        fecha/estado (RN-10).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cod_transportista, cuit_bodega]
+              properties:
+                cod_transportista: { type: integer }
+                cuit_bodega: { type: string }
+      responses:
+        "201":
+          description: Ingreso creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cod_ingreso: { type: integer }
+        "409":
+          description: Transportista no cubre el depósito (RI-05)
+
+  /ingresos/{cod}/renglones:
+    post:
+      summary: Carga renglones a un ingreso en confección
+      description: |
+        Agrega renglones mientras el ingreso está en_confeccion (RN-12). Los
+        vinos deben ser de la bodega de origen (RI-04).
+      parameters:
+        - name: cod
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: "#/components/schemas/RenglonIngresoInput" }
+      responses:
+        "204":
+          description: Renglones agregados
+        "409":
+          description: No en confección (RN-12) o vino ajeno (RI-04)
+
+  /ingresos/{cod}/terminar:
+    post:
+      summary: Pasa el ingreso de en_confeccion a terminado
+      parameters:
+        - name: cod
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Terminado
+        "409":
+          description: Estado inválido o no existe
+
+  /ingresos/{cod}/procesar:
+    post:
+      summary: Procesa el ingreso (impacta el depósito)
+      description: |
+        Invoca sp_procesar_ingreso: suma los renglones al stock del depósito y
+        pasa a procesado. Solo un ingreso terminado impacta el depósito (RN-10).
+      parameters:
+        - name: cod
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Procesado
+        "409":
+          description: Estado inválido o no existe
+
+  /reportes/s1:
+    get:
+      summary: S1 · Top 10 vinos por botellas vendidas
+      responses:
+        "200":
+          description: Ranking de vinos
+  /reportes/s2:
+    get:
+      summary: S2 · Vinos vendidos en todas las salas
+      responses:
+        "200":
+          description: Lista de vinos
+  /reportes/s3:
+    get:
+      summary: S3 · Clientes por tipo que compraron en una sala (última semana)
+      parameters:
+        - name: sala
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Cantidad por tipo
+  /reportes/s4:
+    get:
+      summary: S4 · Top 5 salas que pidieron un vino por transferencia (15 días)
+      parameters:
+        - name: vino
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Ranking de salas
+  /reportes/s5:
+    get:
+      summary: S5 · Salas con menos transferencias pendientes
+      responses:
+        "200":
+          description: Lista de salas
+  /reportes/s6:
+    get:
+      summary: S6 · Vinos sin stock en sala pero con stock en depósito
+      parameters:
+        - name: sala
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Lista de vinos
+  /reportes/s7:
+    get:
+      summary: S7 · Transportista más activo del último mes
+      responses:
+        "200":
+          description: Transportista
+  /reportes/s8:
+    get:
+      summary: S8 · Monto de ventas por sala en el último trimestre
+      responses:
+        "200":
+          description: Montos por sala
+  /reportes/s9:
+    get:
+      summary: S9 · Ficha de un vino (cepas, bodega, maridajes, stock)
+      parameters:
+        - name: vino
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Ficha del vino
+  /reportes/s10:
+    get:
+      summary: S10 · Rendimiento kg/ha por parcela/campaña vs promedio de finca
+      responses:
+        "200":
+          description: Rendimientos
+  /reportes/s11:
+    get:
+      summary: S11 · Ranking de vinos por sala y acumulado mensual por sala
+      responses:
+        "200":
+          description: Ranking y acumulados
+  /reportes/s12a:
+    get:
+      summary: S12a · Clientes que compraron todos los vinos de una bodega
+      parameters:
+        - name: bodega
+          in: query
+          required: true
+          description: CUIT de la bodega (11 dígitos)
+          schema: { type: string }
+      responses:
+        "200":
+          description: Clientes
+  /reportes/s12b:
+    get:
+      summary: S12b · Clientes que nunca compraron vino tinto
+      responses:
+        "200":
+          description: Clientes
+
 components:
   schemas:
     Vino:
@@ -376,6 +691,56 @@ components:
         zona_cobertura: { type: string }
         nro_habilitacion: { type: string }
         pais_destino: { type: string }
+    ComprobanteNuevo:
+      type: object
+      required: [id_cliente, id_sala, renglones]
+      properties:
+        id_cliente: { type: integer }
+        id_sala: { type: integer }
+        renglones:
+          type: array
+          items: { $ref: "#/components/schemas/RenglonComprobanteInput" }
+    RenglonComprobanteInput:
+      type: object
+      required: [cod_vino, cantidad]
+      properties:
+        cod_vino: { type: integer }
+        cantidad: { type: integer }
+    ComprobanteDetalle:
+      type: object
+      properties:
+        nro: { type: integer }
+        fecha: { type: string }
+        id_cliente: { type: integer }
+        cliente: { type: string }
+        id_sala: { type: integer }
+        subtotal: { type: number }
+        porcentaje_descuento: { type: number }
+        total: { type: number }
+        renglones:
+          type: array
+          items: { $ref: "#/components/schemas/RenglonComprobante" }
+    RenglonComprobante:
+      type: object
+      properties:
+        cod_vino: { type: integer }
+        vino: { type: string }
+        cantidad: { type: integer }
+        precio_unitario: { type: number }
+        importe_descuento: { type: number }
+        subtotal: { type: number }
+    RenglonTransferenciaInput:
+      type: object
+      required: [cod_vino, cantidad]
+      properties:
+        cod_vino: { type: integer }
+        cantidad: { type: integer }
+    RenglonIngresoInput:
+      type: object
+      required: [cod_vino, cantidad]
+      properties:
+        cod_vino: { type: integer }
+        cantidad: { type: integer }
     Error:
       type: object
       properties:

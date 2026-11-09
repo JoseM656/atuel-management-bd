@@ -139,6 +139,140 @@ curl -i -X PUT http://localhost:3333/clientes/20002 \
 curl -i -X DELETE http://localhost:3333/clientes/366
 ```
 
+## Comprobantes — venta (`POST /comprobantes`)
+
+```bash
+# Venta transaccional: cabecera + renglones en una sola operación.
+# La API NO envía precios; la base calcula descuento, precios y totales,
+# valida el stock (RN-09) y lo descuenta.
+curl -i -X POST http://localhost:3333/comprobantes \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "id_cliente": 1,
+    "id_sala": 1,
+    "renglones": [
+      {"cod_vino": 1, "cantidad": 2},
+      {"cod_vino": 2, "cantidad": 1}
+    ]
+  }'
+# → 201 {"nro": N}
+
+# Venta sin stock → 409 (no deja datos a medias)
+curl -i -X POST http://localhost:3333/comprobantes \
+  -H 'Content-Type: application/json' \
+  -d '{"id_cliente": 1, "id_sala": 1, "renglones": [{"cod_vino": 1, "cantidad": 999999}]}'
+```
+
+## Comprobantes — detalle (`GET /comprobantes/{nro}`)
+
+```bash
+# Cabecera (cliente, sala, subtotal, descuento, total) + renglones
+curl http://localhost:3333/comprobantes/1
+
+# No existe → 404
+curl -i http://localhost:3333/comprobantes/99999999
+
+# Número inválido → 400
+curl -i http://localhost:3333/comprobantes/abc
+```
+
+## Transferencias (`POST /transferencias` y sub-recursos)
+
+```bash
+# 1. Alta (nace en_confeccion; la fecha la pone la base)
+curl -i -X POST http://localhost:3333/transferencias \
+  -H 'Content-Type: application/json' \
+  -d '{"id_sala": 1}'
+# → 201 {"nro": N}
+
+# 2. Cargar renglones mientras está en_confeccion
+curl -i -X POST http://localhost:3333/transferencias/N/renglones \
+  -H 'Content-Type: application/json' \
+  -d '[{"cod_vino": 1, "cantidad": 5}]'
+# → 204
+
+# 3. Terminar (en_confeccion -> terminado)
+curl -i -X POST http://localhost:3333/transferencias/N/terminar
+# → 204
+
+# 4. Procesar (descuenta depósito, suma a la sala, -> procesado)
+curl -i -X POST http://localhost:3333/transferencias/N/procesar
+# → 204
+
+# Renglón sobre una transferencia ya terminada → 409 (RN-12)
+# Procesar sin stock suficiente → 409 (RN-11)
+```
+
+## Ingresos (`POST /ingresos` y sub-recursos)
+
+```bash
+# 1. Alta (nace en_confeccion; transportista debe cubrir el depósito, RI-05)
+curl -i -X POST http://localhost:3333/ingresos \
+  -H 'Content-Type: application/json' \
+  -d '{"cod_transportista": 1, "cuit_bodega": "30700000019"}'
+# → 201 {"cod_ingreso": N}
+
+# 2. Cargar renglones (vinos de la bodega de origen, RI-04)
+curl -i -X POST http://localhost:3333/ingresos/N/renglones \
+  -H 'Content-Type: application/json' \
+  -d '[{"cod_vino": 1, "cantidad": 120}]'
+# → 204
+
+# 3. Terminar (en_confeccion -> terminado)
+curl -i -X POST http://localhost:3333/ingresos/N/terminar
+# → 204
+
+# 4. Procesar (suma al depósito, -> procesado)
+curl -i -X POST http://localhost:3333/ingresos/N/procesar
+# → 204
+
+# Procesar un ingreso que no está terminado → 409 (RN-10)
+# Vino ajeno a la bodega → 409 (RI-04)
+```
+
+## Reportes — consultas S1–S12 (solo lectura)
+
+```bash
+# S1: top 10 vinos por botellas vendidas
+curl http://localhost:3333/reportes/s1
+
+# S2: vinos vendidos en todas las salas
+curl http://localhost:3333/reportes/s2
+
+# S3: clientes por tipo que compraron en la sala 12 (última semana)
+curl 'http://localhost:3333/reportes/s3?sala=12'
+
+# S4: top 5 salas que pidieron el vino 1 por transferencia (15 días)
+curl 'http://localhost:3333/reportes/s4?vino=1'
+
+# S5: salas con menos transferencias pendientes
+curl http://localhost:3333/reportes/s5
+
+# S6: vinos sin stock en la sala 12 pero con stock en depósito
+curl 'http://localhost:3333/reportes/s6?sala=12'
+
+# S7: transportista más activo del último mes
+curl http://localhost:3333/reportes/s7
+
+# S8: monto de ventas por sala (último trimestre)
+curl http://localhost:3333/reportes/s8
+
+# S9: ficha del vino 1 (cepas, bodega, maridajes, stock total)
+curl 'http://localhost:3333/reportes/s9?vino=1'
+
+# S10: rendimiento kg/ha por parcela/campaña
+curl http://localhost:3333/reportes/s10
+
+# S11: ranking de vinos por sala + acumulado mensual
+curl http://localhost:3333/reportes/s11
+
+# S12a: clientes que compraron todos los vinos de una bodega
+curl 'http://localhost:3333/reportes/s12a?bodega=30700000019'
+
+# S12b: clientes que nunca compraron vino tinto
+curl http://localhost:3333/reportes/s12b
+```
+
 ## Errores (SQLSTATE → HTTP)
 
 | SQLSTATE | Significado | HTTP |
