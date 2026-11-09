@@ -35,7 +35,9 @@ go run ./cmd/api
 | DELETE | `/clientes/{id}` | Baja de un cliente (RN-14 lo rechaza si tiene comprobantes) |
 | POST | `/comprobantes` | Venta transaccional: cabecera + renglones; precios/totales los calcula la base |
 | GET | `/comprobantes/{nro}` | Detalle de un comprobante con sus renglones |
+| GET | `/transferencias` | Lista paginada con filtros `estado` e `id_sala` |
 | POST | `/transferencias` | Alta de una transferencia (en confección) |
+| GET | `/transferencias/{nro}` | Detalle con estado actual y renglones |
 | POST | `/transferencias/{nro}/renglones` | Carga renglones (solo en confección, RN-12) |
 | POST | `/transferencias/{nro}/terminar` | Pasa a terminado (`sp_terminar_transferencia`) |
 | POST | `/transferencias/{nro}/procesar` | Procesa y mueve stock (`sp_procesar_transferencia`) |

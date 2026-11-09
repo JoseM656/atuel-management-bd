@@ -37,7 +37,9 @@ func NewRouter(pool *pgxpool.Pool) *chi.Mux {
 	r.Post("/comprobantes", comprobantes.Crear)
 	r.Get("/comprobantes/{nro}", comprobantes.Obtener)
 
+	r.Get("/transferencias", transferencias.Listar)
 	r.Post("/transferencias", transferencias.Crear)
+	r.Get("/transferencias/{nro}", transferencias.Obtener)
 	r.Post("/transferencias/{nro}/renglones", transferencias.AgregarRenglones)
 	r.Post("/transferencias/{nro}/terminar", transferencias.Terminar)
 	r.Post("/transferencias/{nro}/procesar", transferencias.Procesar)

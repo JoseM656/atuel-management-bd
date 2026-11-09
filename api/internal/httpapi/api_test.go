@@ -232,6 +232,78 @@ func TestListarClientes(t *testing.T) {
 	}
 }
 
+// TestObtenerTransferencia: GET /transferencias/{nro} devuelve el estado real
+// y los renglones, y el estado cambia cuando se termina (RN-11). Es lo que usa
+// el front para habilitar los botones.
+func TestObtenerTransferencia(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/transferencias", map[string]any{"id_sala": 1})
+	if code != http.StatusCreated {
+		t.Fatalf("crear transferencia: esperaba 201, obtuve %d: %s", code, body)
+	}
+	nro := fstr(decodeJSON(t, body)["nro"].(float64))
+
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/transferencias/"+nro+"/renglones",
+		[]map[string]any{{"cod_vino": 1, "cantidad": 2}})
+	if code != http.StatusNoContent {
+		t.Fatalf("agregar renglón: esperaba 204, obtuve %d: %s", code, body)
+	}
+
+	code, body = doJSON(t, http.MethodGet, srv.URL+"/transferencias/"+nro, nil)
+	if code != http.StatusOK {
+		t.Fatalf("esperaba 200, obtuve %d: %s", code, body)
+	}
+	m := decodeJSON(t, body)
+	if m["estado"] != "en_confeccion" {
+		t.Fatalf("esperaba estado en_confeccion, obtuve %v", m["estado"])
+	}
+	if r, ok := m["renglones"].([]any); !ok || len(r) != 1 {
+		t.Fatalf("esperaba 1 renglón, obtuve %v", m["renglones"])
+	}
+
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/transferencias/"+nro+"/terminar", nil)
+	if code != http.StatusNoContent {
+		t.Fatalf("terminar: esperaba 204, obtuve %d: %s", code, body)
+	}
+	_, body = doJSON(t, http.MethodGet, srv.URL+"/transferencias/"+nro, nil)
+	if e := decodeJSON(t, body)["estado"]; e != "terminado" {
+		t.Fatalf("tras terminar esperaba estado terminado, obtuve %v", e)
+	}
+}
+
+// TestTransferenciaInexistente: GET de una transferencia que no existe -> 404.
+func TestTransferenciaInexistente(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, _ := doJSON(t, http.MethodGet, srv.URL+"/transferencias/99999999", nil)
+	if code != http.StatusNotFound {
+		t.Fatalf("esperaba 404, obtuve %d", code)
+	}
+}
+
+// TestListarTransferenciasEstadoInvalido: un estado que no existe en el ENUM
+// estado_documento lo rechaza la base (22P02) y la API responde 400.
+func TestListarTransferenciasEstadoInvalido(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodGet, srv.URL+"/transferencias?estado=anulado", nil)
+	if code != http.StatusBadRequest {
+		t.Fatalf("esperaba 400, obtuve %d: %s", code, body)
+	}
+
+	code, body = doJSON(t, http.MethodGet, srv.URL+"/transferencias?estado=terminado&limit=5", nil)
+	if code != http.StatusOK {
+		t.Fatalf("con un estado válido esperaba 200, obtuve %d: %s", code, body)
+	}
+	if decodeJSON(t, body)["total"] == nil {
+		t.Fatalf("esperaba el campo total: %s", body)
+	}
+}
+
 // fstr convierte un float64 (de JSON) a entero y luego a string, para armar
 // la ruta. Los números de JSON se decodifican como float64.
 func fstr(n float64) string {

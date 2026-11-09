@@ -277,6 +277,40 @@ paths:
           description: No encontrado
 
   /transferencias:
+    get:
+      summary: Lista de transferencias (filtros y paginación)
+      description: |
+        Ordenadas de la más reciente a la más antigua. Un estado que no existe
+        en el ENUM estado_documento lo rechaza la base (22P02 → 400).
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          description: Filtro por estado
+          schema: { type: string, enum: [en_confeccion, terminado, procesado] }
+        - name: id_sala
+          in: query
+          required: false
+          description: Filtro por sala
+          schema: { type: integer }
+        - name: limit
+          in: query
+          required: false
+          description: Tamaño de página (default 20, mínimo 1)
+          schema: { type: integer }
+        - name: offset
+          in: query
+          required: false
+          description: Filas a saltear (default 0)
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Página de transferencias con total
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransferenciasPagina" }
+        "400":
+          description: Parámetro inválido (estado inexistente, limit < 1, etc.)
     post:
       summary: Alta de una transferencia (en_confeccion)
       description: |
@@ -302,6 +336,28 @@ paths:
                   nro: { type: integer }
         "422":
           description: NOT NULL violado (sala inexistente → 409 por FK)
+
+  /transferencias/{nro}:
+    get:
+      summary: Transferencia con su estado actual y sus renglones
+      description: |
+        El front usa `estado` para habilitar los botones Terminar / Procesar
+        (RN-11: en_confeccion → terminado → procesado).
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Transferencia
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransferenciaDetalle" }
+        "400":
+          description: Número inválido
+        "404":
+          description: No encontrada
 
   /transferencias/{nro}/renglones:
     post:
@@ -735,6 +791,41 @@ components:
       properties:
         cod_vino: { type: integer }
         cantidad: { type: integer }
+    TransferenciaDetalle:
+      type: object
+      properties:
+        nro: { type: integer }
+        id_sala: { type: integer }
+        sala: { type: string, description: "calle número, localidad" }
+        fecha_confeccion: { type: string, format: date }
+        estado: { type: string, enum: [en_confeccion, terminado, procesado] }
+        renglones:
+          type: array
+          items: { $ref: "#/components/schemas/RenglonTransferencia" }
+    RenglonTransferencia:
+      type: object
+      properties:
+        cod_vino: { type: integer }
+        vino: { type: string }
+        cantidad: { type: integer }
+    TransferenciaResumen:
+      type: object
+      properties:
+        nro: { type: integer }
+        id_sala: { type: integer }
+        sala: { type: string }
+        fecha_confeccion: { type: string, format: date }
+        estado: { type: string, enum: [en_confeccion, terminado, procesado] }
+        cant_renglones: { type: integer }
+    TransferenciasPagina:
+      type: object
+      properties:
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+        transferencias:
+          type: array
+          items: { $ref: "#/components/schemas/TransferenciaResumen" }
     RenglonIngresoInput:
       type: object
       required: [cod_vino, cantidad]

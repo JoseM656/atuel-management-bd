@@ -203,6 +203,27 @@ curl -i -X POST http://localhost:3333/transferencias/N/procesar
 # Procesar sin stock suficiente → 409 (RN-11)
 ```
 
+## Transferencias — consulta (`GET /transferencias` y `GET /transferencias/{nro}`)
+
+```bash
+# Detalle: cabecera con el estado actual (RN-11) + renglones
+curl -i http://localhost:3333/transferencias/1
+# → 200 {"nro":1,"id_sala":1,"sala":"...","fecha_confeccion":"...","estado":"procesado","renglones":[...]}
+
+# No existe → 404 · Número inválido → 400
+curl -i http://localhost:3333/transferencias/99999999
+curl -i http://localhost:3333/transferencias/abc
+
+# Listado, de la más reciente a la más antigua (limit=20 por defecto)
+curl -i 'http://localhost:3333/transferencias?limit=5'
+
+# Filtros: estado (en_confeccion | terminado | procesado) y sala
+curl -i 'http://localhost:3333/transferencias?estado=terminado&id_sala=1'
+
+# Estado inexistente → 400 (lo rechaza el ENUM de la base, SQLSTATE 22P02)
+curl -i 'http://localhost:3333/transferencias?estado=anulado'
+```
+
 ## Ingresos (`POST /ingresos` y sub-recursos)
 
 ```bash
