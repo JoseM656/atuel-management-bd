@@ -415,6 +415,96 @@ func TestBuscarVinoPorNombre(t *testing.T) {
 	}
 }
 
+// TestSimularVenta: POST /comprobantes/simular devuelve los importes que
+// calcula la base (precio copiado, descuento del cliente, total) sin guardar
+// nada: el stock de la sala queda igual. Sin stock responde 409 (RN-09), igual
+// que una venta real.
+func TestSimularVenta(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	stockSala := func() float64 {
+		t.Helper()
+		var n float64
+		if err := testPool.QueryRow(context.Background(),
+			`SELECT cantidad FROM stock_sala WHERE id_sala = 1 AND cod_vino = 1`).Scan(&n); err != nil {
+			t.Fatalf("leer stock: %v", err)
+		}
+		return n
+	}
+	antes := stockSala()
+
+	venta := map[string]any{
+		"id_cliente": 2, "id_sala": 1,
+		"renglones": []map[string]any{{"cod_vino": 1, "cantidad": 1}},
+	}
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/comprobantes/simular", venta)
+	if code != http.StatusOK {
+		t.Fatalf("esperaba 200, obtuve %d: %s", code, body)
+	}
+	m := decodeJSON(t, body)
+	renglones := m["renglones"].([]any)
+	if len(renglones) != 1 || m["total"].(float64) <= 0 || renglones[0].(map[string]any)["precio_unitario"].(float64) <= 0 {
+		t.Fatalf("esperaba 1 renglón con precio y total calculados por la base: %s", body)
+	}
+	if m["nro"].(float64) != 0 {
+		t.Fatalf("una simulación no tiene nro de comprobante: %v", m["nro"])
+	}
+	if despues := stockSala(); despues != antes {
+		t.Fatalf("la simulación no debe descontar stock: antes %v, después %v", antes, despues)
+	}
+
+	venta["renglones"] = []map[string]any{{"cod_vino": 1, "cantidad": 999999}}
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/comprobantes/simular", venta)
+	if code != http.StatusConflict || !strings.Contains(body, "stock insuficiente") {
+		t.Fatalf("sin stock: esperaba 409 «stock insuficiente», obtuve %d: %s", code, body)
+	}
+}
+
+// TestBuscarClientes: ?q= encuentra por ID exacto (primero en la lista), por
+// documento con guiones y por nombre; se combina con ?tipo=.
+func TestBuscarClientes(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	buscar := func(query string) map[string]any {
+		t.Helper()
+		code, body := doJSON(t, http.MethodGet, srv.URL+"/clientes?"+query, nil)
+		if code != http.StatusOK {
+			t.Fatalf("%s: esperaba 200, obtuve %d: %s", query, code, body)
+		}
+		return decodeJSON(t, body)
+	}
+	primero := func(m map[string]any) map[string]any {
+		t.Helper()
+		l := m["clientes"].([]any)
+		if len(l) == 0 {
+			t.Fatalf("esperaba al menos un cliente: %v", m)
+		}
+		return l[0].(map[string]any)
+	}
+
+	porID := primero(buscar("q=2&limit=5"))
+	if porID["id_cliente"].(float64) != 2 {
+		t.Fatalf("el ID exacto debía aparecer primero, apareció %v", porID["id_cliente"])
+	}
+
+	doc := porID["nro_doc"].(string)
+	conGuion := doc[:2] + "-" + doc[2:]
+	if c := primero(buscar(url.Values{"q": {conGuion}}.Encode())); c["nro_doc"] != doc && !strings.HasPrefix(c["nro_doc"].(string), doc) {
+		t.Fatalf("buscar el documento con guion debía encontrar %s, encontró %v", doc, c["nro_doc"])
+	}
+
+	nombre := strings.Fields(porID["nombre_razon_social"].(string))[0]
+	if buscar(url.Values{"q": {strings.ToUpper(nombre)}}.Encode())["total"].(float64) == 0 {
+		t.Fatalf("buscar por nombre «%s» debía encontrar clientes", nombre)
+	}
+
+	if m := buscar("q=Exportadora&tipo=socio"); m["total"].(float64) != 0 {
+		t.Fatalf("«Exportadora» entre socios no debía encontrar nada, encontró %v", m["total"])
+	}
+}
+
 // fstr convierte un float64 (de JSON) a entero y luego a string, para armar
 // la ruta. Los números de JSON se decodifican como float64.
 func fstr(n float64) string {

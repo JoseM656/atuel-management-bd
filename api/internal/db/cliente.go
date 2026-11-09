@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
+	"strings"
+	"unicode"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,10 +31,40 @@ type Cliente struct {
 }
 
 // ClienteFiltro reúne el filtro y la paginación de GET /clientes.
+//
+// Q es la búsqueda del buscador de la venta (#54). Encuentra un cliente si:
+//   - Q es su ID exacto, o
+//   - su documento empieza con los dígitos de Q (se ignoran guiones y
+//     espacios: «30-8001» busca «30801…»), o
+//   - su nombre o razón social contiene Q (sin distinguir mayúsculas).
+//
+// El ID exacto aparece primero.
 type ClienteFiltro struct {
 	Tipo   string
+	Q      string
 	Limit  int
 	Offset int
+}
+
+// clienteWhere filtra con parámetros fijos ($1 tipo, $2 texto, $3 dígitos del
+// texto, $4 texto escapado para ILIKE). Un filtro vacío no restringe.
+const clienteWhere = `
+	WHERE ($1 = '' OR tipo::text = $1)
+	  AND ($2 = ''
+	       OR id_cliente::text = $2
+	       OR ($3 <> '' AND nro_doc LIKE $3 || '%')
+	       OR nombre_razon_social ILIKE '%' || $4 || '%')`
+
+// argsCliente arma los parámetros de clienteWhere a partir del filtro.
+func argsCliente(f ClienteFiltro) []any {
+	q := strings.TrimSpace(f.Q)
+	digitos := strings.Map(func(r rune) rune {
+		if unicode.IsDigit(r) {
+			return r
+		}
+		return -1
+	}, q)
+	return []any{f.Tipo, q, digitos, likeEscape(q)}
 }
 
 // ClienteNuevo es el cuerpo de POST /clientes. El descuento NO va: lo asigna
@@ -98,10 +130,12 @@ func scanCliente(s rowScanner) (Cliente, error) {
 }
 
 // ListarClientes devuelve los clientes (con su subtipo), filtrados por tipo y
-// paginados.
+// por la búsqueda Q, y paginados.
 func ListarClientes(ctx context.Context, pool *pgxpool.Pool, f ClienteFiltro) ([]Cliente, error) {
-	query := clienteSelect + ` WHERE ($1 = '' OR tipo::text = $1) ORDER BY id_cliente LIMIT $2 OFFSET $3`
-	rows, err := pool.Query(ctx, query, f.Tipo, f.Limit, f.Offset)
+	query := clienteSelect + clienteWhere + `
+		ORDER BY (id_cliente::text = $2) DESC, id_cliente
+		LIMIT $5 OFFSET $6`
+	rows, err := pool.Query(ctx, query, append(argsCliente(f), f.Limit, f.Offset)...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +155,7 @@ func ListarClientes(ctx context.Context, pool *pgxpool.Pool, f ClienteFiltro) ([
 // ContarClientes cuenta cuántos clientes cumplen el filtro (sin paginar).
 func ContarClientes(ctx context.Context, pool *pgxpool.Pool, f ClienteFiltro) (int, error) {
 	var total int
-	err := pool.QueryRow(ctx, `SELECT count(*) FROM v_clientes WHERE ($1 = '' OR tipo::text = $1)`, f.Tipo).Scan(&total)
+	err := pool.QueryRow(ctx, `SELECT count(*) FROM v_clientes`+clienteWhere, argsCliente(f)...).Scan(&total)
 	return total, err
 }
 

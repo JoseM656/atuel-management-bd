@@ -28,12 +28,13 @@ go run ./cmd/api
 | POST | `/vinos` | Alta de un vino con composición de cepas y maridajes |
 | PUT | `/vinos/{cod}` | Reemplaza los campos de un vino (el cambio de precio se audita, RN-13) |
 | DELETE | `/vinos/{cod}` | Baja de un vino (RN-14 lo rechaza si tiene movimientos) |
-| GET | `/clientes` | Lista de clientes con su subtipo (filtro `?tipo=`, paginación) |
+| GET | `/clientes` | Lista de clientes con su subtipo (filtro `?tipo=`, búsqueda `?q=` por ID, documento o nombre, paginación) |
 | POST | `/clientes` | Alta de un cliente (socio/distribuidor/exportador); el descuento lo asigna la base |
 | GET | `/clientes/{id}` | Cliente con su subtipo |
 | PUT | `/clientes/{id}` | Reemplaza campos comunes y del subtipo |
 | DELETE | `/clientes/{id}` | Baja de un cliente (RN-14 lo rechaza si tiene comprobantes) |
 | POST | `/comprobantes` | Venta transaccional: cabecera + renglones; precios/totales los calcula la base |
+| POST | `/comprobantes/simular` | Calcula importes con los triggers y hace ROLLBACK (no guarda) |
 | GET | `/comprobantes/{nro}` | Detalle de un comprobante con sus renglones |
 | GET | `/salas` | Catálogo de salas de venta (para desplegables) |
 | GET | `/cepas` | Catálogo de cepas |

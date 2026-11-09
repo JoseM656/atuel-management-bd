@@ -18,9 +18,13 @@ import (
 // Sala es una sala de venta. sala_venta no tiene nombre: se describe con su
 // dirección y localidad.
 type Sala struct {
-	IDSala      int    `json:"id_sala"`
-	Descripcion string `json:"descripcion"` // "Av. Principal 10 115, San Rafael"
-	Localidad   string `json:"localidad"`
+	IDSala       int    `json:"id_sala"`
+	Descripcion  string `json:"descripcion"` // "Av. Principal 10 115, San Rafael"
+	Direccion    string `json:"direccion"`   // "Av. Principal 10 115"
+	Localidad    string `json:"localidad"`
+	Provincia    string `json:"provincia"`
+	CodigoPostal string `json:"codigo_postal"`
+	DiaCierre    string `json:"dia_cierre"`
 }
 
 // CepaItem es una cepa del catálogo.
@@ -61,10 +65,12 @@ func listar[T any](ctx context.Context, pool *pgxpool.Pool, query string) ([]T, 
 	return lista, nil
 }
 
-// ListarSalas devuelve las salas de venta ordenadas por localidad y dirección.
+// ListarSalas devuelve las salas de venta ordenadas por localidad y dirección,
+// con su día de cierre semanal (dato informativo para el front).
 func ListarSalas(ctx context.Context, pool *pgxpool.Pool) ([]Sala, error) {
 	return listar[Sala](ctx, pool, `
-		SELECT s.id_sala, `+salaDescripcion+`, l.nombre
+		SELECT s.id_sala, `+salaDescripcion+`, s.calle || ' ' || s.numero,
+		       l.nombre, l.provincia, l.codigo_postal, s.dia_cierre::text
 		FROM sala_venta s
 		JOIN localidad l ON l.id_localidad = s.id_localidad
 		ORDER BY l.nombre, s.calle, s.numero`)

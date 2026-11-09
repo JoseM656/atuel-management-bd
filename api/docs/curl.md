@@ -106,6 +106,10 @@ curl -i -X DELETE http://localhost:3333/vinos/401
 # Lista (con filtro ?tipo= y paginación)
 curl 'http://localhost:3333/clientes?tipo=socio&limit=5'
 
+# Búsqueda ?q=: ID exacto (primero), documento que empieza con (ignora guiones) o nombre
+curl 'http://localhost:3333/clientes?q=18500&limit=20'
+curl 'http://localhost:3333/clientes?q=30-8001&tipo=exportador&limit=20'
+
 # Detalle con subtipo
 curl http://localhost:3333/clientes/1
 ```
@@ -164,6 +168,19 @@ curl -i -X POST http://localhost:3333/comprobantes \
 curl -i -X POST http://localhost:3333/comprobantes \
   -H 'Content-Type: application/json' \
   -d '{"id_cliente": 1, "id_sala": 1, "renglones": [{"cod_vino": 1, "cantidad": 999999}]}'
+```
+
+## Comprobantes — simulación (`POST /comprobantes/simular`)
+
+```bash
+# Mismo cuerpo que una venta. La base calcula precio, descuento y total con sus
+# triggers y la transacción termina en ROLLBACK: no guarda nada ni toca stock.
+curl -i -X POST http://localhost:3333/comprobantes/simular \
+  -H 'Content-Type: application/json' \
+  -d '{"id_cliente": 2, "id_sala": 1, "renglones": [{"cod_vino": 1, "cantidad": 6}]}'
+# → 200 {"nro":0, "subtotal":..., "porcentaje_descuento":..., "total":..., "renglones":[...]}
+
+# Sin stock → 409 con el mismo mensaje que una venta real (RN-09)
 ```
 
 ## Comprobantes — detalle (`GET /comprobantes/{nro}`)

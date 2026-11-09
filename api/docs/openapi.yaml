@@ -148,8 +148,15 @@ paths:
 
   /clientes:
     get:
-      summary: Lista de clientes con su subtipo (filtro y paginación)
+      summary: Lista de clientes con su subtipo (filtro, búsqueda y paginación)
       parameters:
+        - name: q
+          in: query
+          required: false
+          description: |
+            Búsqueda: ID exacto (aparece primero), documento que empieza con los
+            dígitos escritos (se ignoran guiones) o nombre que contiene el texto.
+          schema: { type: string }
         - name: tipo
           in: query
           required: false
@@ -241,6 +248,32 @@ paths:
           description: No encontrado
         "409":
           description: Tiene comprobantes (RN-14)
+
+  /comprobantes/simular:
+    post:
+      summary: Simula una venta sin guardarla (ROLLBACK)
+      description: |
+        Hace los mismos INSERT que POST /comprobantes, con los mismos triggers
+        (RN-08, RN-09, RI-03), lee los importes calculados por la base y
+        termina en ROLLBACK: no se guarda nada ni se descuenta stock. La
+        pantalla de venta lo usa para mostrar precios y total antes de
+        confirmar. La secuencia de comprobante.nro no retrocede, así que cada
+        simulación consume un número. `nro` vuelve en 0.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ComprobanteNuevo" }
+      responses:
+        "200":
+          description: Importes calculados por la base
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComprobanteDetalle" }
+        "409":
+          description: Sin stock (RN-09) u otra regla violada
+        "422":
+          description: CHECK violado (cantidad <= 0, etc.)
 
   /comprobantes:
     post:
@@ -905,7 +938,11 @@ components:
       properties:
         id_sala: { type: integer }
         descripcion: { type: string, description: "calle número, localidad" }
+        direccion: { type: string, description: "calle número" }
         localidad: { type: string }
+        provincia: { type: string }
+        codigo_postal: { type: string }
+        dia_cierre: { type: string, description: "ENUM dia_semana (lunes … domingo)" }
     CepaItem:
       type: object
       properties:
