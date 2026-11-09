@@ -22,7 +22,7 @@ paths:
 
   /vinos:
     get:
-      summary: Lista de vinos con su bodega
+      summary: Lista de vinos con su bodega (filtros y paginación)
       parameters:
         - name: tipo
           in: query
@@ -30,17 +30,67 @@ paths:
           description: Filtro por tipo (tinto, blanco, rosado, espumante)
           schema:
             type: string
+        - name: cepa
+          in: query
+          required: false
+          description: Filtro por nombre de cepa (ej. Malbec)
+          schema:
+            type: string
+        - name: bodega
+          in: query
+          required: false
+          description: Filtro por razón social de la bodega
+          schema:
+            type: string
+        - name: anada
+          in: query
+          required: false
+          description: Filtro por año de cosecha
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: Tamaño de página (default 20)
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          required: false
+          description: Filas a saltear (default 0)
+          schema:
+            type: integer
       responses:
         "200":
-          description: Lista de vinos
+          description: Página de vinos con total
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Vino"
+                $ref: "#/components/schemas/VinosPagina"
+        "400":
+          description: Parámetro inválido
         "422":
           description: Filtro inválido
+
+  /vinos/{cod}:
+    get:
+      summary: Ficha de un vino (S9)
+      parameters:
+        - name: cod
+          in: path
+          required: true
+          description: Código del vino
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ficha del vino
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VinoDetalle"
+        "404":
+          description: Vino no encontrado
 
 components:
   schemas:
@@ -63,6 +113,62 @@ components:
           type: number
         bodega:
           type: string
+    VinosPagina:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        vinos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Vino"
+    VinoDetalle:
+      type: object
+      properties:
+        cod_vino:
+          type: integer
+        nombre:
+          type: string
+        tipo:
+          type: string
+        anada:
+          type: integer
+        volumen_ml:
+          type: integer
+        graduacion:
+          type: number
+        precio:
+          type: number
+        bodega:
+          type: string
+        stock_total:
+          type: integer
+        cepas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Cepa"
+        maridajes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Maridaje"
+    Cepa:
+      type: object
+      properties:
+        nombre:
+          type: string
+        porcentaje:
+          type: number
+    Maridaje:
+      type: object
+      properties:
+        nombre:
+          type: string
+        temperatura_servicio:
+          type: number
     Error:
       type: object
       properties:

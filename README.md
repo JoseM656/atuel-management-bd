@@ -35,7 +35,8 @@ go run ./cmd/api
 | Método | Ruta | Descripción |
 | --- | --- | --- |
 | GET | `/salud` | Verifica que la API llega a la base |
-| GET | `/vinos` | Lista de vinos con su bodega (filtro opcional `?tipo=`) |
+| GET | `/vinos` | Lista de vinos con su bodega, con filtros (`?tipo=`, `?cepa=`, `?bodega=`, `?anada=`) y paginación (`?limit=`, `?offset=`) |
+| GET | `/vinos/{cod}` | Ficha de un vino: cepas+porcentajes, bodega, maridajes y stock total (S9) |
 
 ### Errores
 

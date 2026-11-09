@@ -31,6 +31,7 @@ func main() {
 	r.Use(middleware.Logger, middleware.Recoverer)
 	r.Get("/salud", health.Salud)
 	r.Get("/vinos", vinos.Listar)
+	r.Get("/vinos/{cod}", vinos.Obtener)
 
 	log.Printf("[API] escuchando en :%s", cfg.Port)
 	http.ListenAndServe(":"+cfg.Port, r)
