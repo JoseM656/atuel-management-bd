@@ -37,6 +37,9 @@ go run ./cmd/api
 | GET | `/salud` | Verifica que la API llega a la base |
 | GET | `/vinos` | Lista de vinos con su bodega, con filtros (`?tipo=`, `?cepa=`, `?bodega=`, `?anada=`) y paginación (`?limit=`, `?offset=`) |
 | GET | `/vinos/{cod}` | Ficha de un vino: cepas+porcentajes, bodega, maridajes y stock total (S9) |
+| POST | `/vinos` | Alta de un vino con composición de cepas y maridajes |
+| PUT | `/vinos/{cod}` | Reemplaza los campos de un vino (el cambio de precio se audita, RN-13) |
+| DELETE | `/vinos/{cod}` | Baja de un vino (RN-14 lo rechaza si tiene movimientos) |
 
 ### Errores
 

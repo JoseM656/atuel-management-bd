@@ -54,6 +54,49 @@ curl -i http://localhost:3333/vinos/9999
 curl -i http://localhost:3333/vinos/abc
 ```
 
+## Vinos — alta (`POST /vinos`)
+
+```bash
+# Alta con composición (suma 100) y al menos un maridaje
+curl -i -X POST http://localhost:3333/vinos \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "nombre": "Vino de Prueba",
+    "tipo": "tinto",
+    "anada": 2022,
+    "volumen_ml": 750,
+    "graduacion": 13.5,
+    "precio": 8000,
+    "cuit_bodega": "30700000019",
+    "cepas": [{"id_cepa": 1, "porcentaje": 60}, {"id_cepa": 2, "porcentaje": 40}],
+    "maridajes": [1]
+  }'
+# → 201 {"cod_vino": N}
+
+# Cortes que no suman 100 → 409
+# Maridajes vacíos → 409
+```
+
+## Vinos — modificación (`PUT /vinos/{cod}`)
+
+```bash
+# Reemplaza los campos; el cambio de precio lo audita RN-13
+curl -i -X PUT http://localhost:3333/vinos/1 \
+  -H 'Content-Type: application/json' \
+  -d '{"nombre":"Malbec Reserva B1","tipo":"tinto","anada":2020,"volumen_ml":750,"graduacion":14.5,"precio":9000,"cuit_bodega":"30700000019"}'
+# → 204 (sin cuerpo)
+```
+
+## Vinos — baja (`DELETE /vinos/{cod}`)
+
+```bash
+# RN-14: rechaza si el vino tiene movimientos/auditoría → 409
+curl -i -X DELETE http://localhost:3333/vinos/1
+
+# Un vino recién creado (sin movimientos) → 204
+curl -i -X DELETE http://localhost:3333/vinos/401
+```
+
 ## Errores (SQLSTATE → HTTP)
 
 | SQLSTATE | Significado | HTTP |

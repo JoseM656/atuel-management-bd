@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
   title: Bodegas del Atuel — API
-  version: 0.1.0
+  version: 0.2.0
   description: |
-    API REST de la capa de datos (Etapa 6). En desarrollo: hoy expone
-    `/salud` y `/vinos`; se irán agregando clientes, comprobantes,
-    transferencias, ingresos y reportes (S1–S12).
+    API REST de la capa de datos (Etapa 6). Hoy expone `/salud` y el CRUD de
+    `/vinos`; se irán agregando clientes, comprobantes, transferencias,
+    ingresos y reportes (S1–S12).
 servers:
   - url: http://localhost:3333
     description: Local
@@ -28,49 +28,60 @@ paths:
           in: query
           required: false
           description: Filtro por tipo (tinto, blanco, rosado, espumante)
-          schema:
-            type: string
+          schema: { type: string }
         - name: cepa
           in: query
           required: false
           description: Filtro por nombre de cepa (ej. Malbec)
-          schema:
-            type: string
+          schema: { type: string }
         - name: bodega
           in: query
           required: false
           description: Filtro por razón social de la bodega
-          schema:
-            type: string
+          schema: { type: string }
         - name: anada
           in: query
           required: false
           description: Filtro por año de cosecha
-          schema:
-            type: integer
+          schema: { type: integer }
         - name: limit
           in: query
           required: false
           description: Tamaño de página (default 20)
-          schema:
-            type: integer
+          schema: { type: integer }
         - name: offset
           in: query
           required: false
           description: Filas a saltear (default 0)
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         "200":
           description: Página de vinos con total
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/VinosPagina"
+              schema: { $ref: "#/components/schemas/VinosPagina" }
         "400":
           description: Parámetro inválido
+    post:
+      summary: Alta de un vino con su composición de cepas y maridajes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VinoNuevo" }
+      responses:
+        "201":
+          description: Vino creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cod_vino: { type: integer }
+        "409":
+          description: Regla violada (cortes no suman 100, sin maridaje, etc.)
         "422":
-          description: Filtro inválido
+          description: CHECK violado (precio, graduación, etc.)
 
   /vinos/{cod}:
     get:
@@ -80,97 +91,135 @@ paths:
           in: path
           required: true
           description: Código del vino
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         "200":
           description: Ficha del vino
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/VinoDetalle"
+              schema: { $ref: "#/components/schemas/VinoDetalle" }
         "404":
           description: Vino no encontrado
+    put:
+      summary: Reemplaza los campos de un vino (el cambio de precio se audita)
+      parameters:
+        - name: cod
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VinoActualizar" }
+      responses:
+        "204":
+          description: Vino actualizado
+        "404":
+          description: Vino no encontrado
+        "409":
+          description: Regla violada
+        "422":
+          description: CHECK violado
+    delete:
+      summary: Baja de un vino (RN-14 lo rechaza si tiene movimientos)
+      parameters:
+        - name: cod
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Vino eliminado
+        "404":
+          description: Vino no encontrado
+        "409":
+          description: Tiene movimientos/auditoría (RN-14)
 
 components:
   schemas:
     Vino:
       type: object
       properties:
-        cod_vino:
-          type: integer
-        nombre:
-          type: string
-        tipo:
-          type: string
-        anada:
-          type: integer
-        volumen_ml:
-          type: integer
-        graduacion:
-          type: number
-        precio:
-          type: number
-        bodega:
-          type: string
+        cod_vino: { type: integer }
+        nombre: { type: string }
+        tipo: { type: string }
+        anada: { type: integer }
+        volumen_ml: { type: integer }
+        graduacion: { type: number }
+        precio: { type: number }
+        bodega: { type: string }
     VinosPagina:
       type: object
       properties:
-        total:
-          type: integer
-        limit:
-          type: integer
-        offset:
-          type: integer
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
         vinos:
           type: array
-          items:
-            $ref: "#/components/schemas/Vino"
+          items: { $ref: "#/components/schemas/Vino" }
     VinoDetalle:
       type: object
       properties:
-        cod_vino:
-          type: integer
-        nombre:
-          type: string
-        tipo:
-          type: string
-        anada:
-          type: integer
-        volumen_ml:
-          type: integer
-        graduacion:
-          type: number
-        precio:
-          type: number
-        bodega:
-          type: string
-        stock_total:
-          type: integer
+        cod_vino: { type: integer }
+        nombre: { type: string }
+        tipo: { type: string }
+        anada: { type: integer }
+        volumen_ml: { type: integer }
+        graduacion: { type: number }
+        precio: { type: number }
+        bodega: { type: string }
+        stock_total: { type: integer }
         cepas:
           type: array
-          items:
-            $ref: "#/components/schemas/Cepa"
+          items: { $ref: "#/components/schemas/Cepa" }
         maridajes:
           type: array
-          items:
-            $ref: "#/components/schemas/Maridaje"
+          items: { $ref: "#/components/schemas/Maridaje" }
     Cepa:
       type: object
       properties:
-        nombre:
-          type: string
-        porcentaje:
-          type: number
+        nombre: { type: string }
+        porcentaje: { type: number }
     Maridaje:
       type: object
       properties:
-        nombre:
-          type: string
-        temperatura_servicio:
-          type: number
+        nombre: { type: string }
+        temperatura_servicio: { type: number }
+    VinoNuevo:
+      type: object
+      required: [nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega, cepas, maridajes]
+      properties:
+        nombre: { type: string }
+        tipo: { type: string }
+        anada: { type: integer }
+        volumen_ml: { type: integer }
+        graduacion: { type: number }
+        precio: { type: number }
+        cuit_bodega: { type: string }
+        cepas:
+          type: array
+          items: { $ref: "#/components/schemas/CepaInput" }
+        maridajes:
+          type: array
+          items: { type: integer }
+    CepaInput:
+      type: object
+      properties:
+        id_cepa: { type: integer }
+        porcentaje: { type: number }
+    VinoActualizar:
+      type: object
+      required: [nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega]
+      properties:
+        nombre: { type: string }
+        tipo: { type: string }
+        anada: { type: integer }
+        volumen_ml: { type: integer }
+        graduacion: { type: number }
+        precio: { type: number }
+        cuit_bodega: { type: string }
     Error:
       type: object
       properties:
-        error:
-          type: string
+        error: { type: string }

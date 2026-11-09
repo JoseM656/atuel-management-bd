@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -85,6 +86,66 @@ func (h *VinosHandler) Obtener(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, d)
+}
+
+// Crear responde POST /vinos: alta de un vino con su composición y maridajes.
+// Los triggers diferidos (RN-05 suma=100, RI-02 ≥1 maridaje) se validan en el
+// commit y sus errores llegan como 409.
+func (h *VinosHandler) Crear(w http.ResponseWriter, r *http.Request) {
+	var v db.VinoNuevo
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido: " + err.Error()})
+		return
+	}
+	cod, err := db.CrearVino(r.Context(), h.Pool, v)
+	if err != nil {
+		httperr.Write(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]int{"cod_vino": cod})
+}
+
+// Actualizar responde PUT /vinos/{cod}: reemplaza los campos del vino. Si
+// cambia el precio, el trigger RN-13 lo audita.
+func (h *VinosHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
+	cod, err := strconv.Atoi(chi.URLParam(r, "cod"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "cod_vino inválido"})
+		return
+	}
+	var v db.VinoActualizar
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido: " + err.Error()})
+		return
+	}
+	if err := db.ActualizarVino(r.Context(), h.Pool, cod, v); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "vino no encontrado"})
+			return
+		}
+		httperr.Write(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// Borrar responde DELETE /vinos/{cod}: baja de un vino. RN-14 lo rechaza si
+// tiene movimientos (23503 → 409).
+func (h *VinosHandler) Borrar(w http.ResponseWriter, r *http.Request) {
+	cod, err := strconv.Atoi(chi.URLParam(r, "cod"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "cod_vino inválido"})
+		return
+	}
+	if err := db.BorrarVino(r.Context(), h.Pool, cod); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "vino no encontrado"})
+			return
+		}
+		httperr.Write(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // queryInt interpreta un parámetro de query como entero, con valor por

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -207,4 +208,110 @@ func ObtenerVino(ctx context.Context, pool *pgxpool.Pool, cod int) (*VinoDetalle
 	}
 
 	return d, nil
+}
+
+// VinoNuevo es el cuerpo de POST /vinos: el vino más su composición de cepas
+// (la suma de porcentajes debe ser 100, RN-05) y sus maridajes (al menos uno,
+// RI-02).
+type VinoNuevo struct {
+	Nombre     string      `json:"nombre"`
+	Tipo       string      `json:"tipo"`
+	Anada      int         `json:"anada"`
+	VolumenMl  int         `json:"volumen_ml"`
+	Graduacion float64     `json:"graduacion"`
+	Precio     float64     `json:"precio"`
+	CuitBodega string      `json:"cuit_bodega"`
+	Cepas      []CepaInput `json:"cepas"`
+	Maridajes  []int       `json:"maridajes"`
+}
+
+// CepaInput es una cepa del corte con su porcentaje (POST /vinos).
+type CepaInput struct {
+	IDCepa     int     `json:"id_cepa"`
+	Porcentaje float64 `json:"porcentaje"`
+}
+
+// VinoActualizar es el cuerpo de PUT /vinos/{cod}.
+type VinoActualizar struct {
+	Nombre     string  `json:"nombre"`
+	Tipo       string  `json:"tipo"`
+	Anada      int     `json:"anada"`
+	VolumenMl  int     `json:"volumen_ml"`
+	Graduacion float64 `json:"graduacion"`
+	Precio     float64 `json:"precio"`
+	CuitBodega string  `json:"cuit_bodega"`
+}
+
+// CrearVino inserta un vino con su composición y maridajes, en una sola
+// transacción. Devuelve el código generado. Los triggers diferidos (RN-05
+// suma=100 y RI-02 ≥1 maridaje) se evalúan en el COMMIT.
+func CrearVino(ctx context.Context, pool *pgxpool.Pool, v VinoNuevo) (int, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
+	var cod int
+	if err := tx.QueryRow(ctx, `
+		INSERT INTO vino (nombre, tipo, anada, volumen_ml, graduacion, precio, cuit_bodega)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING cod_vino`,
+		v.Nombre, v.Tipo, v.Anada, v.VolumenMl, v.Graduacion, v.Precio, v.CuitBodega,
+	).Scan(&cod); err != nil {
+		return 0, err
+	}
+
+	for _, c := range v.Cepas {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO composicion (cod_vino, id_cepa, porcentaje)
+			VALUES ($1, $2, $3)`, cod, c.IDCepa, c.Porcentaje); err != nil {
+			return 0, err
+		}
+	}
+
+	for _, id := range v.Maridajes {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO vino_maridaje (cod_vino, id_maridaje)
+			VALUES ($1, $2)`, cod, id); err != nil {
+			return 0, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+	return cod, nil
+}
+
+// ActualizarVino reemplaza los campos del vino. Si cambia el precio, el
+// trigger RN-13 lo audita. Devuelve pgx.ErrNoRows si el vino no existe.
+func ActualizarVino(ctx context.Context, pool *pgxpool.Pool, cod int, v VinoActualizar) error {
+	tag, err := pool.Exec(ctx, `
+		UPDATE vino
+		SET nombre = $1, tipo = $2, anada = $3, volumen_ml = $4,
+		    graduacion = $5, precio = $6, cuit_bodega = $7
+		WHERE cod_vino = $8`,
+		v.Nombre, v.Tipo, v.Anada, v.VolumenMl, v.Graduacion, v.Precio, v.CuitBodega, cod)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
+// BorrarVino elimina un vino. Las FK ON DELETE RESTRICT (RN-14) lo rechazan
+// si el vino tiene movimientos (renglones, stock o auditoría): devuelve
+// 23503 (foreign_key_violation). Devuelve pgx.ErrNoRows si no existe.
+func BorrarVino(ctx context.Context, pool *pgxpool.Pool, cod int) error {
+	tag, err := pool.Exec(ctx, `DELETE FROM vino WHERE cod_vino = $1`, cod)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
