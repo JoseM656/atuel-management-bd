@@ -176,6 +176,33 @@ curl -i http://localhost:3333/comprobantes/99999999
 curl -i http://localhost:3333/comprobantes/abc
 ```
 
+## Transferencias (`POST /transferencias` y sub-recursos)
+
+```bash
+# 1. Alta (nace en_confeccion; la fecha la pone la base)
+curl -i -X POST http://localhost:3333/transferencias \
+  -H 'Content-Type: application/json' \
+  -d '{"id_sala": 1}'
+# → 201 {"nro": N}
+
+# 2. Cargar renglones mientras está en_confeccion
+curl -i -X POST http://localhost:3333/transferencias/N/renglones \
+  -H 'Content-Type: application/json' \
+  -d '[{"cod_vino": 1, "cantidad": 5}]'
+# → 204
+
+# 3. Terminar (en_confeccion -> terminado)
+curl -i -X POST http://localhost:3333/transferencias/N/terminar
+# → 204
+
+# 4. Procesar (descuenta depósito, suma a la sala, -> procesado)
+curl -i -X POST http://localhost:3333/transferencias/N/procesar
+# → 204
+
+# Renglón sobre una transferencia ya terminada → 409 (RN-12)
+# Procesar sin stock suficiente → 409 (RN-11)
+```
+
 ## Errores (SQLSTATE → HTTP)
 
 | SQLSTATE | Significado | HTTP |

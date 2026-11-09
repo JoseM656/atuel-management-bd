@@ -276,6 +276,88 @@ paths:
         "404":
           description: No encontrado
 
+  /transferencias:
+    post:
+      summary: Alta de una transferencia (en_confeccion)
+      description: |
+        Crea una transferencia para una sala. La fecha de confección la fuerza
+        la base a la fecha actual y el estado nace en_confeccion (RN-11).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sala]
+              properties:
+                id_sala: { type: integer }
+      responses:
+        "201":
+          description: Transferencia creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nro: { type: integer }
+        "422":
+          description: NOT NULL violado (sala inexistente → 409 por FK)
+
+  /transferencias/{nro}/renglones:
+    post:
+      summary: Carga renglones a una transferencia en confección
+      description: |
+        Agrega renglones mientras la transferencia está en_confeccion (RN-12).
+        Fuera de confección devuelve 409.
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: "#/components/schemas/RenglonTransferenciaInput" }
+      responses:
+        "204":
+          description: Renglones agregados
+        "409":
+          description: Transferencia no en confección (RN-12)
+
+  /transferencias/{nro}/terminar:
+    post:
+      summary: Pasa la transferencia de en_confeccion a terminado
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Terminada
+        "409":
+          description: Estado inválido (no en_confeccion) o no existe
+
+  /transferencias/{nro}/procesar:
+    post:
+      summary: Procesa la transferencia (mueve stock)
+      description: |
+        Invoca sp_procesar_transferencia: descuenta del depósito, suma a la
+        sala y pasa a procesado. Stock insuficiente → 409 sin cambios a medias.
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Procesada
+        "409":
+          description: Estado inválido, no existe o stock insuficiente
+
 components:
   schemas:
     Vino:
@@ -458,6 +540,12 @@ components:
         precio_unitario: { type: number }
         importe_descuento: { type: number }
         subtotal: { type: number }
+    RenglonTransferenciaInput:
+      type: object
+      required: [cod_vino, cantidad]
+      properties:
+        cod_vino: { type: integer }
+        cantidad: { type: integer }
     Error:
       type: object
       properties:
