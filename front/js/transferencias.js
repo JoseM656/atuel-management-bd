@@ -49,7 +49,7 @@ document.addEventListener('alpine:init', () => {
     hayDetalle: false,
     cargando: false,
     errorDetalle: '',       // no se pudo cargar
-    error: '',              // error de una acción (RN-11, RN-12, stock…) tal cual
+    error: '',              // ApiError de una acción (RN-11, RN-12, stock…) tal cual; '' = sin error
     ocupado: false,         // hay una acción en curso
 
     // --- Alta ---
@@ -68,7 +68,7 @@ document.addEventListener('alpine:init', () => {
 
     async init() {
       this.cargarLista();
-      api.listarSalas().then(s => { this.salas = s; }).catch(e => { this.error = e.message; });
+      api.listarSalas().then(s => { this.salas = s; }).catch(e => { this.error = e; });
       this.alCambiarRuta(Alpine.store('ruta'));
     },
 
@@ -157,7 +157,7 @@ document.addEventListener('alpine:init', () => {
         await fn();
         return true;
       } catch (e) {
-        this.error = e.message;
+        this.error = e;
         return false;
       } finally {
         if (this.nro) await this.cargarDetalle();
@@ -178,7 +178,7 @@ document.addEventListener('alpine:init', () => {
         await this.cargarLista();
         location.hash = `#transferencias/${nro}`;
       } catch (e) {
-        this.error = e.message;
+        this.error = e;
       } finally {
         this.ocupado = false;
       }
@@ -198,7 +198,7 @@ document.addEventListener('alpine:init', () => {
         const r = await api.listarVinos({ nombre: this.qVino.trim(), limit: RESULTADOS_VINO });
         this.vinos = r.vinos;
       } catch (e) {
-        this.error = e.message;
+        this.error = e;
         this.vinos = [];
       } finally {
         this.buscandoVinos = false;

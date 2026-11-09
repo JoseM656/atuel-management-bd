@@ -199,7 +199,7 @@
 
               <div class="alerta-api" x-show="errorAccion">
                 <span class="icono" aria-hidden="true">⚠</span>
-                <div><strong>Error de la API</strong><div x-text="errorAccion"></div></div>
+                <div><strong>Error de la API</strong><div x-text="errorAccion && errorAccion.message"></div><small class="detalle-error" x-show="detalleError(errorAccion)" x-text="detalleError(errorAccion)"></small></div>
               </div>
 
               <div class="tarjeta">
@@ -267,7 +267,7 @@
           <!-- Error de la base, tal cual (p. ej. RN-05: la composición no suma 100) -->
           <div class="alerta-api" x-show="errorForm">
             <span class="icono" aria-hidden="true">⚠</span>
-            <div><strong>Error de la API</strong><div x-text="errorForm"></div></div>
+            <div><strong>Error de la API</strong><div x-text="errorForm && errorForm.message"></div><small class="detalle-error" x-show="detalleError(errorForm)" x-text="detalleError(errorForm)"></small></div>
           </div>
 
           <div class="form-vino" x-show="!cargando && !error">
@@ -554,7 +554,7 @@
         <!-- Error de la API tal cual (p. ej. RN-09 stock insuficiente) -->
         <div class="alerta-api" x-show="errorVenta">
           <span class="icono" aria-hidden="true">⚠</span>
-          <div><strong>Error de la API</strong><div x-text="errorVenta"></div></div>
+          <div><strong>Error de la API</strong><div x-text="errorVenta && errorVenta.message"></div><small class="detalle-error" x-show="detalleError(errorVenta)" x-text="detalleError(errorVenta)"></small></div>
         </div>
 
         <div class="grilla-venta">
@@ -701,7 +701,7 @@
           <!-- Error de la base tal cual (RN-11, RN-12, stock insuficiente…) -->
           <div class="alerta-api" x-show="error">
             <span class="icono" aria-hidden="true">⚠</span>
-            <div><strong>Error de la API</strong><div x-text="error"></div></div>
+            <div><strong>Error de la API</strong><div x-text="error && error.message"></div><small class="detalle-error" x-show="detalleError(error)" x-text="detalleError(error)"></small></div>
           </div>
 
           <!-- Nada elegido -->

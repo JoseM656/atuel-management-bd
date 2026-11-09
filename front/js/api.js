@@ -18,12 +18,25 @@ const API_BASE = window.API_BASE || '/api';
 //   status 400 → formato inválido
 //   status 503 → serialización/deadlock (reintentar) o base no accesible
 //   status 0   → no hubo respuesta (API caída o sin red)
+//
+// Si el error viene de la base, también trae `codigo` (SQLSTATE) y
+// `restriccion` (nombre del CHECK/UNIQUE/FK), que el front muestra debajo del
+// mensaje para que se vea que la regla la aplicó la base (#88). El mensaje en
+// castellano lo arma la API; el front no traduce nada.
 class ApiError extends Error {
-  constructor(status, mensaje) {
+  constructor(status, mensaje, codigo = '', restriccion = '') {
     super(mensaje);
     this.name = 'ApiError';
     this.status = status;
+    this.codigo = codigo;
+    this.restriccion = restriccion;
   }
+}
+
+// detalleError devuelve «SQLSTATE · restricción» de un error de la API, o ''
+// si no lo tiene (por ejemplo, si la API no respondió).
+function detalleError(e) {
+  return e && e.codigo ? [e.codigo, e.restriccion].filter(Boolean).join(' · ') : '';
 }
 
 // request hace el pedido y devuelve el JSON de la respuesta (o null si es 204).
@@ -64,7 +77,7 @@ async function request(metodo, ruta, { query, body } = {}) {
 
   if (!resp.ok) {
     const mensaje = (datos && datos.error) || texto.trim() || resp.statusText;
-    throw new ApiError(resp.status, mensaje);
+    throw new ApiError(resp.status, mensaje, datos && datos.codigo, datos && datos.restriccion);
   }
   return datos;
 }
@@ -129,3 +142,4 @@ const api = {
 
 window.api = api;
 window.ApiError = ApiError;
+window.detalleError = detalleError;

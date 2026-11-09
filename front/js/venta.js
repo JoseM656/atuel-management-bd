@@ -57,7 +57,7 @@ document.addEventListener('alpine:init', () => {
     renglones: [],            // [{ cod_vino, nombre, anada, volumen_ml, cantidad }]
     calculo: null,            // respuesta de /comprobantes/simular
     calculando: false,
-    errorVenta: '',           // error de la API (p. ej. RN-09) tal cual
+    errorVenta: '',           // ApiError (p. ej. RN-09) tal cual; '' = sin error
     pedido: 0,                // descarta respuestas viejas de la simulación
 
     // --- Confirmación ---
@@ -156,7 +156,7 @@ document.addEventListener('alpine:init', () => {
         const r = await api.listarVinos({ nombre: this.qVino.trim(), limit: RESULTADOS_VINO });
         this.vinos = r.vinos;
       } catch (e) {
-        this.errorVenta = e.message;
+        this.errorVenta = e;
         this.vinos = [];
       } finally {
         this.buscandoVinos = false;
@@ -226,7 +226,7 @@ document.addEventListener('alpine:init', () => {
         return true;
       } catch (e) {
         if (pedido !== this.pedido) return false;
-        this.errorVenta = e.message;   // p. ej. «stock insuficiente del vino …» (RN-09)
+        this.errorVenta = e;   // p. ej. «stock insuficiente del vino …» (RN-09)
         return false;
       } finally {
         if (pedido === this.pedido) this.calculando = false;
@@ -264,7 +264,7 @@ document.addEventListener('alpine:init', () => {
         this.comprobante = await api.obtenerComprobante(nro);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (e) {
-        this.errorVenta = e.message;    // tal cual (RN-09 si otro vendió antes, etc.)
+        this.errorVenta = e;    // tal cual (RN-09 si otro vendió antes, etc.)
       } finally {
         this.confirmando = false;
       }

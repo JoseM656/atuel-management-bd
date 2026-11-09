@@ -270,6 +270,14 @@ button.chip:hover { border-color: var(--vino); }
 .alerta-api .icono { font-size: 1.1rem; line-height: 1.2; }
 .alerta-api strong { display: block; margin-bottom: 0.15rem; }
 .alerta-api div > div { white-space: pre-wrap; }
+/* SQLSTATE · restricción: muestra que la regla la aplicó la base (#88). */
+.alerta-api .detalle-error {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
 
 /* ---------- Formulario de vino ---------- */
 .form-vino { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }

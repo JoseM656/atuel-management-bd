@@ -44,6 +44,8 @@ document.addEventListener('alpine:init', () => {
     hayVino: false,
     cargando: false,
     error: '',         // error al cargar la ficha
+    // errorAccion y errorForm guardan el ApiError entero ('' = sin error), para
+    // mostrar debajo del mensaje el SQLSTATE y la restricción (#88).
     errorAccion: '',   // error al eliminar desde la ficha
     eliminando: false,
     confirmando: false, // ventana «¿Estás seguro…?» abierta
@@ -104,7 +106,7 @@ document.addEventListener('alpine:init', () => {
         this.opciones = { cepas, bodegas, maridajes };
         this.opcionesCargadas = true;
       } catch (e) {
-        this.errorForm = e.message;
+        this.errorForm = e;
       }
     },
 
@@ -154,7 +156,7 @@ document.addEventListener('alpine:init', () => {
         }
       } catch (e) {
         // Mensaje de la base tal cual (p. ej. «la composición de un vino no suma 100»).
-        this.errorForm = e.message;
+        this.errorForm = e;
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } finally {
         this.guardando = false;
@@ -188,7 +190,7 @@ document.addEventListener('alpine:init', () => {
         // Si tiene ventas, stock o auditoría, la base lo impide (RN-14): se
         // cierra la ventana y se muestra el mensaje de la API tal cual.
         this.confirmando = false;
-        if (this.modo === 'ficha') this.errorAccion = e.message; else this.errorForm = e.message;
+        if (this.modo === 'ficha') this.errorAccion = e; else this.errorForm = e;
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } finally {
         this.eliminando = false;
