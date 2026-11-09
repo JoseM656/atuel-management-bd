@@ -1,6 +1,6 @@
 // Package httperr traduce errores de PostgreSQL (SQLSTATE) a códigos HTTP.
-// Mapeo: 23505→409 · 23514/23502→422 · 22P02→400 · 40001/40P01→503 ·
-// P0001 (RAISE EXCEPTION de reglas RN/RI)→422 · resto→500.
+// Mapeo: 23505/23503→409 · 23514/23502→422 · 22P02→400 · 40001/40P01→503 ·
+// P0001 (RAISE EXCEPTION de reglas RN/RI)→409 · resto→500.
 package httperr
 
 import (
@@ -20,7 +20,7 @@ func Status(err error) int {
 	}
 
 	switch pgErr.Code {
-	case "23505": // unique_violation
+	case "23505", "23503": // unique_violation, foreign_key_violation
 		return http.StatusConflict
 	case "23514", "23502": // check_violation, not_null_violation
 		return http.StatusUnprocessableEntity
@@ -29,7 +29,7 @@ func Status(err error) int {
 	case "40001", "40P01": // serialization_failure, deadlock_detected
 		return http.StatusServiceUnavailable
 	case "P0001": // raise_exception: reglas RN/RI de triggers y procedimientos
-		return http.StatusUnprocessableEntity
+		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError
 	}

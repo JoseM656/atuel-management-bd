@@ -41,7 +41,7 @@ go run ./cmd/api
 ### Errores
 
 Los errores se devuelven como JSON `{"error": "..."}` con el código HTTP correspondiente al `SQLSTATE`:
-`23505` → 409 · `23514`/`23502` → 422 · `22P02` → 400 · `40001`/`40P01` → 503 · `RAISE EXCEPTION` (reglas RN/RI) → 422.
+`23505`/`23503` → 409 · `23514`/`23502` → 422 · `22P02` → 400 · `40001`/`40P01` → 503 · `RAISE EXCEPTION` (reglas RN/RI) → 409.
 
 ### Documentación
 
