@@ -26,11 +26,21 @@ func main() {
 
 	health := &httpapi.HealthHandler{Pool: pool}
 	vinos := &httpapi.VinosHandler{Pool: pool}
+	clientes := &httpapi.ClientesHandler{Pool: pool}
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger, middleware.Recoverer)
 	r.Get("/salud", health.Salud)
 	r.Get("/vinos", vinos.Listar)
+	r.Post("/vinos", vinos.Crear)
+	r.Get("/vinos/{cod}", vinos.Obtener)
+	r.Put("/vinos/{cod}", vinos.Actualizar)
+	r.Delete("/vinos/{cod}", vinos.Borrar)
+	r.Get("/clientes", clientes.Listar)
+	r.Post("/clientes", clientes.Crear)
+	r.Get("/clientes/{id}", clientes.Obtener)
+	r.Put("/clientes/{id}", clientes.Actualizar)
+	r.Delete("/clientes/{id}", clientes.Borrar)
 
 	log.Printf("[API] escuchando en :%s", cfg.Port)
 	http.ListenAndServe(":"+cfg.Port, r)
