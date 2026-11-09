@@ -105,11 +105,14 @@ const api = {
   // Transferencias (#55): en_confeccion → terminado → procesado
   // filtros: { estado, id_sala, limit, offset } → { total, limit, offset, transferencias }
   listarTransferencias: (filtros) => request('GET', '/transferencias', { query: filtros }),
-  // → { nro, id_sala, sala, fecha_confeccion, estado, renglones: [...] }
+  // → { nro, id_sala, sala, localidad, fecha_confeccion, estado,
+  //     renglones: [{ cod_vino, vino, anada, volumen_ml, cantidad, stock_deposito }] }
   obtenerTransferencia: (nro)     => request('GET', `/transferencias/${encodeURIComponent(nro)}`),
   crearTransferencia:   (idSala)        => request('POST', '/transferencias', { body: { id_sala: idSala } }), // → { nro }
   agregarRenglonesTransferencia: (nro, renglones) =>
     request('POST', `/transferencias/${encodeURIComponent(nro)}/renglones`, { body: renglones }),
+  quitarRenglonTransferencia: (nro, cod) =>
+    request('DELETE', `/transferencias/${encodeURIComponent(nro)}/renglones/${encodeURIComponent(cod)}`),
   terminarTransferencia: (nro)  => request('POST', `/transferencias/${encodeURIComponent(nro)}/terminar`),
   procesarTransferencia: (nro)  => request('POST', `/transferencias/${encodeURIComponent(nro)}/procesar`),
 

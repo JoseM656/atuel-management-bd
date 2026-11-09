@@ -18,6 +18,7 @@
   <script src="js/catalogo.js"></script>
   <script src="js/vino.js"></script>
   <script src="js/venta.js"></script>
+  <script src="js/transferencias.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body x-data="app" x-cloak>
@@ -654,14 +655,210 @@
     </section>
 
     <!-- ===================== #55 Transferencias ===================== -->
-    <section x-show="pantalla === 'transferencias'">
-      <div class="titulo-pantalla"><h2>Transferencias</h2></div>
-      <div class="boceto">
-        Boceto — se implementa en #55.
-        <ul>
-          <li>Crear transferencia para una sala y cargar renglones.</li>
-          <li>Botones Terminar / Procesar habilitados según el estado.</li>
-        </ul>
+    <section x-show="pantalla === 'transferencias'" x-data="transferencias" @ruta.window="alCambiarRuta($event.detail)">
+      <div class="titulo-pantalla">
+        <h2>Transferencias depósito → sala</h2>
+        <div class="ruta-api">POST /transferencias · POST /transferencias/{nro}/renglones · POST /transferencias/{nro}/terminar · POST /transferencias/{nro}/procesar</div>
+      </div>
+
+      <div class="grilla-transferencias">
+        <!-- ---------- Lista ---------- -->
+        <aside class="tarjeta lista-documentos">
+          <a class="boton primario ancho" href="#transferencias/nueva">+ Nueva transferencia</a>
+          <div class="campo">
+            <label for="tr-estado">Filtrar por estado</label>
+            <select id="tr-estado" x-model="filtroEstado" @change="filtrar()">
+              <option value="">Todos</option>
+              <template x-for="e in estados" :key="e">
+                <option :value="e" x-text="etiquetaEstado(e)"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="error-api" x-show="errorLista" x-text="errorLista"></div>
+
+          <template x-for="d in lista" :key="d.nro">
+            <a class="documento" :class="{ activo: String(d.nro) === String(nro) }" :href="'#transferencias/' + d.nro">
+              <div class="fila">
+                <strong x-text="'N° ' + d.nro"></strong>
+                <span class="estado" :class="d.estado" x-text="etiquetaEstado(d.estado)"></span>
+              </div>
+              <span class="detalle" x-text="'Sala #' + d.id_sala + ' · ' + d.localidad + ' · ' + fecha(d.fecha_confeccion)"></span>
+            </a>
+          </template>
+          <p class="vacio" x-show="!cargandoLista && !errorLista && lista.length === 0">No hay transferencias.</p>
+
+          <div class="paginacion compacta" x-show="total > 0">
+            <button type="button" class="boton" @click="irA(pagina - 1)" :disabled="pagina <= 1 || cargandoLista" aria-label="Página anterior">←</button>
+            <span><span x-text="pagina"></span> / <span x-text="totalPaginas"></span> · <span x-text="total"></span></span>
+            <button type="button" class="boton" @click="irA(pagina + 1)" :disabled="pagina >= totalPaginas || cargandoLista" aria-label="Página siguiente">→</button>
+          </div>
+        </aside>
+
+        <!-- ---------- Panel derecho ---------- -->
+        <div class="panel-documento">
+          <!-- Error de la base tal cual (RN-11, RN-12, stock insuficiente…) -->
+          <div class="alerta-api" x-show="error">
+            <span class="icono" aria-hidden="true">⚠</span>
+            <div><strong>Error de la API</strong><div x-text="error"></div></div>
+          </div>
+
+          <!-- Nada elegido -->
+          <div class="tarjeta vacio" x-show="modo === null">
+            Elegí una transferencia de la lista o creá una nueva.
+          </div>
+
+          <!-- Alta -->
+          <form class="tarjeta" x-show="modo === 'nueva'" @submit.prevent="crear()">
+            <h3>Nueva transferencia</h3>
+            <div class="grilla-form">
+              <div class="campo">
+                <label for="tr-sala">Sala destino</label>
+                <select id="tr-sala" required x-model="salaNueva">
+                  <option value="" disabled>Elegir sala…</option>
+                  <template x-for="s in salas" :key="s.id_sala">
+                    <option :value="s.id_sala" x-text="etiquetaSala(s)"></option>
+                  </template>
+                </select>
+              </div>
+              <div class="campo">
+                <label>Fecha de confección</label>
+                <input type="text" value="La asigna la base (fecha actual)" disabled>
+              </div>
+            </div>
+            <div class="acciones derecha">
+              <a class="boton" href="#transferencias">Cancelar</a>
+              <button type="submit" class="boton primario" :disabled="!salaNueva || ocupado"
+                      x-text="ocupado ? 'Creando…' : 'Crear transferencia'"></button>
+            </div>
+          </form>
+
+          <!-- Detalle -->
+          <div x-show="modo === 'detalle'">
+            <p class="cargando" x-show="cargando && !hayDetalle">Cargando transferencia…</p>
+            <div class="error-api" x-show="errorDetalle" x-text="errorDetalle"></div>
+
+            <template x-if="hayDetalle">
+              <div>
+                <div class="tarjeta">
+                  <div class="titulo-tarjeta">
+                    <h3 class="grande" x-text="'Transferencia N° ' + t.nro"></h3>
+                    <span class="estado" :class="t.estado" x-text="etiquetaEstado(t.estado)"></span>
+                  </div>
+                  <div class="grilla-form">
+                    <div class="campo">
+                      <label>Sala destino</label>
+                      <input type="text" disabled :value="'#' + t.id_sala + ' · ' + t.sala">
+                    </div>
+                    <div class="campo">
+                      <label>Fecha de confección</label>
+                      <input type="text" disabled :value="fecha(t.fecha_confeccion) + ' (fija, no editable)'">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tarjeta">
+                  <h3>Renglones</h3>
+
+                  <form class="agregar-vino" x-show="puede.renglones" @submit.prevent="agregarRenglon()">
+                    <div class="campo combo" @click.outside="abiertoVino = false">
+                      <label for="tr-vino">Vino</label>
+                      <input id="tr-vino" type="search" autocomplete="off" placeholder="Buscar vino por nombre…"
+                             x-model="qVino" @input="escribirVino()" @focus="abiertoVino = true; vinos.length || buscarVinos()"
+                             @keydown.escape="abiertoVino = false">
+                      <div class="desplegable" x-show="abiertoVino">
+                        <ul>
+                          <template x-for="v in vinos" :key="v.cod_vino">
+                            <li><button type="button" class="opcion" @click="elegirVino(v)">
+                              <span class="id" x-text="'#' + v.cod_vino"></span>
+                              <span class="texto">
+                                <strong x-text="v.nombre + ' ' + v.anada"></strong>
+                                <span x-text="v.volumen_ml + ' ml · ' + v.bodega"></span>
+                              </span>
+                            </button></li>
+                          </template>
+                          <li class="vacio" x-show="!buscandoVinos && vinos.length === 0">Ningún vino coincide.</li>
+                        </ul>
+                        <div class="pie-desplegable">
+                          <span x-text="buscandoVinos ? 'Buscando…' : `${vinos.length} resultados`"></span>
+                          <code>GET /vinos?nombre=&amp;limit=10</code>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="campo">
+                      <label for="tr-cantidad">Cantidad</label>
+                      <input id="tr-cantidad" type="number" step="1" x-ref="cantidadTr" x-model="cantidad">
+                    </div>
+                    <button type="submit" class="boton" :disabled="!vinoElegido || ocupado">Agregar renglón</button>
+                  </form>
+                  <p class="aclaracion" x-show="aviso" x-text="aviso"></p>
+
+                  <div class="tabla-contenedor separada">
+                    <table>
+                      <thead>
+                        <tr><th>Cód</th><th>Vino</th><th class="num">Cantidad</th><th class="num">Stock en depósito</th><th></th></tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="r in t.renglones" :key="r.cod_vino">
+                          <tr>
+                            <td x-text="r.cod_vino"></td>
+                            <td class="texto-largo" x-text="etiquetaVino(r)"></td>
+                            <td class="num" x-text="r.cantidad"></td>
+                            <td class="num" :class="claseStock(r)" x-text="r.stock_deposito"></td>
+                            <td>
+                              <button type="button" class="enlace peligro" x-show="puede.renglones"
+                                      @click="quitar(r.cod_vino)" :disabled="ocupado">Quitar</button>
+                            </td>
+                          </tr>
+                        </template>
+                        <tr x-show="t.renglones.length === 0"><td colspan="5" class="vacio">La transferencia no tiene renglones.</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <p class="nota">
+                    <strong>Nota de diseño:</strong> «Stock en depósito» es un dato informativo de la API (tabla
+                    <code>stock_deposito</code>). Si al procesar no alcanza, la base rechaza todo con
+                    «stock insuficiente del vino …: hay … y se piden …» y la transferencia queda en terminado.
+                  </p>
+                </div>
+
+                <div class="acciones derecha">
+                  <button type="button" class="boton primario" @click="terminar()" :disabled="!puede.terminar || ocupado">Terminar</button>
+                  <button type="button" class="boton primario" @click="procesar()" :disabled="!puede.procesar || ocupado">Procesar</button>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Ayuda: qué se habilita en cada estado -->
+          <div class="tarjeta">
+            <h3>Botones habilitados según estado</h3>
+            <div class="tabla-contenedor">
+              <table>
+                <thead>
+                  <tr><th>Estado</th><th>Agregar / quitar renglones</th><th>Terminar</th><th>Procesar</th></tr>
+                </thead>
+                <tbody>
+                  <template x-for="e in estados" :key="e">
+                    <tr>
+                      <td><span class="estado" :class="e" x-text="etiquetaEstado(e)"></span></td>
+                      <td x-text="acciones[e].renglones ? '✓ habilitado' : '✕ deshabilitado'"></td>
+                      <td x-text="acciones[e].terminar ? '✓ habilitado' : '✕ deshabilitado'"></td>
+                      <td x-text="acciones[e].procesar ? '✓ habilitado' : (e === 'procesado' ? '✕ deshabilitado (solo lectura)' : '✕ deshabilitado')"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <p class="nota">
+            <strong>Nota de diseño:</strong> Procesar invoca el procedimiento de la base, que mueve el stock del depósito a la sala.
+            El front solo cambia qué botones se habilitan según el estado que devuelve la API; si la base rechaza el cambio,
+            se muestra su mensaje.
+          </p>
+        </div>
       </div>
     </section>
 

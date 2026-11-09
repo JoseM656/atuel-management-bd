@@ -422,12 +422,52 @@ h3.separado { margin-top: 1.5rem; }
 .aviso-ok .icono { font-size: 1.1rem; line-height: 1.2; }
 .aviso-ok strong { display: block; margin-bottom: 0.15rem; }
 
+/* ---------- Transferencias ---------- */
+.grilla-transferencias { display: grid; grid-template-columns: 280px 1fr; gap: 1.25rem; align-items: start; }
+.grilla-transferencias > * { min-width: 0; }
+.lista-documentos { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0; }
+.documento {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.85rem;
+  color: var(--texto);
+  text-decoration: none;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+.documento:hover { border-color: var(--vino); }
+.documento.activo { border-color: var(--vino); background: #fdf8f9; }
+.documento .fila { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.documento .detalle { font-size: 0.78rem; color: var(--texto-suave); }
+.paginacion.compacta { margin: 0; justify-content: space-between; }
+.paginacion.compacta .boton { height: 2.1rem; padding: 0 0.7rem; }
+
+.estado {
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+.estado.en_confeccion { background: #fdf0d5; color: #8a5a00; }
+.estado.terminado     { background: #e3edfb; color: #1f4f99; }
+.estado.procesado     { background: #e2f3e7; color: var(--ok); }
+
+.titulo-tarjeta { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.9rem; }
+.titulo-tarjeta h3 { margin: 0; }
+h3.grande { font-size: 1.3rem; font-weight: 700; }
+input:disabled { background: var(--fondo); color: var(--texto); }
+.acciones.derecha { justify-content: flex-end; margin-bottom: 1.25rem; }
+.tabla-contenedor.separada { margin: 1rem 0; }
+.tarjeta.vacio { padding: 2rem; }
+
 /* ---------- Pantallas angostas ---------- */
 @media (max-width: 1000px) {
   .filtros { grid-template-columns: 1fr 1fr; }
   .form-vino { grid-template-columns: 1fr; }
   .cabecera-venta { grid-template-columns: 1fr 1fr; }
-  .grilla-venta { grid-template-columns: 1fr; }
+  .grilla-venta, .grilla-transferencias { grid-template-columns: 1fr; }
   .resumen { position: static; }
 }
 @media (max-width: 640px) {
