@@ -97,6 +97,48 @@ curl -i -X DELETE http://localhost:3333/vinos/1
 curl -i -X DELETE http://localhost:3333/vinos/401
 ```
 
+## Clientes — listado y detalle
+
+```bash
+# Lista (con filtro ?tipo= y paginación)
+curl 'http://localhost:3333/clientes?tipo=socio&limit=5'
+
+# Detalle con subtipo
+curl http://localhost:3333/clientes/1
+```
+
+## Clientes — alta (`POST /clientes`)
+
+```bash
+# Socio (sin campos de subtipo)
+curl -i -X POST http://localhost:3333/clientes \
+  -H 'Content-Type: application/json' \
+  -d '{"nombre_razon_social":"Socio Test","tipo_doc":"DNI","nro_doc":"39999999","direccion":"Calle 1","id_localidad":1,"tipo":"socio"}'
+
+# Distribuidor
+curl -i -X POST http://localhost:3333/clientes \
+  -H 'Content-Type: application/json' \
+  -d '{"nombre_razon_social":"Distri Test","tipo_doc":"CUIT","nro_doc":"30999999991","direccion":"Calle 2","id_localidad":1,"tipo":"distribuidor","zona_cobertura":"Sur","nro_habilitacion":"HAB-TEST"}'
+
+# Exportador (con permisos; >3 permisos -> descuento 35 %)
+curl -i -X POST http://localhost:3333/clientes \
+  -H 'Content-Type: application/json' \
+  -d '{"nombre_razon_social":"Export Test","tipo_doc":"CUIT","nro_doc":"30999999992","direccion":"Calle 3","id_localidad":1,"tipo":"exportador","pais_destino":"Chile","permisos":[{"codigo":"P-1","fecha_emision":"2025-01-01","fecha_vencimiento":"2026-01-01"}]}'
+```
+
+El `descuento` NO se envía: lo asigna la base (socio 10, distribuidor 20, exportador 30/35).
+
+## Clientes — modificación y baja
+
+```bash
+curl -i -X PUT http://localhost:3333/clientes/20002 \
+  -H 'Content-Type: application/json' \
+  -d '{"nombre_razon_social":"Distri Test","tipo_doc":"CUIT","nro_doc":"30999999991","direccion":"Calle 2 bis","id_localidad":1,"zona_cobertura":"Norte","nro_habilitacion":"HAB-TEST"}'
+
+# RN-14: rechaza si tiene comprobantes → 409
+curl -i -X DELETE http://localhost:3333/clientes/366
+```
+
 ## Errores (SQLSTATE → HTTP)
 
 | SQLSTATE | Significado | HTTP |

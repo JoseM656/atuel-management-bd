@@ -136,6 +136,102 @@ paths:
         "409":
           description: Tiene movimientos/auditoría (RN-14)
 
+  /clientes:
+    get:
+      summary: Lista de clientes con su subtipo (filtro y paginación)
+      parameters:
+        - name: tipo
+          in: query
+          required: false
+          description: Filtro por tipo (socio, distribuidor, exportador)
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Página de clientes
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClientesPagina" }
+    post:
+      summary: Alta de un cliente con su subtipo (el descuento lo asigna la base)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClienteNuevo" }
+      responses:
+        "201":
+          description: Cliente creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id_cliente: { type: integer }
+        "400":
+          description: Tipo inválido
+        "409":
+          description: Duplicado (tipo_doc, nro_doc)
+        "422":
+          description: NOT NULL violado
+
+  /clientes/{id}:
+    get:
+      summary: Cliente con su subtipo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Cliente
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Cliente" }
+        "404":
+          description: No encontrado
+    put:
+      summary: Reemplaza campos comunes y del subtipo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClienteActualizar" }
+      responses:
+        "204":
+          description: Actualizado
+        "404":
+          description: No encontrado
+        "422":
+          description: NOT NULL violado
+    delete:
+      summary: Baja de un cliente (RN-14 lo rechaza si tiene comprobantes)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Eliminado
+        "404":
+          description: No encontrado
+        "409":
+          description: Tiene comprobantes (RN-14)
+
 components:
   schemas:
     Vino:
@@ -219,6 +315,67 @@ components:
         graduacion: { type: number }
         precio: { type: number }
         cuit_bodega: { type: string }
+    Cliente:
+      type: object
+      properties:
+        id_cliente: { type: integer }
+        nombre_razon_social: { type: string }
+        tipo_doc: { type: string }
+        nro_doc: { type: string }
+        direccion: { type: string }
+        id_localidad: { type: integer }
+        localidad: { type: string }
+        provincia: { type: string }
+        fecha_alta: { type: string }
+        tipo: { type: string }
+        descuento: { type: number }
+        zona_cobertura: { type: string, nullable: true }
+        nro_habilitacion: { type: string, nullable: true }
+        pais_destino: { type: string, nullable: true }
+        cant_permisos_exportacion: { type: integer }
+    ClientesPagina:
+      type: object
+      properties:
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+        clientes:
+          type: array
+          items: { $ref: "#/components/schemas/Cliente" }
+    ClienteNuevo:
+      type: object
+      required: [nombre_razon_social, tipo_doc, nro_doc, direccion, id_localidad, tipo]
+      properties:
+        nombre_razon_social: { type: string }
+        tipo_doc: { type: string }
+        nro_doc: { type: string }
+        direccion: { type: string }
+        id_localidad: { type: integer }
+        tipo: { type: string }
+        zona_cobertura: { type: string }
+        nro_habilitacion: { type: string }
+        pais_destino: { type: string }
+        permisos:
+          type: array
+          items: { $ref: "#/components/schemas/PermisoInput" }
+    PermisoInput:
+      type: object
+      properties:
+        codigo: { type: string }
+        fecha_emision: { type: string }
+        fecha_vencimiento: { type: string }
+    ClienteActualizar:
+      type: object
+      required: [nombre_razon_social, tipo_doc, nro_doc, direccion, id_localidad]
+      properties:
+        nombre_razon_social: { type: string }
+        tipo_doc: { type: string }
+        nro_doc: { type: string }
+        direccion: { type: string }
+        id_localidad: { type: integer }
+        zona_cobertura: { type: string }
+        nro_habilitacion: { type: string }
+        pais_destino: { type: string }
     Error:
       type: object
       properties:
