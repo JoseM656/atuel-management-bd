@@ -1,11 +1,10 @@
 // catalogo.js — pantalla «Catálogo de vinos» (#52).
 //
-// Listado paginado con filtros (tipo, cepa, bodega, añada) y detalle con
-// composición y maridajes. Todo sale de la API:
+// Listado paginado con filtros (tipo, cepa, bodega, añada). Todo sale de la API:
 //   - GET /vinos           → filtros y paginación los resuelve la base (WHERE + LIMIT/OFFSET).
-//   - GET /vinos/{cod}     → ficha (S9) con cepas, maridajes y stock total.
 //   - GET /cepas, /bodegas → opciones de los desplegables (#87).
 // El stock total viene de la vista v_stock_total_vino: el front no suma nada.
+// «Ver detalle» lleva a la ficha del vino (#vino/{cod}, ver vino.js).
 
 document.addEventListener('alpine:init', () => {
 
@@ -39,13 +38,15 @@ document.addEventListener('alpine:init', () => {
     cargando: false,
     error: '',
 
-    detalle: null,          // ficha abierta en el panel lateral
-    cargandoDetalle: false,
-    errorDetalle: '',
-
     async init() {
       // Desplegables y primera página en paralelo.
       await Promise.all([this.cargarOpciones(), this.buscar()]);
+    },
+
+    // Al volver al catálogo (p. ej. después de editar o eliminar un vino) se
+    // recarga la página actual, manteniendo filtros y número de página.
+    alCambiarRuta({ pantalla }) {
+      if (pantalla === 'catalogo') this.buscar();
     },
 
     async cargarOpciones() {
@@ -69,6 +70,11 @@ document.addEventListener('alpine:init', () => {
         });
         this.vinos = r.vinos;
         this.total = r.total;
+        // Si se eliminó el último vino de la última página, retroceder una.
+        if (this.vinos.length === 0 && this.pagina > 1) {
+          this.pagina = this.totalPaginas;
+          return this.buscar();
+        }
       } catch (e) {
         // Se muestra el mensaje de la API sin reemplazarlo.
         this.error = e.message;
@@ -100,22 +106,6 @@ document.addEventListener('alpine:init', () => {
       this.pagina = pagina;
       this.buscar();
     },
-
-    // --- Detalle ---
-    async verDetalle(cod) {
-      this.detalle = { cod_vino: cod };
-      this.cargandoDetalle = true;
-      this.errorDetalle = '';
-      try {
-        this.detalle = await api.obtenerVino(cod);
-      } catch (e) {
-        this.errorDetalle = e.message;
-      } finally {
-        this.cargandoDetalle = false;
-      }
-    },
-
-    cerrarDetalle() { this.detalle = null; },
 
     // --- Formato (solo presentación) ---
     precio(valor) { return formatoPrecio.format(valor); },

@@ -16,6 +16,7 @@
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
   <script src="js/catalogo.js"></script>
+  <script src="js/vino.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body x-data="app" x-cloak>
@@ -29,8 +30,8 @@
     </div>
 
     <nav>
-      <template x-for="p in pantallas" :key="p.id">
-        <a :href="'#' + p.id" :class="{ activa: pantalla === p.id }" x-text="p.titulo"></a>
+      <template x-for="p in menu" :key="p.id">
+        <a :href="'#' + p.id" :class="{ activa: seccion === p.id }" x-text="p.titulo"></a>
       </template>
     </nav>
 
@@ -46,10 +47,15 @@
   <main>
 
     <!-- ===================== #52 Catálogo de vinos ===================== -->
-    <section x-show="pantalla === 'catalogo'" x-data="catalogo">
-      <div class="titulo-pantalla">
-        <h2>Catálogo de vinos</h2>
-        <div class="ruta-api">GET /vinos?tipo=&amp;cepa=&amp;bodega=&amp;anada=&amp;limit=&amp;offset=</div>
+    <section x-show="pantalla === 'catalogo'" x-data="catalogo" @ruta.window="alCambiarRuta($event.detail)">
+      <div class="titulo-pantalla con-acciones">
+        <div>
+          <h2>Catálogo de vinos</h2>
+          <div class="ruta-api">GET /vinos?tipo=&amp;cepa=&amp;bodega=&amp;anada=&amp;limit=&amp;offset=</div>
+        </div>
+        <div class="acciones">
+          <a class="boton primario" href="#vino/nuevo">+ Nuevo vino</a>
+        </div>
       </div>
 
       <!-- Filtros: se envían a la API al apretar «Aplicar filtros» -->
@@ -117,7 +123,7 @@
           </thead>
           <tbody>
             <template x-for="v in vinos" :key="v.cod_vino">
-              <tr :class="{ seleccionada: detalle && detalle.cod_vino === v.cod_vino }">
+              <tr>
                 <td x-text="v.cod_vino"></td>
                 <td class="texto-largo" x-text="v.nombre"></td>
                 <td x-text="v.tipo"></td>
@@ -127,7 +133,7 @@
                 <td x-text="v.volumen_ml + ' ml'"></td>
                 <td class="num" x-text="precio(v.precio)"></td>
                 <td class="num" :class="claseStock(v.stock_total)" x-text="v.stock_total"></td>
-                <td><button type="button" class="enlace" @click="verDetalle(v.cod_vino)">Ver detalle →</button></td>
+                <td><a class="enlace" :href="'#vino/' + v.cod_vino">Ver detalle →</a></td>
               </tr>
             </template>
             <tr x-show="cargando && vinos.length === 0"><td colspan="10" class="vacio">Cargando…</td></tr>
@@ -152,66 +158,214 @@
         <strong>Nota de diseño:</strong> la paginación y los filtros los resuelve la API (WHERE y LIMIT/OFFSET en SQL).
         «Stock total» = depósito + salas, viene de la vista <code>v_stock_total_vino</code>; el front no lo suma.
       </p>
-
-      <!-- Panel de detalle: GET /vinos/{cod} (S9) -->
-      <template x-if="detalle">
-        <div>
-          <div class="fondo-panel" @click="cerrarDetalle()"></div>
-          <aside class="panel" @keydown.escape.window="cerrarDetalle()">
-            <div class="cabecera">
-              <div>
-                <h3 x-text="detalle.nombre || ('Vino ' + detalle.cod_vino)"></h3>
-                <p class="subtitulo" x-show="detalle.bodega" x-text="detalle.bodega"></p>
-              </div>
-              <button type="button" class="cerrar" @click="cerrarDetalle()" aria-label="Cerrar">×</button>
-            </div>
-
-            <p class="cargando" x-show="cargandoDetalle">Cargando ficha…</p>
-            <div class="error-api" x-show="errorDetalle" x-text="errorDetalle"></div>
-
-            <template x-if="!cargandoDetalle && !errorDetalle && detalle.cepas">
-              <div>
-                <dl>
-                  <dt>Código</dt>      <dd x-text="detalle.cod_vino"></dd>
-                  <dt>Tipo</dt>        <dd x-text="detalle.tipo"></dd>
-                  <dt>Añada</dt>       <dd x-text="detalle.anada"></dd>
-                  <dt>Volumen</dt>     <dd x-text="detalle.volumen_ml + ' ml'"></dd>
-                  <dt>Graduación</dt>  <dd x-text="detalle.graduacion + ' %'"></dd>
-                  <dt>Precio</dt>      <dd x-text="precio(detalle.precio)"></dd>
-                  <dt>Stock total</dt> <dd :class="claseStock(detalle.stock_total)" x-text="detalle.stock_total"></dd>
-                </dl>
-
-                <h4>Composición</h4>
-                <ul class="lista">
-                  <template x-for="c in detalle.cepas" :key="c.nombre">
-                    <li><span x-text="c.nombre"></span><span x-text="c.porcentaje + ' %'"></span></li>
-                  </template>
-                </ul>
-
-                <h4>Maridajes</h4>
-                <ul class="lista">
-                  <template x-for="m in detalle.maridajes" :key="m.nombre">
-                    <li><span x-text="m.nombre"></span><span x-text="m.temperatura_servicio + ' °C'"></span></li>
-                  </template>
-                </ul>
-              </div>
-            </template>
-          </aside>
-        </div>
-      </template>
     </section>
 
-    <!-- ===================== #53 Alta / edición de vino ===================== -->
-    <section x-show="pantalla === 'vino'">
-      <div class="titulo-pantalla"><h2>Alta / edición de vino</h2></div>
-      <div class="boceto">
-        Boceto — se implementa en #53.
-        <ul>
-          <li>Datos del vino y bodega.</li>
-          <li>Composición de cepas con porcentajes (la base valida que sumen 100, RN-05).</li>
-          <li>Error de la API visible tal cual.</li>
-        </ul>
-      </div>
+    <!-- ===================== #53 Ficha y alta/edición de vino ===================== -->
+    <section x-show="pantalla === 'vino'" x-data="vino" @ruta.window="alCambiarRuta($event.detail)">
+
+      <!-- ---------- Ficha: GET /vinos/{cod} ---------- -->
+      <template x-if="modo === 'ficha'">
+        <div>
+          <nav class="migas">
+            <a href="#catalogo">← Catálogo de vinos</a>
+            <span x-show="hayVino"> / <span x-text="vino.nombre"></span></span>
+          </nav>
+
+          <p class="cargando" x-show="cargando">Cargando ficha…</p>
+          <div class="error-api" x-show="error" x-text="error"></div>
+
+          <template x-if="hayVino">
+            <div>
+              <div class="titulo-pantalla con-acciones">
+                <div>
+                  <h2 x-text="vino.nombre"></h2>
+                  <div class="ruta-api">Cód <span x-text="vino.cod_vino"></span> · GET /vinos/{cod}</div>
+                </div>
+                <div class="acciones">
+                  <button type="button" class="boton peligro" @click="eliminar()" :disabled="eliminando">Eliminar</button>
+                  <a class="boton primario" :href="'#vino/' + vino.cod_vino + '/editar'">Editar</a>
+                </div>
+              </div>
+
+              <div class="alerta-api" x-show="errorAccion">
+                <span class="icono" aria-hidden="true">⚠</span>
+                <div><strong>Error de la API</strong><div x-text="errorAccion"></div></div>
+              </div>
+
+              <div class="tarjeta">
+                <h3>Ficha técnica</h3>
+                <div class="datos">
+                  <div class="dato"><span>Tipo</span><strong x-text="mayuscula(vino.tipo)"></strong></div>
+                  <div class="dato"><span>Añada</span><strong x-text="vino.anada"></strong></div>
+                  <div class="dato"><span>Volumen</span><strong x-text="vino.volumen_ml + ' ml'"></strong></div>
+                  <div class="dato"><span>Graduación</span><strong x-text="decimal(vino.graduacion) + ' % vol'"></strong></div>
+                  <div class="dato"><span>Bodega</span><strong x-text="vino.bodega"></strong></div>
+                  <div class="dato"><span>Precio</span><strong x-text="precio(vino.precio)"></strong></div>
+                </div>
+              </div>
+
+              <div class="tarjeta">
+                <h3>Stock</h3>
+                <div class="datos">
+                  <div class="dato"><span>Depósito central</span><strong x-text="botellas(vino.stock_deposito)"></strong></div>
+                  <div class="dato"><span>Salas de venta</span><strong x-text="botellas(vino.stock_salas)"></strong></div>
+                  <div class="dato destacado"><span>Stock total</span><strong x-text="botellas(vino.stock_total)"></strong></div>
+                </div>
+                <p class="aclaracion">Dato de la vista <code>v_stock_total_vino</code> (consulta S9: ficha del vino). El front no suma nada.</p>
+              </div>
+
+              <div class="tarjeta">
+                <h3>Composición</h3>
+                <template x-for="c in vino.cepas" :key="c.id_cepa">
+                  <div class="barra-cepa">
+                    <div class="fila"><span x-text="c.nombre"></span><strong x-text="decimal(c.porcentaje).replace(/,0+$/, '') + ' %'"></strong></div>
+                    <div class="barra"><div :style="`width: ${c.porcentaje}%`"></div></div>
+                  </div>
+                </template>
+              </div>
+
+              <div class="tarjeta">
+                <h3>Maridajes</h3>
+                <div class="chips">
+                  <template x-for="m in vino.maridajes" :key="m.id_maridaje">
+                    <span class="chip activo" x-text="m.nombre + ' · ' + m.temperatura_servicio + ' °C'"></span>
+                  </template>
+                </div>
+              </div>
+
+              <p class="nota">
+                <strong>Nota de diseño:</strong> Editar lleva al formulario con los datos cargados. Eliminar pide confirmación
+                y llama a <code>DELETE /vinos/{cod}</code>; si la base lo impide (el vino tiene ventas o stock, RN-14),
+                se muestra el mensaje de la API tal cual.
+              </p>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- ---------- Formulario: POST /vinos o PUT /vinos/{cod} ---------- -->
+      <template x-if="modo === 'editar' || modo === 'nuevo'">
+        <form @submit.prevent="guardar()">
+          <div class="titulo-pantalla">
+            <h2 x-text="modo === 'nuevo' ? 'Nuevo vino' : 'Editar vino · Cód ' + cod"></h2>
+            <div class="ruta-api">Alta: POST /vinos · Edición: PUT /vinos/{cod} · Baja: DELETE /vinos/{cod}</div>
+          </div>
+
+          <p class="cargando" x-show="cargando">Cargando vino…</p>
+          <div class="error-api" x-show="error" x-text="error"></div>
+
+          <!-- Error de la base, tal cual (p. ej. RN-05: la composición no suma 100) -->
+          <div class="alerta-api" x-show="errorForm">
+            <span class="icono" aria-hidden="true">⚠</span>
+            <div><strong>Error de la API</strong><div x-text="errorForm"></div></div>
+          </div>
+
+          <div class="form-vino" x-show="!cargando && !error">
+            <!-- Datos del vino -->
+            <div class="tarjeta">
+              <h3>Datos del vino</h3>
+              <div class="grilla-form">
+                <div class="campo ancho">
+                  <label for="v-nombre">Nombre</label>
+                  <input id="v-nombre" type="text" required maxlength="120" x-model="form.nombre">
+                </div>
+                <div class="campo">
+                  <label for="v-tipo">Tipo</label>
+                  <select id="v-tipo" required x-model="form.tipo">
+                    <template x-for="t in tipos" :key="t">
+                      <option :value="t" x-text="t" :selected="t === form.tipo"></option>
+                    </template>
+                  </select>
+                </div>
+                <div class="campo">
+                  <label for="v-anada">Añada</label>
+                  <input id="v-anada" type="number" required step="1" x-model="form.anada">
+                </div>
+                <div class="campo">
+                  <label for="v-volumen">Volumen (ml)</label>
+                  <select id="v-volumen" required x-model.number="form.volumen_ml">
+                    <template x-for="vol in volumenes" :key="vol">
+                      <option :value="vol" x-text="vol" :selected="vol === form.volumen_ml"></option>
+                    </template>
+                  </select>
+                </div>
+                <div class="campo">
+                  <label for="v-graduacion">Graduación (% vol)</label>
+                  <input id="v-graduacion" type="number" required step="0.01" x-model="form.graduacion">
+                </div>
+                <div class="campo">
+                  <label for="v-precio">Precio ($)</label>
+                  <input id="v-precio" type="number" required step="0.01" x-model="form.precio">
+                </div>
+                <div class="campo">
+                  <label for="v-bodega">Bodega</label>
+                  <select id="v-bodega" required x-model="form.cuit_bodega">
+                    <option value="" disabled>Elegir bodega…</option>
+                    <template x-for="b in opciones.bodegas" :key="b.cuit">
+                      <option :value="b.cuit" x-text="b.razon_social" :selected="b.cuit === form.cuit_bodega"></option>
+                    </template>
+                  </select>
+                </div>
+              </div>
+              <p class="nota">
+                <strong>Nota de diseño:</strong> Volumen: 187 / 375 / 750 / 1500 / 3000 ml. Graduación entre 5 y 20.
+                Añada entre 1990 y 2100 (CHECK de la base). Un cambio de precio queda auditado por trigger (RN-13).
+              </p>
+            </div>
+
+            <!-- Composición y maridajes -->
+            <div class="tarjeta">
+              <h3>Composición de cepas</h3>
+              <template x-for="(c, i) in form.cepas" :key="i">
+                <div class="fila-cepa">
+                  <div class="campo">
+                    <label :for="'v-cepa-' + i">Cepa</label>
+                    <select :id="'v-cepa-' + i" required x-model.number="c.id_cepa">
+                      <option value="" disabled>Elegir cepa…</option>
+                      <template x-for="op in opciones.cepas" :key="op.id_cepa">
+                        <option :value="op.id_cepa" x-text="op.nombre" :selected="op.id_cepa === c.id_cepa"></option>
+                      </template>
+                    </select>
+                  </div>
+                  <div class="campo">
+                    <label :for="'v-pct-' + i">%</label>
+                    <input :id="'v-pct-' + i" type="number" required step="0.01" x-model="c.porcentaje">
+                  </div>
+                  <button type="button" class="boton" @click="quitarCepa(i)">Quitar</button>
+                </div>
+              </template>
+              <button type="button" class="boton" @click="agregarCepa()">+ Agregar cepa</button>
+
+              <h3 class="separado">Maridajes (al menos uno)</h3>
+              <div class="chips">
+                <template x-for="m in opciones.maridajes" :key="m.id_maridaje">
+                  <button type="button" class="chip" :class="{ activo: tieneMaridaje(m.id_maridaje) }"
+                          :aria-pressed="tieneMaridaje(m.id_maridaje)"
+                          @click="alternarMaridaje(m.id_maridaje)"
+                          x-text="(tieneMaridaje(m.id_maridaje) ? '✓ ' : '+ ') + m.nombre"></button>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <div class="barra-acciones" x-show="!cargando && !error">
+            <div>
+              <button type="button" class="boton peligro" x-show="modo === 'editar'" @click="eliminar()" :disabled="eliminando || guardando">Eliminar vino</button>
+            </div>
+            <div class="acciones">
+              <button type="button" class="boton" @click="cancelar()" :disabled="guardando">Cancelar</button>
+              <button type="submit" class="boton primario" :disabled="guardando"
+                      x-text="guardando ? 'Guardando…' : (modo === 'nuevo' ? 'Crear vino' : 'Guardar cambios')"></button>
+            </div>
+          </div>
+
+          <p class="nota">
+            <strong>Nota de diseño:</strong> el vino, su composición y sus maridajes se envían juntos en un solo request.
+            Si la base rechaza la suma ≠ 100 %, no se guarda nada y se muestra la alerta de arriba con el texto exacto de la API.
+            El front no suma los porcentajes.
+          </p>
+        </form>
+      </template>
     </section>
 
     <!-- ===================== #54 Nueva venta ===================== -->

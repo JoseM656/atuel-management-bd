@@ -150,7 +150,6 @@ th:last-child, td:last-child { padding-right: 1rem; }
 th { font-weight: 500; color: var(--texto-suave); background: var(--cabecera-tabla); }
 td { border-top: 1px solid var(--borde); }
 tbody tr:hover { background: #faf7f5; }
-tbody tr.seleccionada { background: var(--vino-claro); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 /* Nombre, cepas del corte y bodega pueden ser largos: se dejan partir en
    líneas para que la tabla entre a lo ancho sin esconder información. */
@@ -202,39 +201,103 @@ td.texto-largo { white-space: normal; min-width: 130px; max-width: 180px; line-h
 }
 .boceto ul { margin: 0.5rem 0 0; }
 
-/* ---------- Panel de detalle (lateral derecho) ---------- */
-.fondo-panel {
-  position: fixed;
-  inset: 0;
-  background: rgba(20, 10, 12, 0.35);
-  z-index: 10;
+/* ---------- Encabezados con acciones y migas ---------- */
+.titulo-pantalla.con-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
-.panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(440px, 100%);
-  overflow-y: auto;
-  padding: 1.5rem;
+.acciones { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.migas { margin-bottom: 1rem; font-size: 0.85rem; color: var(--texto-suave); }
+.migas a { color: var(--vino); font-weight: 500; text-decoration: none; }
+.migas a:hover { text-decoration: underline; }
+
+a.boton { display: inline-flex; align-items: center; text-decoration: none; }
+.boton.peligro { color: var(--error); border-color: var(--error); background: var(--superficie); }
+.boton.peligro:hover:not(:disabled) { background: var(--error-fondo); }
+
+/* ---------- Ficha del vino ---------- */
+.datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+.dato {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 8px;
+  background: var(--fondo);
+}
+.dato span { font-size: 0.78rem; color: var(--texto-suave); }
+.dato strong { font-size: 1.05rem; font-weight: 600; }
+.dato.destacado { background: var(--vino-claro); }
+.dato.destacado strong { color: var(--vino); }
+.aclaracion { margin: 0.9rem 0 0; font-size: 0.78rem; color: var(--texto-suave); }
+
+.barra-cepa + .barra-cepa { margin-top: 0.9rem; }
+.barra-cepa .fila { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
+.barra { height: 7px; border-radius: 4px; background: var(--vino-claro); overflow: hidden; }
+.barra > div { height: 100%; border-radius: 4px; background: var(--vino); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  padding: 0.45rem 0.85rem;
+  font: inherit;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
   background: var(--superficie);
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
-  z-index: 11;
+  color: var(--texto);
 }
-.panel .cabecera { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
-.panel h3 { margin: 0; font-size: 1.25rem; }
-.panel .subtitulo { margin: 0.25rem 0 0; color: var(--texto-suave); }
-.panel h4 { margin: 1.5rem 0 0.6rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); }
-.panel dl { display: grid; grid-template-columns: auto 1fr; gap: 0.45rem 1rem; margin: 1.25rem 0 0; }
-.panel dt { color: var(--texto-suave); }
-.panel dd { margin: 0; }
-.panel ul.lista { list-style: none; margin: 0; padding: 0; }
-.panel ul.lista li { display: flex; justify-content: space-between; padding: 0.55rem 0; border-top: 1px solid var(--borde); }
-.cerrar { font-size: 1.4rem; line-height: 1; padding: 0.1rem 0.4rem; background: none; border: 0; cursor: pointer; color: var(--texto-suave); }
+button.chip { cursor: pointer; }
+button.chip:hover { border-color: var(--vino); }
+.chip.activo { background: var(--vino-claro); border-color: var(--vino-claro); color: var(--vino); }
+
+/* ---------- Alerta de error de la API (con título) ---------- */
+.alerta-api {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radio);
+  background: var(--error-fondo);
+  color: var(--error);
+}
+.alerta-api .icono { font-size: 1.1rem; line-height: 1.2; }
+.alerta-api strong { display: block; margin-bottom: 0.15rem; }
+.alerta-api div > div { white-space: pre-wrap; }
+
+/* ---------- Formulario de vino ---------- */
+.form-vino { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
+.form-vino .tarjeta { margin-bottom: 0; }
+.grilla-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 1rem; }
+.campo.ancho { grid-column: 1 / -1; }
+.fila-cepa {
+  display: grid;
+  grid-template-columns: 1fr 90px auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 0.8rem;
+}
+h3.separado { margin-top: 1.5rem; }
+.barra-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
 
 /* ---------- Pantallas angostas ---------- */
 @media (max-width: 1000px) {
   .filtros { grid-template-columns: 1fr 1fr; }
+  .form-vino { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .datos, .grilla-form { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
   .layout { flex-direction: column; }

@@ -124,30 +124,36 @@ func ContarVinos(ctx context.Context, pool *pgxpool.Pool, f VinoFiltro) (int, er
 }
 
 // VinoDetalle es la ficha completa de un vino (GET /vinos/{cod}), equivalente
-// a la consulta S9: cabecera, bodega, stock total, cepas del corte y
-// maridajes.
+// a la consulta S9: cabecera, bodega, stock (depósito, salas y total, de la
+// vista v_stock_total_vino), cepas del corte y maridajes. Los ids (cuit_bodega,
+// id_cepa, id_maridaje) los usa el formulario de edición del front.
 type VinoDetalle struct {
-	CodVino    int        `json:"cod_vino"`
-	Nombre     string     `json:"nombre"`
-	Tipo       string     `json:"tipo"`
-	Anada      int        `json:"anada"`
-	VolumenMl  int        `json:"volumen_ml"`
-	Graduacion float64    `json:"graduacion"`
-	Precio     float64    `json:"precio"`
-	Bodega     string     `json:"bodega"`
-	StockTotal int        `json:"stock_total"`
-	Cepas      []Cepa     `json:"cepas"`
-	Maridajes  []Maridaje `json:"maridajes"`
+	CodVino       int        `json:"cod_vino"`
+	Nombre        string     `json:"nombre"`
+	Tipo          string     `json:"tipo"`
+	Anada         int        `json:"anada"`
+	VolumenMl     int        `json:"volumen_ml"`
+	Graduacion    float64    `json:"graduacion"`
+	Precio        float64    `json:"precio"`
+	CuitBodega    string     `json:"cuit_bodega"`
+	Bodega        string     `json:"bodega"`
+	StockDeposito int        `json:"stock_deposito"`
+	StockSalas    int        `json:"stock_salas"`
+	StockTotal    int        `json:"stock_total"`
+	Cepas         []Cepa     `json:"cepas"`
+	Maridajes     []Maridaje `json:"maridajes"`
 }
 
 // Cepa resume una cepa del corte de un vino (S9).
 type Cepa struct {
+	IDCepa     int     `json:"id_cepa"`
 	Nombre     string  `json:"nombre"`
 	Porcentaje float64 `json:"porcentaje"`
 }
 
 // Maridaje resume un maridaje recomendado (S9).
 type Maridaje struct {
+	IDMaridaje          int     `json:"id_maridaje"`
 	Nombre              string  `json:"nombre"`
 	TemperaturaServicio float64 `json:"temperatura_servicio"`
 }
@@ -157,7 +163,8 @@ type Maridaje struct {
 func ObtenerVino(ctx context.Context, pool *pgxpool.Pool, cod int) (*VinoDetalle, error) {
 	const cabecera = `
 		SELECT v.cod_vino, v.nombre, v.tipo, v.anada, v.volumen_ml,
-		       v.graduacion, v.precio, b.razon_social, st.stock_total
+		       v.graduacion, v.precio, v.cuit_bodega::text, b.razon_social,
+		       st.stock_deposito, st.stock_salas, st.stock_total
 		FROM vino v
 		JOIN bodega b ON b.cuit = v.cuit_bodega
 		JOIN v_stock_total_vino st ON st.cod_vino = v.cod_vino
@@ -166,13 +173,14 @@ func ObtenerVino(ctx context.Context, pool *pgxpool.Pool, cod int) (*VinoDetalle
 	d := &VinoDetalle{Cepas: []Cepa{}, Maridajes: []Maridaje{}}
 	if err := pool.QueryRow(ctx, cabecera, cod).Scan(
 		&d.CodVino, &d.Nombre, &d.Tipo, &d.Anada, &d.VolumenMl,
-		&d.Graduacion, &d.Precio, &d.Bodega, &d.StockTotal,
+		&d.Graduacion, &d.Precio, &d.CuitBodega, &d.Bodega,
+		&d.StockDeposito, &d.StockSalas, &d.StockTotal,
 	); err != nil {
 		return nil, err
 	}
 
 	const cepasQuery = `
-		SELECT c.nombre, co.porcentaje
+		SELECT c.id_cepa, c.nombre, co.porcentaje
 		FROM composicion co
 		JOIN cepa c ON c.id_cepa = co.id_cepa
 		WHERE co.cod_vino = $1
@@ -184,7 +192,7 @@ func ObtenerVino(ctx context.Context, pool *pgxpool.Pool, cod int) (*VinoDetalle
 	}
 	for rows.Next() {
 		var c Cepa
-		if err := rows.Scan(&c.Nombre, &c.Porcentaje); err != nil {
+		if err := rows.Scan(&c.IDCepa, &c.Nombre, &c.Porcentaje); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -196,7 +204,7 @@ func ObtenerVino(ctx context.Context, pool *pgxpool.Pool, cod int) (*VinoDetalle
 	}
 
 	const maridajesQuery = `
-		SELECT m.nombre, m.temperatura_servicio
+		SELECT m.id_maridaje, m.nombre, m.temperatura_servicio
 		FROM vino_maridaje vm
 		JOIN maridaje m ON m.id_maridaje = vm.id_maridaje
 		WHERE vm.cod_vino = $1
@@ -208,7 +216,7 @@ func ObtenerVino(ctx context.Context, pool *pgxpool.Pool, cod int) (*VinoDetalle
 	}
 	for rows.Next() {
 		var m Maridaje
-		if err := rows.Scan(&m.Nombre, &m.TemperaturaServicio); err != nil {
+		if err := rows.Scan(&m.IDMaridaje, &m.Nombre, &m.TemperaturaServicio); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -243,15 +251,20 @@ type CepaInput struct {
 	Porcentaje float64 `json:"porcentaje"`
 }
 
-// VinoActualizar es el cuerpo de PUT /vinos/{cod}.
+// VinoActualizar es el cuerpo de PUT /vinos/{cod}. Cepas y Maridajes son
+// opcionales: si el campo no viene en el JSON (nil) no se tocan; si viene, se
+// reemplazan completos. Una lista vacía también reemplaza, y la base la
+// rechaza (RN-05 / maridaje obligatorio).
 type VinoActualizar struct {
-	Nombre     string  `json:"nombre"`
-	Tipo       string  `json:"tipo"`
-	Anada      int     `json:"anada"`
-	VolumenMl  int     `json:"volumen_ml"`
-	Graduacion float64 `json:"graduacion"`
-	Precio     float64 `json:"precio"`
-	CuitBodega string  `json:"cuit_bodega"`
+	Nombre     string      `json:"nombre"`
+	Tipo       string      `json:"tipo"`
+	Anada      int         `json:"anada"`
+	VolumenMl  int         `json:"volumen_ml"`
+	Graduacion float64     `json:"graduacion"`
+	Precio     float64     `json:"precio"`
+	CuitBodega string      `json:"cuit_bodega"`
+	Cepas      []CepaInput `json:"cepas"`
+	Maridajes  []int       `json:"maridajes"`
 }
 
 // CrearVino inserta un vino con su composición y maridajes, en una sola
@@ -296,10 +309,21 @@ func CrearVino(ctx context.Context, pool *pgxpool.Pool, v VinoNuevo) (int, error
 	return cod, nil
 }
 
-// ActualizarVino reemplaza los campos del vino. Si cambia el precio, el
-// trigger RN-13 lo audita. Devuelve pgx.ErrNoRows si el vino no existe.
+// ActualizarVino reemplaza los campos del vino y, si vienen, su composición y
+// sus maridajes, todo en una sola transacción. Si cambia el precio, el trigger
+// RN-13 lo audita. Los triggers de RN-05 (suma = 100) y del maridaje
+// obligatorio son diferidos: se evalúan en el COMMIT, por eso se puede borrar
+// y volver a insertar el corte sin que falle a mitad de camino. Si la regla no
+// se cumple, el COMMIT falla y no queda ningún cambio a medias.
+// Devuelve pgx.ErrNoRows si el vino no existe.
 func ActualizarVino(ctx context.Context, pool *pgxpool.Pool, cod int, v VinoActualizar) error {
-	tag, err := pool.Exec(ctx, `
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	tag, err := tx.Exec(ctx, `
 		UPDATE vino
 		SET nombre = $1, tipo = $2, anada = $3, volumen_ml = $4,
 		    graduacion = $5, precio = $6, cuit_bodega = $7
@@ -311,7 +335,34 @@ func ActualizarVino(ctx context.Context, pool *pgxpool.Pool, cod int, v VinoActu
 	if tag.RowsAffected() == 0 {
 		return pgx.ErrNoRows
 	}
-	return nil
+
+	if v.Cepas != nil {
+		if _, err := tx.Exec(ctx, `DELETE FROM composicion WHERE cod_vino = $1`, cod); err != nil {
+			return err
+		}
+		for _, c := range v.Cepas {
+			if _, err := tx.Exec(ctx, `
+				INSERT INTO composicion (cod_vino, id_cepa, porcentaje)
+				VALUES ($1, $2, $3)`, cod, c.IDCepa, c.Porcentaje); err != nil {
+				return err
+			}
+		}
+	}
+
+	if v.Maridajes != nil {
+		if _, err := tx.Exec(ctx, `DELETE FROM vino_maridaje WHERE cod_vino = $1`, cod); err != nil {
+			return err
+		}
+		for _, id := range v.Maridajes {
+			if _, err := tx.Exec(ctx, `
+				INSERT INTO vino_maridaje (cod_vino, id_maridaje)
+				VALUES ($1, $2)`, cod, id); err != nil {
+				return err
+			}
+		}
+	}
+
+	return tx.Commit(ctx)
 }
 
 // BorrarVino elimina un vino. Las FK ON DELETE RESTRICT (RN-14) lo rechazan

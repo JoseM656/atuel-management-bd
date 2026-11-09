@@ -102,6 +102,11 @@ paths:
           description: Vino no encontrado
     put:
       summary: Reemplaza los campos de un vino (el cambio de precio se audita)
+      description: |
+        Si el cuerpo trae `cepas` y/o `maridajes`, se reemplazan completos en la
+        misma transacción. RN-05 (suma = 100) y el maridaje obligatorio son
+        triggers diferidos: si no se cumplen, el COMMIT falla (409) y no se
+        guarda ningún cambio. Si no vienen, el corte y los maridajes no se tocan.
       parameters:
         - name: cod
           in: path
@@ -686,8 +691,11 @@ components:
         volumen_ml: { type: integer }
         graduacion: { type: number }
         precio: { type: number }
+        cuit_bodega: { type: string }
         bodega: { type: string }
-        stock_total: { type: integer }
+        stock_deposito: { type: integer }
+        stock_salas: { type: integer }
+        stock_total: { type: integer, description: "Depósito + salas (vista v_stock_total_vino)" }
         cepas:
           type: array
           items: { $ref: "#/components/schemas/Cepa" }
@@ -697,11 +705,13 @@ components:
     Cepa:
       type: object
       properties:
+        id_cepa: { type: integer }
         nombre: { type: string }
         porcentaje: { type: number }
     Maridaje:
       type: object
       properties:
+        id_maridaje: { type: integer }
         nombre: { type: string }
         temperatura_servicio: { type: number }
     VinoNuevo:
@@ -737,6 +747,14 @@ components:
         graduacion: { type: number }
         precio: { type: number }
         cuit_bodega: { type: string }
+        cepas:
+          type: array
+          description: Opcional. Si viene, reemplaza el corte completo (RN-05).
+          items: { $ref: "#/components/schemas/CepaInput" }
+        maridajes:
+          type: array
+          description: Opcional. Si viene, reemplaza los maridajes (al menos uno).
+          items: { type: integer }
     Cliente:
       type: object
       properties:

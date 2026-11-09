@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -332,6 +333,55 @@ func TestCatalogos(t *testing.T) {
 		if filas[0][c.campoID] == nil {
 			t.Fatalf("%s: esperaba el campo %s: %v", c.ruta, c.campoID, filas[0])
 		}
+	}
+}
+
+// TestEditarVinoComposicion: PUT /vinos/{cod} reemplaza el corte en una sola
+// transacción. Si los porcentajes no suman 100, la base lo rechaza (RN-05,
+// 409) y el corte anterior queda intacto; con una suma válida se guarda. Al
+// final se borra el vino de prueba (no tiene movimientos, RN-14 lo permite).
+func TestEditarVinoComposicion(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	nombre := "Vino Test Edición " + strconv.FormatInt(time.Now().UnixNano(), 36)
+	vino := map[string]any{
+		"nombre": nombre, "tipo": "tinto", "anada": 2022,
+		"volumen_ml": 750, "graduacion": 13.5, "precio": 9000,
+		"cuit_bodega": "30700000019",
+		"cepas":       []map[string]any{{"id_cepa": 1, "porcentaje": 100}},
+		"maridajes":   []int{1},
+	}
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/vinos", vino)
+	if code != http.StatusCreated {
+		t.Fatalf("alta: esperaba 201, obtuve %d: %s", code, body)
+	}
+	cod := fstr(decodeJSON(t, body)["cod_vino"].(float64))
+	defer doJSON(t, http.MethodDelete, srv.URL+"/vinos/"+cod, nil)
+
+	cantCepas := func() int {
+		_, body := doJSON(t, http.MethodGet, srv.URL+"/vinos/"+cod, nil)
+		return len(decodeJSON(t, body)["cepas"].([]any))
+	}
+
+	// Suma 90 → 409 con el mensaje del trigger, y el corte sigue siendo el original.
+	vino["cepas"] = []map[string]any{{"id_cepa": 1, "porcentaje": 60}, {"id_cepa": 2, "porcentaje": 30}}
+	code, body = doJSON(t, http.MethodPut, srv.URL+"/vinos/"+cod, vino)
+	if code != http.StatusConflict || !strings.Contains(body, "no suma 100") {
+		t.Fatalf("suma 90: esperaba 409 «no suma 100», obtuve %d: %s", code, body)
+	}
+	if n := cantCepas(); n != 1 {
+		t.Fatalf("tras el rechazo el corte debía quedar intacto (1 cepa), quedó con %d", n)
+	}
+
+	// Suma 100 → 204 y el corte nuevo tiene 2 cepas.
+	vino["cepas"] = []map[string]any{{"id_cepa": 1, "porcentaje": 60}, {"id_cepa": 2, "porcentaje": 40}}
+	code, body = doJSON(t, http.MethodPut, srv.URL+"/vinos/"+cod, vino)
+	if code != http.StatusNoContent {
+		t.Fatalf("suma 100: esperaba 204, obtuve %d: %s", code, body)
+	}
+	if n := cantCepas(); n != 2 {
+		t.Fatalf("esperaba 2 cepas tras editar, hay %d", n)
 	}
 }
 
