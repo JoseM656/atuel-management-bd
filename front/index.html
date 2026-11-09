@@ -19,6 +19,7 @@
   <script src="js/vino.js"></script>
   <script src="js/venta.js"></script>
   <script src="js/transferencias.js"></script>
+  <script src="js/tablero.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body x-data="app" x-cloak>
@@ -863,16 +864,121 @@
     </section>
 
     <!-- ===================== #56 Tablero ===================== -->
-    <section x-show="pantalla === 'tablero'">
-      <div class="titulo-pantalla"><h2>Tablero</h2></div>
-      <div class="boceto">
-        Boceto — se implementa en #56.
-        <ul>
-          <li>Top 10 vinos más vendidos (S1).</li>
-          <li>Ventas por sala del último trimestre, en gráfico (S8).</li>
-          <li>Vinos sin stock en una sala elegida (S6).</li>
-        </ul>
+    <section x-show="pantalla === 'tablero'" x-data="tablero" @ruta.window="alCambiarRuta($event.detail)">
+      <div class="titulo-pantalla">
+        <h2>Tablero</h2>
+        <div class="ruta-api">GET /reportes/top-vinos · GET /reportes/ventas-por-sala · GET /reportes/vinos-sin-stock?sala=</div>
       </div>
+
+      <div class="grilla-tablero">
+        <!-- Top 10 (S1) -->
+        <div class="tarjeta">
+          <h3>Top 10 vinos más vendidos</h3>
+          <div class="error-api" x-show="errorTop" x-text="errorTop"></div>
+          <div class="tabla-contenedor">
+            <table>
+              <thead><tr><th>#</th><th>Vino</th><th class="num">Unidades</th></tr></thead>
+              <tbody>
+                <template x-for="(v, i) in top" :key="v.cod_vino">
+                  <tr>
+                    <td x-text="i + 1"></td>
+                    <td class="texto-largo">
+                      <a class="enlace" :href="'#vino/' + v.cod_vino" x-text="v.nombre + ' ' + v.anada"></a>
+                      <span class="sub" x-text="v.volumen_ml + ' ml'"></span>
+                    </td>
+                    <td class="num" x-text="numero(v.botellas)"></td>
+                  </tr>
+                </template>
+                <tr x-show="cargandoTop && top.length === 0"><td colspan="3" class="vacio">Cargando…</td></tr>
+                <tr x-show="!cargandoTop && !errorTop && top.length === 0"><td colspan="3" class="vacio">Todavía no hay ventas.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="aclaracion">Botellas vendidas en toda la red de salas (consulta S1).</p>
+        </div>
+
+        <!-- Ventas por sala (S8) -->
+        <div class="tarjeta">
+          <h3>Ventas por sala · último trimestre</h3>
+          <div class="error-api" x-show="errorVentas" x-text="errorVentas"></div>
+          <p class="cargando" x-show="cargandoVentas && ventas.salas.length === 0">Cargando…</p>
+          <p class="vacio" x-show="!cargandoVentas && !errorVentas && ventas.salas.length === 0">No hubo ventas en el período.</p>
+
+          <div class="barras" role="list">
+            <template x-for="s in salasVisibles" :key="s.id_sala">
+              <div class="barra-sala" role="listitem" :title="pesos(s.monto_total)">
+                <span class="nombre" x-text="'#' + s.id_sala + ' ' + s.localidad"></span>
+                <div class="pista"><div :style="'width: ' + anchoBarra(s.monto_total)"></div></div>
+                <span class="monto" x-text="millones(s.monto_total)"></span>
+              </div>
+            </template>
+          </div>
+          <button type="button" class="enlace ver-todas" x-show="ventas.salas.length > 10"
+                  @click="todasLasSalas = !todasLasSalas"
+                  x-text="todasLasSalas ? 'Ver solo las 10 primeras' : `Ver las ${ventas.salas.length} salas`"></button>
+
+          <p class="aclaracion" x-show="ventas.desde">
+            Suma del total de los comprobantes del <span x-text="fecha(ventas.desde)"></span>
+            al <span x-text="fecha(ventas.hasta)"></span> (consulta S8; el período lo fija la base con <code>CURRENT_DATE</code>).
+          </p>
+        </div>
+      </div>
+
+      <!-- Vinos sin stock en la sala (S6) -->
+      <div class="tarjeta">
+        <h3>Vinos sin stock en la sala, con stock en el depósito (S6)</h3>
+        <div class="campo selector-sala">
+          <label for="tb-sala">Sala</label>
+          <select id="tb-sala" x-model="salaElegida" @change="cargarSinStock()">
+            <template x-for="s in salas" :key="s.id_sala">
+              <option :value="String(s.id_sala)" x-text="etiquetaSala(s)" :selected="String(s.id_sala) === salaElegida"></option>
+            </template>
+          </select>
+        </div>
+
+        <div class="error-api" x-show="errorSinStock" x-text="errorSinStock"></div>
+
+        <div class="tabla-contenedor">
+          <table>
+            <thead>
+              <tr><th>Cód</th><th>Vino</th><th>Tipo</th><th>Bodega</th><th class="num">Stock en sala</th><th class="num">Stock en depósito</th></tr>
+            </thead>
+            <tbody>
+              <template x-for="v in filasSinStock" :key="v.cod_vino">
+                <tr>
+                  <td x-text="v.cod_vino"></td>
+                  <td class="texto-largo" x-text="v.nombre + ' ' + v.anada + ' · ' + v.volumen_ml + ' ml'"></td>
+                  <td x-text="v.tipo"></td>
+                  <td class="texto-largo" x-text="v.bodega"></td>
+                  <td class="num stock-cero" x-text="v.stock_sala"></td>
+                  <td class="num" :class="claseDeposito(v.stock_deposito)" x-text="numero(v.stock_deposito)"></td>
+                </tr>
+              </template>
+              <tr x-show="cargandoSinStock"><td colspan="6" class="vacio">Cargando…</td></tr>
+              <tr x-show="!cargandoSinStock && !errorSinStock && sinStock.length === 0"><td colspan="6" class="vacio">La sala tiene stock de todos los vinos del depósito.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="paginacion" x-show="sinStock.length > 0">
+          <span><span x-text="numero(sinStock.length)"></span> vinos para reponer</span>
+          <div class="controles">
+            <button type="button" class="boton" @click="irA(pagina - 1)" :disabled="pagina <= 1">← Anterior</button>
+            <span>Página <span x-text="pagina"></span> de <span x-text="totalPaginas"></span></span>
+            <button type="button" class="boton" @click="irA(pagina + 1)" :disabled="pagina >= totalPaginas">Siguiente →</button>
+          </div>
+        </div>
+
+        <p class="nota">
+          <strong>Nota de diseño:</strong> sirve para decidir qué transferir: estos vinos se pueden reponer desde el depósito
+          (pantalla <a href="#transferencias">Transferencias</a>).
+        </p>
+      </div>
+
+      <p class="nota">
+        <strong>Nota de diseño:</strong> los reportes son de solo lectura y vienen ya calculados por las consultas de la sección 8
+        (S1, S8 y S6). El front solo dibuja el ranking, el gráfico y la tabla con lo que devuelve la API.
+      </p>
     </section>
 
   </main>

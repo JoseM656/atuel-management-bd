@@ -116,10 +116,13 @@ const api = {
   terminarTransferencia: (nro)  => request('POST', `/transferencias/${encodeURIComponent(nro)}/terminar`),
   procesarTransferencia: (nro)  => request('POST', `/transferencias/${encodeURIComponent(nro)}/procesar`),
 
-  // Reportes — tablero (#56)
-  topVinos:       ()            => request('GET', '/reportes/s1'),                       // S1
-  vinosSinStock:  (idSala)      => request('GET', '/reportes/s6', { query: { sala: idSala } }), // S6
-  ventasPorSala:  ()            => request('GET', '/reportes/s8'),                       // S8
+  // Reportes — tablero (#56). Rutas del enunciado; misma lógica que S1, S8 y S6.
+  // → [{ cod_vino, nombre, anada, volumen_ml, botellas }]
+  topVinos:       ()            => request('GET', '/reportes/top-vinos'),
+  // → { desde, hasta, salas: [{ id_sala, localidad, monto_total }] }
+  ventasPorSala:  ()            => request('GET', '/reportes/ventas-por-sala'),
+  // → [{ cod_vino, nombre, anada, volumen_ml, tipo, bodega, stock_sala, stock_deposito }]
+  vinosSinStock:  (idSala)      => request('GET', '/reportes/vinos-sin-stock', { query: { sala: idSala } }),
 };
 
 window.api = api;

@@ -191,6 +191,7 @@ td.texto-largo { white-space: normal; min-width: 130px; max-width: 180px; line-h
   background: var(--nota-fondo);
   color: var(--nota-texto);
 }
+.nota a { color: inherit; font-weight: 600; }
 .cargando { color: var(--texto-suave); }
 
 .boceto {
@@ -462,12 +463,25 @@ input:disabled { background: var(--fondo); color: var(--texto); }
 .tabla-contenedor.separada { margin: 1rem 0; }
 .tarjeta.vacio { padding: 2rem; }
 
+/* ---------- Tablero ---------- */
+.grilla-tablero { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
+.grilla-tablero > * { min-width: 0; }
+.sub { display: block; font-size: 0.75rem; color: var(--texto-suave); }
+.barras { display: flex; flex-direction: column; gap: 0.55rem; }
+.barra-sala { display: grid; grid-template-columns: 9.5rem 1fr 5.2rem; gap: 0.6rem; align-items: center; font-size: 0.82rem; }
+.barra-sala .nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto-suave); }
+.barra-sala .pista { height: 1.15rem; border-radius: 4px; background: var(--vino-claro); overflow: hidden; }
+.barra-sala .pista > div { height: 100%; border-radius: 4px; background: var(--vino); }
+.barra-sala .monto { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ver-todas { margin-top: 0.8rem; }
+.selector-sala { max-width: 420px; margin-bottom: 1rem; }
+
 /* ---------- Pantallas angostas ---------- */
 @media (max-width: 1000px) {
   .filtros { grid-template-columns: 1fr 1fr; }
   .form-vino { grid-template-columns: 1fr; }
   .cabecera-venta { grid-template-columns: 1fr 1fr; }
-  .grilla-venta, .grilla-transferencias { grid-template-columns: 1fr; }
+  .grilla-venta, .grilla-transferencias, .grilla-tablero { grid-template-columns: 1fr; }
   .resumen { position: static; }
 }
 @media (max-width: 640px) {
@@ -475,6 +489,7 @@ input:disabled { background: var(--fondo); color: var(--texto); }
   .cabecera-venta, .agregar-vino { grid-template-columns: 1fr; }
   .desplegable { min-width: 0; }
   .elegido { flex-wrap: wrap; }
+  .barra-sala { grid-template-columns: 6.5rem 1fr 4.6rem; }
 }
 @media (max-width: 760px) {
   .layout { flex-direction: column; }

@@ -719,6 +719,78 @@ paths:
         "200":
           description: Clientes
 
+  /reportes/top-vinos:
+    get:
+      summary: Tablero · Top 10 vinos más vendidos (misma lógica que S1)
+      description: Mismo ranking que S1, con añada y volumen para mostrar.
+      responses:
+        "200":
+          description: Ranking
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    cod_vino: { type: integer }
+                    nombre: { type: string }
+                    anada: { type: integer }
+                    volumen_ml: { type: integer }
+                    botellas: { type: integer }
+  /reportes/ventas-por-sala:
+    get:
+      summary: Tablero · Ventas por sala del último trimestre (misma lógica que S8)
+      description: |
+        Mismos montos que S8, con la localidad de cada sala y el período usado
+        (desde = CURRENT_DATE - 3 meses, hasta = CURRENT_DATE).
+      responses:
+        "200":
+          description: Período y montos por sala, de mayor a menor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  desde: { type: string, format: date }
+                  hasta: { type: string, format: date }
+                  salas:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id_sala: { type: integer }
+                        localidad: { type: string }
+                        monto_total: { type: number }
+  /reportes/vinos-sin-stock:
+    get:
+      summary: Tablero · Vinos sin stock en una sala, con stock en depósito (misma lógica que S6)
+      parameters:
+        - name: sala
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Mismos vinos que S6, con tipo, bodega y stock en sala para mostrar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    cod_vino: { type: integer }
+                    nombre: { type: string }
+                    anada: { type: integer }
+                    volumen_ml: { type: integer }
+                    tipo: { type: string }
+                    bodega: { type: string }
+                    stock_sala: { type: integer }
+                    stock_deposito: { type: integer }
+        "400":
+          description: Parámetro sala inválido
+
 components:
   schemas:
     Vino:
