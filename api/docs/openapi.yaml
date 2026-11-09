@@ -24,6 +24,11 @@ paths:
     get:
       summary: Lista de vinos con su bodega (filtros y paginación)
       parameters:
+        - name: nombre
+          in: query
+          required: false
+          description: Búsqueda parcial por nombre, sin distinguir mayúsculas (ILIKE '%texto%'). Los comodines % y _ se buscan como texto.
+          schema: { type: string }
         - name: tipo
           in: query
           required: false

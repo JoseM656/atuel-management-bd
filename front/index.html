@@ -51,7 +51,7 @@
       <div class="titulo-pantalla con-acciones">
         <div>
           <h2>Catálogo de vinos</h2>
-          <div class="ruta-api">GET /vinos?tipo=&amp;cepa=&amp;bodega=&amp;anada=&amp;limit=&amp;offset=</div>
+          <div class="ruta-api">GET /vinos?nombre=&amp;tipo=&amp;cepa=&amp;bodega=&amp;anada=&amp;limit=&amp;offset=</div>
         </div>
         <div class="acciones">
           <a class="boton primario" href="#vino/nuevo">+ Nuevo vino</a>
@@ -62,6 +62,12 @@
       <form class="tarjeta" @submit.prevent="aplicarFiltros()">
         <h3>Filtros</h3>
         <div class="filtros">
+          <div class="campo buscador">
+            <label for="f-nombre">Nombre</label>
+            <input id="f-nombre" type="search" placeholder="Buscar por nombre (ej. reserva, malbec)…"
+                   autocomplete="off" x-model="filtros.nombre">
+          </div>
+
           <div class="campo">
             <label for="f-tipo">Tipo</label>
             <select id="f-tipo" x-model="filtros.tipo">
@@ -155,7 +161,8 @@
       </div>
 
       <p class="nota">
-        <strong>Nota de diseño:</strong> la paginación y los filtros los resuelve la API (WHERE y LIMIT/OFFSET en SQL).
+        <strong>Nota de diseño:</strong> la paginación y los filtros los resuelve la API (WHERE y LIMIT/OFFSET en SQL);
+        la búsqueda por nombre es parcial y sin distinguir mayúsculas (<code>ILIKE</code>).
         «Stock total» = depósito + salas, viene de la vista <code>v_stock_total_vino</code>; el front no lo suma.
       </p>
     </section>

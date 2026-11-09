@@ -385,6 +385,36 @@ func TestEditarVinoComposicion(t *testing.T) {
 	}
 }
 
+// TestBuscarVinoPorNombre: ?nombre= busca parte del nombre sin distinguir
+// mayúsculas, se combina con otros filtros, y un comodín de LIKE ("%") se
+// busca como texto literal (no devuelve todos los vinos).
+func TestBuscarVinoPorNombre(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	total := func(query string) float64 {
+		t.Helper()
+		code, body := doJSON(t, http.MethodGet, srv.URL+"/vinos?"+query, nil)
+		if code != http.StatusOK {
+			t.Fatalf("%s: esperaba 200, obtuve %d: %s", query, code, body)
+		}
+		return decodeJSON(t, body)["total"].(float64)
+	}
+
+	todos := total("limit=1")
+	mayus := total("nombre=RESERVA&limit=1")
+	minus := total("nombre=reserva&limit=1")
+	if mayus == 0 || mayus != minus || mayus >= todos {
+		t.Fatalf("«reserva» debía encontrar algunos vinos (no todos) sin importar mayúsculas: RESERVA=%v reserva=%v todos=%v", mayus, minus, todos)
+	}
+	if conTipo := total("nombre=reserva&tipo=tinto&limit=1"); conTipo > minus {
+		t.Fatalf("combinado con tipo no puede devolver más que solo por nombre: %v > %v", conTipo, minus)
+	}
+	if comodin := total(url.Values{"nombre": {"%"}}.Encode() + "&limit=1"); comodin != 0 {
+		t.Fatalf("«%%» debía buscarse como texto literal (0 vinos), devolvió %v", comodin)
+	}
+}
+
 // fstr convierte un float64 (de JSON) a entero y luego a string, para armar
 // la ruta. Los números de JSON se decodifican como float64.
 func fstr(n float64) string {

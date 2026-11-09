@@ -82,7 +82,7 @@ const api = {
   listarMaridajes: () => request('GET', '/maridajes'),  // [{ id_maridaje, nombre, temperatura_servicio }]
 
   // Vinos — catálogo (#52) y alta/edición (#53)
-  // filtros: { tipo, cepa, bodega, anada, limit, offset } → { total, limit, offset, vinos }
+  // filtros: { nombre, tipo, cepa, bodega, anada, limit, offset } → { total, limit, offset, vinos }
   listarVinos:   (filtros)     => request('GET', '/vinos', { query: filtros }),
   obtenerVino:   (cod)         => request('GET', `/vinos/${encodeURIComponent(cod)}`),
   crearVino:     (vino)        => request('POST', '/vinos', { body: vino }),         // → { cod_vino }

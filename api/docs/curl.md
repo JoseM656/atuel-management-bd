@@ -23,6 +23,9 @@ curl http://localhost:3333/vinos
 # Paginación: 5 por página, salteando 10
 curl 'http://localhost:3333/vinos?limit=5&offset=10'
 
+# Búsqueda por nombre: parcial y sin distinguir mayúsculas
+curl -i 'http://localhost:3333/vinos?nombre=reserva'
+
 # Filtro por tipo (tinto | blanco | rosado | espumante)
 curl 'http://localhost:3333/vinos?tipo=tinto'
 

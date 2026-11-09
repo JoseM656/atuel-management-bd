@@ -1,7 +1,8 @@
 // catalogo.js — pantalla «Catálogo de vinos» (#52).
 //
-// Listado paginado con filtros (tipo, cepa, bodega, añada). Todo sale de la API:
-//   - GET /vinos           → filtros y paginación los resuelve la base (WHERE + LIMIT/OFFSET).
+// Listado paginado con búsqueda por nombre y filtros (tipo, cepa, bodega,
+// añada). Todo sale de la API:
+//   - GET /vinos           → búsqueda (ILIKE), filtros y paginación los resuelve la base.
 //   - GET /cepas, /bodegas → opciones de los desplegables (#87).
 // El stock total viene de la vista v_stock_total_vino: el front no suma nada.
 // «Ver detalle» lleva a la ficha del vino (#vino/{cod}, ver vino.js).
@@ -18,7 +19,7 @@ document.addEventListener('alpine:init', () => {
   // negocio: no bloquea ni cambia nada, solo ayuda a leer la tabla.
   const STOCK_BAJO = 50;
 
-  const filtrosVacios = () => ({ tipo: '', cepa: '', bodega: '', anada: '' });
+  const filtrosVacios = () => ({ nombre: '', tipo: '', cepa: '', bodega: '', anada: '' });
 
   const formatoPrecio = new Intl.NumberFormat('es-AR', {
     style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2,

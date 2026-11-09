@@ -93,6 +93,7 @@ main { flex: 1; min-width: 0; padding: 2rem 2rem 3rem; }
   align-items: end;
 }
 .campo { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.filtros .buscador { grid-column: 1 / -1; }
 .campo label { font-size: 0.78rem; color: var(--texto-suave); }
 
 input, select {

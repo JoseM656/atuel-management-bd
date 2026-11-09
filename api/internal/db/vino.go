@@ -30,6 +30,7 @@ type Vino struct {
 // VinoFiltro reúne los filtros opcionales y la paginación de GET /vinos.
 // Un string vacío o un 0 no filtran.
 type VinoFiltro struct {
+	Nombre string // búsqueda parcial, sin distinguir mayúsculas
 	Tipo   string
 	Cepa   string
 	Bodega string
@@ -57,6 +58,13 @@ func buildVinoWhere(f VinoFiltro) (string, []any) {
 	var conds []string
 	var args []any
 
+	if f.Nombre != "" {
+		// Búsqueda parcial sin distinguir mayúsculas: «reserva» encuentra
+		// «Malbec Reserva B1». Los comodines de LIKE (% _ \) que escriba el
+		// usuario se escapan para que se busquen como texto literal.
+		args = append(args, likeEscape(f.Nombre))
+		conds = append(conds, fmt.Sprintf("v.nombre ILIKE '%%' || $%d || '%%'", len(args)))
+	}
 	if f.Tipo != "" {
 		args = append(args, f.Tipo)
 		conds = append(conds, fmt.Sprintf("v.tipo::text = $%d", len(args)))
@@ -80,6 +88,12 @@ func buildVinoWhere(f VinoFiltro) (string, []any) {
 		return "", args
 	}
 	return " WHERE " + strings.Join(conds, " AND "), args
+}
+
+// likeEscape escapa los comodines de LIKE para buscar el texto tal cual.
+// PostgreSQL usa \ como carácter de escape por defecto en LIKE/ILIKE.
+func likeEscape(s string) string {
+	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
 }
 
 // ListarVinos devuelve los vinos que cumplen los filtros, paginados.
