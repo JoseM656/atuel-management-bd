@@ -230,6 +230,49 @@ curl -i -X POST http://localhost:3333/ingresos/N/procesar
 # Vino ajeno a la bodega → 409 (RI-04)
 ```
 
+## Reportes — consultas S1–S12 (solo lectura)
+
+```bash
+# S1: top 10 vinos por botellas vendidas
+curl http://localhost:3333/reportes/s1
+
+# S2: vinos vendidos en todas las salas
+curl http://localhost:3333/reportes/s2
+
+# S3: clientes por tipo que compraron en la sala 12 (última semana)
+curl 'http://localhost:3333/reportes/s3?sala=12'
+
+# S4: top 5 salas que pidieron el vino 1 por transferencia (15 días)
+curl 'http://localhost:3333/reportes/s4?vino=1'
+
+# S5: salas con menos transferencias pendientes
+curl http://localhost:3333/reportes/s5
+
+# S6: vinos sin stock en la sala 12 pero con stock en depósito
+curl 'http://localhost:3333/reportes/s6?sala=12'
+
+# S7: transportista más activo del último mes
+curl http://localhost:3333/reportes/s7
+
+# S8: monto de ventas por sala (último trimestre)
+curl http://localhost:3333/reportes/s8
+
+# S9: ficha del vino 1 (cepas, bodega, maridajes, stock total)
+curl 'http://localhost:3333/reportes/s9?vino=1'
+
+# S10: rendimiento kg/ha por parcela/campaña
+curl http://localhost:3333/reportes/s10
+
+# S11: ranking de vinos por sala + acumulado mensual
+curl http://localhost:3333/reportes/s11
+
+# S12a: clientes que compraron todos los vinos de una bodega
+curl 'http://localhost:3333/reportes/s12a?bodega=30700000019'
+
+# S12b: clientes que nunca compraron vino tinto
+curl http://localhost:3333/reportes/s12b
+```
+
 ## Errores (SQLSTATE → HTTP)
 
 | SQLSTATE | Significado | HTTP |

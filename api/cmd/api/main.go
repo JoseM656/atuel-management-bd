@@ -30,6 +30,7 @@ func main() {
 	comprobantes := &httpapi.ComprobantesHandler{Pool: pool}
 	transferencias := &httpapi.TransferenciasHandler{Pool: pool}
 	ingresos := &httpapi.IngresosHandler{Pool: pool}
+	reportes := &httpapi.ReportesHandler{Pool: pool}
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger, middleware.Recoverer)
@@ -54,6 +55,7 @@ func main() {
 	r.Post("/ingresos/{cod}/renglones", ingresos.AgregarRenglones)
 	r.Post("/ingresos/{cod}/terminar", ingresos.Terminar)
 	r.Post("/ingresos/{cod}/procesar", ingresos.Procesar)
+	reportes.Registrar(r)
 
 	log.Printf("[API] escuchando en :%s", cfg.Port)
 	http.ListenAndServe(":"+cfg.Port, r)

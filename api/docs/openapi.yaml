@@ -442,6 +442,111 @@ paths:
         "409":
           description: Estado inválido o no existe
 
+  /reportes/s1:
+    get:
+      summary: S1 · Top 10 vinos por botellas vendidas
+      responses:
+        "200":
+          description: Ranking de vinos
+  /reportes/s2:
+    get:
+      summary: S2 · Vinos vendidos en todas las salas
+      responses:
+        "200":
+          description: Lista de vinos
+  /reportes/s3:
+    get:
+      summary: S3 · Clientes por tipo que compraron en una sala (última semana)
+      parameters:
+        - name: sala
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Cantidad por tipo
+  /reportes/s4:
+    get:
+      summary: S4 · Top 5 salas que pidieron un vino por transferencia (15 días)
+      parameters:
+        - name: vino
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Ranking de salas
+  /reportes/s5:
+    get:
+      summary: S5 · Salas con menos transferencias pendientes
+      responses:
+        "200":
+          description: Lista de salas
+  /reportes/s6:
+    get:
+      summary: S6 · Vinos sin stock en sala pero con stock en depósito
+      parameters:
+        - name: sala
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Lista de vinos
+  /reportes/s7:
+    get:
+      summary: S7 · Transportista más activo del último mes
+      responses:
+        "200":
+          description: Transportista
+  /reportes/s8:
+    get:
+      summary: S8 · Monto de ventas por sala en el último trimestre
+      responses:
+        "200":
+          description: Montos por sala
+  /reportes/s9:
+    get:
+      summary: S9 · Ficha de un vino (cepas, bodega, maridajes, stock)
+      parameters:
+        - name: vino
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Ficha del vino
+  /reportes/s10:
+    get:
+      summary: S10 · Rendimiento kg/ha por parcela/campaña vs promedio de finca
+      responses:
+        "200":
+          description: Rendimientos
+  /reportes/s11:
+    get:
+      summary: S11 · Ranking de vinos por sala y acumulado mensual por sala
+      responses:
+        "200":
+          description: Ranking y acumulados
+  /reportes/s12a:
+    get:
+      summary: S12a · Clientes que compraron todos los vinos de una bodega
+      parameters:
+        - name: bodega
+          in: query
+          required: true
+          description: CUIT de la bodega (11 dígitos)
+          schema: { type: string }
+      responses:
+        "200":
+          description: Clientes
+  /reportes/s12b:
+    get:
+      summary: S12b · Clientes que nunca compraron vino tinto
+      responses:
+        "200":
+          description: Clientes
+
 components:
   schemas:
     Vino:
