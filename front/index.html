@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bodegas del Atuel</title>
+</head>
+<body>
+  <!-- Página provisoria para verificar el proxy de nginx (/api/ → API).
+       La estructura real del front y la capa api.js llegan con #51. -->
+  <h1>Bodegas del Atuel</h1>
+  <p>Estado de la API: <strong id="estado">consultando…</strong></p>
+
+  <script>
+    fetch('/api/salud')
+      .then(r => r.ok ? r.json() : Promise.reject(r.status + ' ' + r.statusText))
+      .then(d => { document.getElementById('estado').textContent = d.estado; })
+      .catch(e => { document.getElementById('estado').textContent = 'error: ' + e; });
+  </script>
+</body>
+</html>
