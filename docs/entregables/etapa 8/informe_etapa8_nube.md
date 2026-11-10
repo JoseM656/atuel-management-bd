@@ -82,7 +82,7 @@ flowchart TB
 | **2. Conexión cifrada (`sslmode=require`)** | Tanto en la cadena `DATABASE_URL` de la API como en los comandos administrativos `psql` / `pg_dump` se incluye `?sslmode=require`, obligando a negociar TLS 1.2/1.3. Una conexión con `sslmode=disable` contra el endpoint cloud es rechazada por el servidor. |
 | **3. Aislamiento del puerto de la base de datos** | En despliegue sobre VPS con Docker Compose, el servicio `db` no publica el puerto `5432` al exterior (solo es visible dentro de la red bridge interna para el contenedor `api`). En despliegue PaaS gestionado, el acceso está restringido por TLS obligatorio, credenciales de alta entropía SCRAM-SHA-256 y lista de IPs permitidas (*IP Allowlist*) hacia el servicio de la API. |
 | **4. Secretos fuera del repositorio** | El repositorio solo incluye [`.env.example`](../../../.env.example) con valores locales de prueba. Los archivos `.env` están ignorados en [`.gitignore`](../../../.gitignore) y las credenciales reales de producción se inyectan como *Environment Variables* secretas en el panel del proveedor cloud. |
-| **5. Contenedor de API endurecido** | [`api/Dockerfile`](../../../api/Dockerfile) compila un binario estático (`CGO_ENABLED=0`) y lo copia a `gcr.io/distroless/static-debian12:nonroot`, ejecutándose con el usuario sin privilegios `nonroot` y sin shell (`/bin/sh` no existe dentro del contenedor). |
+| **5. Contenedor de API liviano y aislado** | [`api/Dockerfile`](../../../api/Dockerfile) utiliza construcción multi-stage (`FROM golang:1.26 AS build` → `FROM alpine:3`) compilando un único binario estático (`CGO_ENABLED=0 go build -o /api ./cmd/api`) sin código fuente ni toolchain de compilación en la imagen final. |
 
 ### Verificación de rechazo de conexión no autorizada
 ```bash

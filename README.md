@@ -49,8 +49,8 @@ La arquitectura está diseñada en tres capas (**PostgreSQL 16** + **API REST en
 │   ├── insert.sql                     # Operaciones de inserción (I1–I6) en transacción con ROLLBACK
 │   ├── delete.sql                     # Operaciones de borrado (D1–D6) en transacción con ROLLBACK
 │   └── select.sql                     # Consultas básicas (S1–S8) y avanzadas (S9–S12)
-├── api/                               # API REST en Go 1.25 (chi + pgx/v5) sin ORM
-│   ├── Dockerfile                     # Construcción multi-stage hacia imagen distroless:nonroot
+├── api/                               # API REST en Go 1.26 (chi + pgx/v5) sin ORM
+│   ├── Dockerfile                     # Construcción multi-stage (golang:1.26 → alpine:3 con binario estático)
 │   ├── cmd/api/main.go                # Punto de entrada del servidor HTTP
 │   ├── internal/                      # Paquetes config, db, httpapi y httperr (traducción SQLSTATE→HTTP)
 │   └── docs/                          # Documentación de la API (api.md, openapi.yaml, curl.md)
@@ -71,7 +71,7 @@ La arquitectura está diseñada en tres capas (**PostgreSQL 16** + **API REST en
   - [Docker](https://docs.docker.com/get-docker/) y **Docker Compose v2** (`docker compose`).
 - **Herramientas opcionales en la máquina anfitriona** (solo si se desea correr el generador `seed.py` o `go test` fuera de Docker):
   - **Python 3.10+** con `psycopg[binary]` y `Faker` (`pip install "psycopg[binary]" Faker`).
-  - **Go 1.25+** y cliente **`psql`** (o usar directamente `docker compose exec db psql ...`).
+  - **Go 1.26+** y cliente **`psql`** (o usar directamente `docker compose exec db psql ...`).
 
 ---
 
@@ -92,7 +92,7 @@ docker compose up --build -d
 | Servicio | Contenedor | URL / Puerto en Host | Descripción |
 | :--- | :--- | :--- | :--- |
 | **Frontend Web** | `front` (`nginx:1.27-alpine`) | [`http://localhost:8080`](http://localhost:8080) | Interfaz de usuario con las 5 pantallas y proxy inverso `/api/*` |
-| **API REST** | `api` (`Go 1.25 distroless`) | [`http://localhost:3333`](http://localhost:3333) | Backend HTTP JSON (ver [`http://localhost:3333/salud`](http://localhost:3333/salud)) |
+| **API REST** | `api` (`Go 1.26 alpine:3`) | [`http://localhost:3333`](http://localhost:3333) | Backend HTTP JSON (ver [`http://localhost:3333/salud`](http://localhost:3333/salud)) |
 | **PostgreSQL 16** | `db` (`postgres:16`) | `localhost:5433` (BD: `atuel`) | Motor relacional (mapeado al puerto `5433` del host para no colisionar con instancias locales en `5432`) |
 
 Para verificar que los tres contenedores están saludables y que la API responde desde la base:
@@ -148,12 +148,12 @@ docker compose exec -T db psql -U postgres -d atuel < db/tests/db_tests_roles.sq
 ```
 
 ### 5.4. Ejecutar las consultas SQL requeridas (Etapa 5)
-Todas las operaciones de modificación (`U1`–`U6`, `I1`–`I6`, `D1`–`D6`) corren dentro de bloques `BEGIN; ... SET CONSTRAINTS ALL IMMEDIATE; ROLLBACK;` para mostrar el estado previo y posterior sin alterar los datos cargados:
+Todas las operaciones de modificación (`U1`–`U6`, `I1`–`I6`, `D1`–`D6`) corren dentro de bloques `BEGIN; ... SET CONSTRAINTS ALL IMMEDIATE; ROLLBACK;` para mostrar el estado previo y posterior sin alterar los datos cargados (`update.sql` y `delete.sql` reciben por `-v` los parámetros de bodega y localidades exigidos por sus consignas):
 
 ```bash
 docker compose exec -T db psql -U postgres -d atuel -v ON_ERROR_STOP=1 < consultas/insert.sql
-docker compose exec -T db psql -U postgres -d atuel -v ON_ERROR_STOP=1 < consultas/update.sql
-docker compose exec -T db psql -U postgres -d atuel -v ON_ERROR_STOP=1 < consultas/delete.sql
+docker compose exec -T db psql -U postgres -d atuel -v ON_ERROR_STOP=1 -v bodega="Bodega Atuel del Sur S.A." < consultas/update.sql
+docker compose exec -T db psql -U postgres -d atuel -v ON_ERROR_STOP=1 -v localidad_d3="Chacras de Coria" -v localidad_d6="General Alvear" < consultas/delete.sql
 docker compose exec -T db psql -U postgres -d atuel -v ON_ERROR_STOP=1 < consultas/select.sql
 ```
 

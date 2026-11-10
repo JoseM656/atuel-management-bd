@@ -2,6 +2,8 @@
 
 TPI Bases de Datos · Bodegas del Atuel · Oct 13, 2026  
 
+> **Diagrama Entidad-Relación y justificación conceptual:** ver [`DER.png`](DER.png), archivo fuente editable [`DER_Bodegas_del_Atuel_V1.drawio`](DER_Bodegas_del_Atuel_V1.drawio) y guía de defensa [`defensa_DER.md`](defensa_DER.md).
+
 ## 1. Relaciones 
 
 El DER se transforma en 31 relaciones. Convención: **negrita** = clave primaria (PK), _cursiva_ = clave foránea (FK), ***negrita y cursiva*** = PK que además es FK. AK = clave alternativa (UNIQUE). 
