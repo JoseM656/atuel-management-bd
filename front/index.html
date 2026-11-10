@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bodegas del Atuel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="css/estilos.css">
+
+  <!-- Orden de carga: primero la capa de API y los componentes (registran sus
+       datos en el evento alpine:init) y al final Alpine, que con `defer`
+       arranca cuando el HTML ya está listo. -->
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/catalogo.js"></script>
+  <script src="js/vino.js"></script>
+  <script src="js/venta.js"></script>
+  <script src="js/transferencias.js"></script>
+  <script src="js/tablero.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body x-data="app" x-cloak>
+<div class="layout">
+
+  <!-- ===================== Barra lateral ===================== -->
+  <aside class="sidebar">
+    <div class="marca">
+      <h1>Bodegas del Atuel</h1>
+      <p>Sistema de gestión</p>
+    </div>
+
+    <nav>
+      <template x-for="p in menu" :key="p.id">
+        <a :href="'#' + p.id" :class="{ activa: seccion === p.id }" x-text="p.titulo"></a>
+      </template>
+    </nav>
+
+    <div class="pie">
+      <div>API: <code x-text="apiBase"></code> (configurable)</div>
+      <div class="salud" :title="salud">
+        <span class="punto" :class="{ ok: salud === 'ok', error: salud !== 'ok' && salud !== 'consultando' }"></span>
+        <span x-text="salud === 'ok' ? 'conectada' : (salud === 'consultando' ? 'consultando…' : salud)"></span>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- ===================== #52 Catálogo de vinos ===================== -->
+    <section x-show="pantalla === 'catalogo'" x-data="catalogo" @ruta.window="alCambiarRuta($event.detail)">
+      <div class="titulo-pantalla con-acciones">
+        <div>
+          <h2>Catálogo de vinos</h2>
+        </div>
+        <div class="acciones">
+          <a class="boton primario" href="#vino/nuevo">+ Nuevo vino</a>
+        </div>
+      </div>
+
+      <!-- Filtros: se envían a la API al apretar «Aplicar filtros» -->
+      <form class="tarjeta" @submit.prevent="aplicarFiltros()">
+        <h3>Filtros</h3>
+        <div class="filtros">
+          <div class="campo buscador">
+            <label for="f-nombre">Nombre</label>
+            <input id="f-nombre" type="search" placeholder="Buscar por nombre (ej. reserva, malbec)…"
+                   autocomplete="off" x-model="filtros.nombre">
+          </div>
+
+          <div class="campo">
+            <label for="f-tipo">Tipo</label>
+            <select id="f-tipo" x-model="filtros.tipo">
+              <option value="">Todos</option>
+              <template x-for="t in tipos" :key="t">
+                <option :value="t" x-text="t"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="f-cepa">Cepa</label>
+            <select id="f-cepa" x-model="filtros.cepa">
+              <option value="">Todas</option>
+              <template x-for="c in cepas" :key="c.id_cepa">
+                <option :value="c.nombre" x-text="c.nombre"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="f-bodega">Bodega</label>
+            <select id="f-bodega" x-model="filtros.bodega">
+              <option value="">Todas</option>
+              <template x-for="b in bodegas" :key="b.cuit">
+                <option :value="b.razon_social" x-text="b.razon_social"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="f-anada">Añada</label>
+            <input id="f-anada" type="number" min="1900" max="2100" step="1" placeholder="Todas" x-model="filtros.anada">
+          </div>
+
+          <button type="submit" class="boton primario" :disabled="cargando">Aplicar filtros</button>
+          <button type="button" class="boton" @click="limpiar()" :disabled="cargando">Limpiar</button>
+        </div>
+      </form>
+
+      <!-- Error de la API, tal cual -->
+      <div class="error-api" x-show="error" x-text="error"></div>
+
+      <div class="tabla-contenedor">
+        <table>
+          <thead>
+            <tr>
+              <th>Cód</th>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Cepa</th>
+              <th>Añada</th>
+              <th>Bodega</th>
+              <th>Volumen</th>
+              <th class="num">Precio</th>
+              <th class="num">Stock total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="v in vinos" :key="v.cod_vino">
+              <tr>
+                <td x-text="v.cod_vino"></td>
+                <td class="texto-largo" x-text="v.nombre"></td>
+                <td x-text="v.tipo"></td>
+                <td class="texto-largo" x-text="v.cepas"></td>
+                <td x-text="v.anada"></td>
+                <td class="texto-largo" x-text="v.bodega"></td>
+                <td x-text="v.volumen_ml + ' ml'"></td>
+                <td class="num" x-text="precio(v.precio)"></td>
+                <td class="num" :class="claseStock(v.stock_total)" x-text="v.stock_total"></td>
+                <td><a class="enlace" :href="'#vino/' + v.cod_vino">Ver detalle →</a></td>
+              </tr>
+            </template>
+            <tr x-show="cargando && vinos.length === 0"><td colspan="10" class="vacio">Cargando…</td></tr>
+            <tr x-show="!cargando && !error && vinos.length === 0"><td colspan="10" class="vacio">No hay vinos que cumplan los filtros.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="paginacion">
+        <span>
+          Mostrando <span x-text="desde"></span>–<span x-text="hasta"></span>
+          de <span x-text="total"></span> vinos
+        </span>
+        <div class="controles">
+          <button type="button" class="boton" @click="irA(pagina - 1)" :disabled="pagina <= 1 || cargando">← Anterior</button>
+          <span>Página <span x-text="pagina"></span> de <span x-text="totalPaginas"></span></span>
+          <button type="button" class="boton" @click="irA(pagina + 1)" :disabled="pagina >= totalPaginas || cargando">Siguiente →</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================== #53 Ficha y alta/edición de vino ===================== -->
+    <section x-show="pantalla === 'vino'" x-data="vino" @ruta.window="alCambiarRuta($event.detail)">
+
+      <!-- ---------- Ficha: GET /vinos/{cod} ---------- -->
+      <template x-if="modo === 'ficha'">
+        <div>
+          <nav class="migas">
+            <a href="#catalogo">← Catálogo de vinos</a>
+            <span x-show="hayVino"> / <span x-text="vino.nombre"></span></span>
+          </nav>
+
+          <p class="cargando" x-show="cargando">Cargando ficha…</p>
+          <div class="error-api" x-show="error" x-text="error"></div>
+
+          <template x-if="hayVino">
+            <div>
+              <div class="titulo-pantalla con-acciones">
+                <div>
+                  <h2 x-text="vino.nombre"></h2>
+                  <div class="subtitulo">Cód <span x-text="vino.cod_vino"></span></div>
+                </div>
+                <div class="acciones">
+                  <button type="button" class="boton peligro" @click="pedirEliminar()" :disabled="eliminando">Eliminar</button>
+                  <a class="boton primario" :href="'#vino/' + vino.cod_vino + '/editar'">Editar</a>
+                </div>
+              </div>
+
+              <div class="alerta-api" x-show="errorAccion">
+                <span class="icono" aria-hidden="true">⚠</span>
+                <div><strong>Error de la API</strong><div x-text="errorAccion && errorAccion.message"></div><small class="detalle-error" x-show="detalleError(errorAccion)" x-text="detalleError(errorAccion)"></small></div>
+              </div>
+
+              <div class="tarjeta">
+                <h3>Ficha técnica</h3>
+                <div class="datos">
+                  <div class="dato"><span>Tipo</span><strong x-text="mayuscula(vino.tipo)"></strong></div>
+                  <div class="dato"><span>Añada</span><strong x-text="vino.anada"></strong></div>
+                  <div class="dato"><span>Volumen</span><strong x-text="vino.volumen_ml + ' ml'"></strong></div>
+                  <div class="dato"><span>Graduación</span><strong x-text="decimal(vino.graduacion) + ' % vol'"></strong></div>
+                  <div class="dato"><span>Bodega</span><strong x-text="vino.bodega"></strong></div>
+                  <div class="dato"><span>Precio</span><strong x-text="precio(vino.precio)"></strong></div>
+                </div>
+              </div>
+
+              <div class="tarjeta">
+                <h3>Stock</h3>
+                <div class="datos">
+                  <div class="dato"><span>Depósito central</span><strong x-text="botellas(vino.stock_deposito)"></strong></div>
+                  <div class="dato"><span>Salas de venta</span><strong x-text="botellas(vino.stock_salas)"></strong></div>
+                  <div class="dato destacado"><span>Stock total</span><strong x-text="botellas(vino.stock_total)"></strong></div>
+                </div>
+                <p class="aclaracion">Dato de la vista <code>v_stock_total_vino</code> (consulta S9: ficha del vino). El front no suma nada.</p>
+              </div>
+
+              <div class="tarjeta">
+                <h3>Composición</h3>
+                <template x-for="c in vino.cepas" :key="c.id_cepa">
+                  <div class="barra-cepa">
+                    <div class="fila"><span x-text="c.nombre"></span><strong x-text="decimal(c.porcentaje).replace(/,0+$/, '') + ' %'"></strong></div>
+                    <div class="barra"><div :style="`width: ${c.porcentaje}%`"></div></div>
+                  </div>
+                </template>
+              </div>
+
+              <div class="tarjeta">
+                <h3>Maridajes</h3>
+                <div class="chips">
+                  <template x-for="m in vino.maridajes" :key="m.id_maridaje">
+                    <span class="chip activo" x-text="m.nombre + ' · ' + m.temperatura_servicio + ' °C'"></span>
+                  </template>
+                </div>
+              </div>
+
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- ---------- Formulario: POST /vinos o PUT /vinos/{cod} ---------- -->
+      <template x-if="modo === 'editar' || modo === 'nuevo'">
+        <form @submit.prevent="guardar()">
+          <div class="titulo-pantalla">
+            <h2 x-text="modo === 'nuevo' ? 'Nuevo vino' : 'Editar vino · Cód ' + cod"></h2>
+          </div>
+
+          <p class="cargando" x-show="cargando">Cargando vino…</p>
+          <div class="error-api" x-show="error" x-text="error"></div>
+
+          <!-- Error de la base, tal cual (p. ej. RN-05: la composición no suma 100) -->
+          <div class="alerta-api" x-show="errorForm">
+            <span class="icono" aria-hidden="true">⚠</span>
+            <div><strong>Error de la API</strong><div x-text="errorForm && errorForm.message"></div><small class="detalle-error" x-show="detalleError(errorForm)" x-text="detalleError(errorForm)"></small></div>
+          </div>
+
+          <div class="form-vino" x-show="!cargando && !error">
+            <!-- Datos del vino -->
+            <div class="tarjeta">
+              <h3>Datos del vino</h3>
+              <div class="grilla-form">
+                <div class="campo ancho">
+                  <label for="v-nombre">Nombre</label>
+                  <input id="v-nombre" type="text" required maxlength="120" x-model="form.nombre">
+                </div>
+                <div class="campo">
+                  <label for="v-tipo">Tipo</label>
+                  <select id="v-tipo" required x-model="form.tipo">
+                    <template x-for="t in tipos" :key="t">
+                      <option :value="t" x-text="t" :selected="t === form.tipo"></option>
+                    </template>
+                  </select>
+                </div>
+                <div class="campo">
+                  <label for="v-anada">Añada</label>
+                  <input id="v-anada" type="number" required step="1" x-model="form.anada">
+                </div>
+                <div class="campo">
+                  <label for="v-volumen">Volumen (ml)</label>
+                  <select id="v-volumen" required x-model.number="form.volumen_ml">
+                    <template x-for="vol in volumenes" :key="vol">
+                      <option :value="vol" x-text="vol" :selected="vol === form.volumen_ml"></option>
+                    </template>
+                  </select>
+                </div>
+                <div class="campo">
+                  <label for="v-graduacion">Graduación (% vol)</label>
+                  <input id="v-graduacion" type="number" required step="0.01" x-model="form.graduacion">
+                </div>
+                <div class="campo">
+                  <label for="v-precio">Precio ($)</label>
+                  <input id="v-precio" type="number" required step="0.01" x-model="form.precio">
+                </div>
+                <div class="campo">
+                  <label for="v-bodega">Bodega</label>
+                  <select id="v-bodega" required x-model="form.cuit_bodega">
+                    <option value="" disabled>Elegir bodega…</option>
+                    <template x-for="b in opciones.bodegas" :key="b.cuit">
+                      <option :value="b.cuit" x-text="b.razon_social" :selected="b.cuit === form.cuit_bodega"></option>
+                    </template>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Composición y maridajes -->
+            <div class="tarjeta">
+              <h3>Composición de cepas</h3>
+              <template x-for="(c, i) in form.cepas" :key="i">
+                <div class="fila-cepa">
+                  <div class="campo">
+                    <label :for="'v-cepa-' + i">Cepa</label>
+                    <select :id="'v-cepa-' + i" required x-model.number="c.id_cepa">
+                      <option value="" disabled>Elegir cepa…</option>
+                      <template x-for="op in opciones.cepas" :key="op.id_cepa">
+                        <option :value="op.id_cepa" x-text="op.nombre" :selected="op.id_cepa === c.id_cepa"></option>
+                      </template>
+                    </select>
+                  </div>
+                  <div class="campo">
+                    <label :for="'v-pct-' + i">%</label>
+                    <input :id="'v-pct-' + i" type="number" required step="0.01" x-model="c.porcentaje">
+                  </div>
+                  <button type="button" class="boton" @click="quitarCepa(i)">Quitar</button>
+                </div>
+              </template>
+              <button type="button" class="boton" @click="agregarCepa()">+ Agregar cepa</button>
+
+              <h3 class="separado">Maridajes (al menos uno)</h3>
+              <div class="chips">
+                <template x-for="m in opciones.maridajes" :key="m.id_maridaje">
+                  <button type="button" class="chip" :class="{ activo: tieneMaridaje(m.id_maridaje) }"
+                          :aria-pressed="tieneMaridaje(m.id_maridaje)"
+                          @click="alternarMaridaje(m.id_maridaje)"
+                          x-text="(tieneMaridaje(m.id_maridaje) ? '✓ ' : '+ ') + m.nombre"></button>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <div class="barra-acciones" x-show="!cargando && !error">
+            <div>
+              <button type="button" class="boton peligro" x-show="modo === 'editar'" @click="pedirEliminar()" :disabled="eliminando || guardando">Eliminar vino</button>
+            </div>
+            <div class="acciones">
+              <button type="button" class="boton" @click="cancelar()" :disabled="guardando">Cancelar</button>
+              <button type="submit" class="boton primario" :disabled="guardando"
+                      x-text="guardando ? 'Guardando…' : (modo === 'nuevo' ? 'Crear vino' : 'Guardar cambios')"></button>
+            </div>
+          </div>
+
+        </form>
+      </template>
+
+      <!-- ---------- Confirmación de borrado (DELETE /vinos/{cod}) ---------- -->
+      <div class="modal-fondo" x-show="confirmando" x-transition.opacity
+           @click.self="cancelarEliminar()" @keydown.escape.window="cancelarEliminar()">
+        <div class="modal" role="alertdialog" aria-modal="true"
+             aria-labelledby="modal-borrar-titulo" aria-describedby="modal-borrar-subtitulo">
+          <h3 id="modal-borrar-titulo">¿Estás seguro que quieres eliminar este vino?</h3>
+          <p id="modal-borrar-subtitulo">Esta acción es irreversible.</p>
+          <div class="acciones">
+            <button type="button" class="boton" x-ref="cancelarBorrado"
+                    @click="cancelarEliminar()" :disabled="eliminando">Cancelar</button>
+            <button type="button" class="boton borrar" @click="eliminar()" :disabled="eliminando"
+                    x-text="eliminando ? 'Borrando…' : 'Borrar vino'"></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== #54 Nueva venta ===================== -->
+    <section x-show="pantalla === 'venta'" x-data="venta">
+      <div class="titulo-pantalla">
+        <h2>Nueva venta</h2>
+      </div>
+
+      <!-- ---------- Venta registrada ---------- -->
+      <template x-if="comprobante">
+        <div>
+          <div class="aviso-ok">
+            <span class="icono" aria-hidden="true">✓</span>
+            <div>
+              <strong>Venta registrada · Comprobante N° <span x-text="comprobante.nro"></span></strong>
+            </div>
+          </div>
+
+          <div class="tarjeta">
+            <div class="datos">
+              <div class="dato"><span>Fecha</span><strong x-text="comprobante.fecha"></strong></div>
+              <div class="dato"><span>Cliente</span><strong x-text="'#' + comprobante.id_cliente + ' · ' + comprobante.cliente"></strong></div>
+              <div class="dato"><span>Sala</span><strong x-text="'#' + comprobante.id_sala"></strong></div>
+            </div>
+          </div>
+
+          <div class="tabla-contenedor">
+            <table>
+              <thead>
+                <tr><th>Vino</th><th class="num">Cant.</th><th class="num">Precio unit.</th><th class="num">Descuento</th><th class="num">Subtotal</th></tr>
+              </thead>
+              <tbody>
+                <template x-for="r in comprobante.renglones" :key="r.cod_vino">
+                  <tr>
+                    <td class="texto-largo" x-text="r.vino"></td>
+                    <td class="num" x-text="r.cantidad"></td>
+                    <td class="num" x-text="precio(r.precio_unitario)"></td>
+                    <td class="num" x-text="'− ' + precio(r.importe_descuento)"></td>
+                    <td class="num" x-text="precio(r.subtotal)"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tarjeta resumen confirmado">
+            <div class="linea"><span>Subtotal</span><span x-text="precio(comprobante.subtotal)"></span></div>
+            <div class="linea"><span>Descuento del cliente</span><span x-text="porcentaje(comprobante.porcentaje_descuento)"></span></div>
+            <div class="linea total"><span>Total</span><span x-text="precio(comprobante.total)"></span></div>
+            <button type="button" class="boton primario ancho" @click="limpiar()">Nueva venta</button>
+          </div>
+        </div>
+      </template>
+
+      <!-- ---------- Formulario de venta ---------- -->
+      <div x-show="!comprobante">
+        <!-- Cabecera: cliente, sala y fecha -->
+        <div class="tarjeta">
+          <h3>Cabecera</h3>
+          <div class="cabecera-venta">
+
+            <!-- Cliente -->
+            <div class="campo" @click.outside="abiertoCliente = false">
+              <label for="vt-cliente">Cliente</label>
+              <template x-if="cliente">
+                <div class="elegido">
+                  <div>
+                    <strong x-text="'#' + cliente.id_cliente + ' · ' + cliente.nombre_razon_social"></strong>
+                    <span x-text="documento(cliente) + ' · ' + mayuscula(cliente.tipo)"></span>
+                  </div>
+                  <span class="insignia" x-text="'desc. ' + porcentaje(cliente.descuento)"></span>
+                  <button type="button" class="enlace" @click="cambiarCliente()">Cambiar</button>
+                </div>
+              </template>
+              <div x-show="!cliente" class="combo">
+                <input id="vt-cliente" type="search" x-ref="buscadorCliente" autocomplete="off"
+                       placeholder="Buscar por ID, documento o nombre…"
+                       x-model="qCliente" @input="escribirCliente()" @focus="abiertoCliente = true; clientes.length || buscarClientes()"
+                       @keydown.escape="abiertoCliente = false">
+                <div class="desplegable" x-show="abiertoCliente">
+                  <div class="chips tipos">
+                    <button type="button" class="chip" :class="{ activo: tipoCliente === '' }" @click="elegirTipo('')">Todos</button>
+                    <template x-for="t in tiposCliente" :key="t">
+                      <button type="button" class="chip" :class="{ activo: tipoCliente === t }" @click="elegirTipo(t)" x-text="mayuscula(t)"></button>
+                    </template>
+                  </div>
+                  <div class="error-api" x-show="errorCliente" x-text="errorCliente"></div>
+                  <ul>
+                    <template x-for="c in clientes" :key="c.id_cliente">
+                      <li><button type="button" class="opcion" @click="elegirCliente(c)">
+                        <span class="id" x-text="'#' + c.id_cliente"></span>
+                        <span class="texto">
+                          <strong x-text="c.nombre_razon_social"></strong>
+                          <span x-text="documento(c) + ' · ' + mayuscula(c.tipo)"></span>
+                        </span>
+                        <span class="insignia" x-text="'desc. ' + porcentaje(c.descuento)"></span>
+                      </button></li>
+                    </template>
+                    <li class="vacio" x-show="!buscandoClientes && !errorCliente && clientes.length === 0">Ningún cliente coincide.</li>
+                  </ul>
+                  <div class="pie-desplegable">
+                    <span x-text="buscandoClientes ? 'Buscando…' : `${clientes.length} de ${totalClientes} clientes`"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sala -->
+            <div class="campo" @click.outside="abiertoSala = false">
+              <label for="vt-sala">Sala de venta</label>
+              <template x-if="sala">
+                <div class="elegido">
+                  <div>
+                    <strong x-text="'#' + sala.id_sala + ' · ' + sala.direccion"></strong>
+                    <span x-text="sala.localidad + ', ' + sala.provincia + ' · CP ' + sala.codigo_postal"></span>
+                  </div>
+                  <span class="insignia gris" x-text="'cierra ' + sala.dia_cierre"></span>
+                  <button type="button" class="enlace" @click="cambiarSala()">Cambiar</button>
+                </div>
+              </template>
+              <div x-show="!sala" class="combo">
+                <input id="vt-sala" type="search" x-ref="buscadorSala" autocomplete="off"
+                       placeholder="Buscar por ID, dirección o localidad…"
+                       x-model="qSala" @focus="abiertoSala = true" @input="abiertoSala = true"
+                       @keydown.escape="abiertoSala = false">
+                <div class="desplegable" x-show="abiertoSala">
+                  <div class="error-api" x-show="errorSala" x-text="errorSala"></div>
+                  <ul>
+                    <template x-for="s in salasFiltradas" :key="s.id_sala">
+                      <li><button type="button" class="opcion" @click="elegirSala(s)">
+                        <span class="id" x-text="'#' + s.id_sala"></span>
+                        <span class="texto">
+                          <strong x-text="s.direccion"></strong>
+                          <span x-text="s.localidad + ', ' + s.provincia + ' · CP ' + s.codigo_postal"></span>
+                        </span>
+                        <span class="insignia gris" x-text="'cierra ' + s.dia_cierre"></span>
+                      </button></li>
+                    </template>
+                    <li class="vacio" x-show="!errorSala && salasFiltradas.length === 0">Ninguna sala coincide.</li>
+                  </ul>
+                  <div class="pie-desplegable">
+                    <span x-text="`${salasFiltradas.length} de ${salas.length} salas`"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fecha -->
+            <div class="campo">
+              <label>Fecha</label>
+              <div class="fecha"><strong x-text="hoy"></strong> <span>(la asigna la base)</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error de la API tal cual (p. ej. RN-09 stock insuficiente) -->
+        <div class="alerta-api" x-show="errorVenta">
+          <span class="icono" aria-hidden="true">⚠</span>
+          <div><strong>Error de la API</strong><div x-text="errorVenta && errorVenta.message"></div><small class="detalle-error" x-show="detalleError(errorVenta)" x-text="detalleError(errorVenta)"></small></div>
+        </div>
+
+        <div class="grilla-venta">
+          <div>
+            <!-- Agregar vino -->
+            <form class="tarjeta" @submit.prevent="agregar()">
+              <h3>Agregar vino</h3>
+              <div class="agregar-vino">
+                <div class="campo combo" @click.outside="abiertoVino = false">
+                  <label for="vt-vino">Vino</label>
+                  <input id="vt-vino" type="search" autocomplete="off" placeholder="Buscar vino por nombre…"
+                         x-model="qVino" @input="escribirVino()" @focus="abiertoVino = true; vinos.length || buscarVinos()"
+                         @keydown.escape="abiertoVino = false">
+                  <div class="desplegable" x-show="abiertoVino">
+                    <ul>
+                      <template x-for="v in vinos" :key="v.cod_vino">
+                        <li><button type="button" class="opcion" @click="elegirVino(v)">
+                          <span class="id" x-text="'#' + v.cod_vino"></span>
+                          <span class="texto">
+                            <strong x-text="v.nombre + ' ' + v.anada"></strong>
+                            <span x-text="v.volumen_ml + ' ml · ' + v.bodega"></span>
+                          </span>
+                        </button></li>
+                      </template>
+                      <li class="vacio" x-show="!buscandoVinos && vinos.length === 0">Ningún vino coincide.</li>
+                    </ul>
+                    <div class="pie-desplegable">
+                      <span x-text="buscandoVinos ? 'Buscando…' : `${vinos.length} resultados`"></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo">
+                  <label for="vt-cantidad">Cantidad</label>
+                  <input id="vt-cantidad" type="number" step="1" x-ref="cantidad" x-model="cantidad">
+                </div>
+                <button type="submit" class="boton primario" :disabled="!vinoElegido || calculando">Agregar</button>
+              </div>
+              <p class="aclaracion" x-show="avisoVino" x-text="avisoVino"></p>
+            </form>
+
+            <!-- Renglones -->
+            <div class="tabla-contenedor">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Vino</th><th class="num">Cant.</th><th class="num">Precio unit.</th>
+                    <th class="num">Descuento</th><th class="num">Subtotal</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="r in renglones" :key="r.cod_vino">
+                    <tr>
+                      <td class="texto-largo" x-text="etiquetaVino(r)"></td>
+                      <td class="num" x-text="r.cantidad"></td>
+                      <template x-if="calculado(r.cod_vino)">
+                        <td class="num" x-text="precio(calculado(r.cod_vino).precio_unitario)"></td>
+                      </template>
+                      <template x-if="calculado(r.cod_vino)">
+                        <td class="num" x-text="'− ' + precio(calculado(r.cod_vino).importe_descuento)"></td>
+                      </template>
+                      <template x-if="calculado(r.cod_vino)">
+                        <td class="num" x-text="precio(calculado(r.cod_vino).subtotal)"></td>
+                      </template>
+                      <template x-if="!calculado(r.cod_vino)">
+                        <td class="num pendiente" colspan="3" x-text="calculando ? 'calculando…' : '— backend'"></td>
+                      </template>
+                      <td><button type="button" class="enlace peligro" @click="quitar(r.cod_vino)">Quitar</button></td>
+                    </tr>
+                  </template>
+                  <tr x-show="renglones.length === 0"><td colspan="6" class="vacio">Todavía no hay vinos en la venta.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Resumen -->
+          <aside class="tarjeta resumen">
+            <h3>Resumen</h3>
+            <div class="linea"><span>Subtotal</span><span x-text="calculo ? precio(calculo.subtotal) : '—'"></span></div>
+            <div class="linea"><span>Descuento del cliente</span><span x-text="calculo ? porcentaje(calculo.porcentaje_descuento) : '—'"></span></div>
+            <div class="linea total"><span>Total</span><span x-text="calculo ? precio(calculo.total) : '—'"></span></div>
+            <p class="aclaracion" x-text="calculando ? 'Calculando en la base…' : 'Calculado por el backend'"></p>
+            <button type="button" class="boton primario ancho" @click="confirmar()" :disabled="!puedeConfirmar"
+                    x-text="confirmando ? 'Confirmando…' : 'Confirmar venta'"></button>
+            <button type="button" class="boton ancho" @click="limpiar()" :disabled="confirmando">Cancelar</button>
+            <p class="aclaracion" x-show="!cliente || !sala">Elegí cliente y sala para calcular la venta.</p>
+          </aside>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================== #55 Transferencias ===================== -->
+    <section x-show="pantalla === 'transferencias'" x-data="transferencias" @ruta.window="alCambiarRuta($event.detail)">
+      <div class="titulo-pantalla">
+        <h2>Transferencias depósito → sala</h2>
+      </div>
+
+      <div class="grilla-transferencias">
+        <!-- ---------- Lista ---------- -->
+        <aside class="tarjeta lista-documentos">
+          <a class="boton primario ancho" href="#transferencias/nueva">+ Nueva transferencia</a>
+          <div class="campo">
+            <label for="tr-estado">Filtrar por estado</label>
+            <select id="tr-estado" x-model="filtroEstado" @change="filtrar()">
+              <option value="">Todos</option>
+              <template x-for="e in estados" :key="e">
+                <option :value="e" x-text="etiquetaEstado(e)"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="error-api" x-show="errorLista" x-text="errorLista"></div>
+
+          <template x-for="d in lista" :key="d.nro">
+            <a class="documento" :class="{ activo: String(d.nro) === String(nro) }" :href="'#transferencias/' + d.nro">
+              <div class="fila">
+                <strong x-text="'N° ' + d.nro"></strong>
+                <span class="estado" :class="d.estado" x-text="etiquetaEstado(d.estado)"></span>
+              </div>
+              <span class="detalle" x-text="'Sala #' + d.id_sala + ' · ' + d.localidad + ' · ' + fecha(d.fecha_confeccion)"></span>
+            </a>
+          </template>
+          <p class="vacio" x-show="!cargandoLista && !errorLista && lista.length === 0">No hay transferencias.</p>
+
+          <div class="paginacion compacta" x-show="total > 0">
+            <button type="button" class="boton" @click="irA(pagina - 1)" :disabled="pagina <= 1 || cargandoLista" aria-label="Página anterior">←</button>
+            <span><span x-text="pagina"></span> / <span x-text="totalPaginas"></span> · <span x-text="total"></span></span>
+            <button type="button" class="boton" @click="irA(pagina + 1)" :disabled="pagina >= totalPaginas || cargandoLista" aria-label="Página siguiente">→</button>
+          </div>
+        </aside>
+
+        <!-- ---------- Panel derecho ---------- -->
+        <div class="panel-documento">
+          <!-- Error de la base tal cual (RN-11, RN-12, stock insuficiente…) -->
+          <div class="alerta-api" x-show="error">
+            <span class="icono" aria-hidden="true">⚠</span>
+            <div><strong>Error de la API</strong><div x-text="error && error.message"></div><small class="detalle-error" x-show="detalleError(error)" x-text="detalleError(error)"></small></div>
+          </div>
+
+          <!-- Nada elegido -->
+          <div class="tarjeta vacio" x-show="modo === null">
+            Elegí una transferencia de la lista o creá una nueva.
+          </div>
+
+          <!-- Alta -->
+          <form class="tarjeta" x-show="modo === 'nueva'" @submit.prevent="crear()">
+            <h3>Nueva transferencia</h3>
+            <div class="grilla-form">
+              <div class="campo">
+                <label for="tr-sala">Sala destino</label>
+                <select id="tr-sala" required x-model="salaNueva">
+                  <option value="" disabled>Elegir sala…</option>
+                  <template x-for="s in salas" :key="s.id_sala">
+                    <option :value="s.id_sala" x-text="etiquetaSala(s)"></option>
+                  </template>
+                </select>
+              </div>
+              <div class="campo">
+                <label>Fecha de confección</label>
+                <input type="text" value="La asigna la base (fecha actual)" disabled>
+              </div>
+            </div>
+            <div class="acciones derecha">
+              <a class="boton" href="#transferencias">Cancelar</a>
+              <button type="submit" class="boton primario" :disabled="!salaNueva || ocupado"
+                      x-text="ocupado ? 'Creando…' : 'Crear transferencia'"></button>
+            </div>
+          </form>
+
+          <!-- Detalle -->
+          <div x-show="modo === 'detalle'">
+            <p class="cargando" x-show="cargando && !hayDetalle">Cargando transferencia…</p>
+            <div class="error-api" x-show="errorDetalle" x-text="errorDetalle"></div>
+
+            <template x-if="hayDetalle">
+              <div>
+                <div class="tarjeta">
+                  <div class="titulo-tarjeta">
+                    <h3 class="grande" x-text="'Transferencia N° ' + t.nro"></h3>
+                    <span class="estado" :class="t.estado" x-text="etiquetaEstado(t.estado)"></span>
+                  </div>
+                  <div class="grilla-form">
+                    <div class="campo">
+                      <label>Sala destino</label>
+                      <input type="text" disabled :value="'#' + t.id_sala + ' · ' + t.sala">
+                    </div>
+                    <div class="campo">
+                      <label>Fecha de confección</label>
+                      <input type="text" disabled :value="fecha(t.fecha_confeccion) + ' (fija, no editable)'">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tarjeta">
+                  <h3>Renglones</h3>
+
+                  <form class="agregar-vino" x-show="puede.renglones" @submit.prevent="agregarRenglon()">
+                    <div class="campo combo" @click.outside="abiertoVino = false">
+                      <label for="tr-vino">Vino</label>
+                      <input id="tr-vino" type="search" autocomplete="off" placeholder="Buscar vino por nombre…"
+                             x-model="qVino" @input="escribirVino()" @focus="abiertoVino = true; vinos.length || buscarVinos()"
+                             @keydown.escape="abiertoVino = false">
+                      <div class="desplegable" x-show="abiertoVino">
+                        <ul>
+                          <template x-for="v in vinos" :key="v.cod_vino">
+                            <li><button type="button" class="opcion" @click="elegirVino(v)">
+                              <span class="id" x-text="'#' + v.cod_vino"></span>
+                              <span class="texto">
+                                <strong x-text="v.nombre + ' ' + v.anada"></strong>
+                                <span x-text="v.volumen_ml + ' ml · ' + v.bodega"></span>
+                              </span>
+                            </button></li>
+                          </template>
+                          <li class="vacio" x-show="!buscandoVinos && vinos.length === 0">Ningún vino coincide.</li>
+                        </ul>
+                        <div class="pie-desplegable">
+                          <span x-text="buscandoVinos ? 'Buscando…' : `${vinos.length} resultados`"></span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="campo">
+                      <label for="tr-cantidad">Cantidad</label>
+                      <input id="tr-cantidad" type="number" step="1" x-ref="cantidadTr" x-model="cantidad">
+                    </div>
+                    <button type="submit" class="boton" :disabled="!vinoElegido || ocupado">Agregar renglón</button>
+                  </form>
+                  <p class="aclaracion" x-show="aviso" x-text="aviso"></p>
+
+                  <div class="tabla-contenedor separada">
+                    <table>
+                      <thead>
+                        <tr><th>Cód</th><th>Vino</th><th class="num">Cantidad</th><th class="num">Stock en depósito</th><th></th></tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="r in t.renglones" :key="r.cod_vino">
+                          <tr>
+                            <td x-text="r.cod_vino"></td>
+                            <td class="texto-largo" x-text="etiquetaVino(r)"></td>
+                            <td class="num" x-text="r.cantidad"></td>
+                            <td class="num" :class="claseStock(r)" x-text="r.stock_deposito"></td>
+                            <td>
+                              <button type="button" class="enlace peligro" x-show="puede.renglones"
+                                      @click="quitar(r.cod_vino)" :disabled="ocupado">Quitar</button>
+                            </td>
+                          </tr>
+                        </template>
+                        <tr x-show="t.renglones.length === 0"><td colspan="5" class="vacio">La transferencia no tiene renglones.</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                </div>
+
+                <div class="acciones derecha">
+                  <button type="button" class="boton primario" @click="terminar()" :disabled="!puede.terminar || ocupado">Terminar</button>
+                  <button type="button" class="boton primario" @click="procesar()" :disabled="!puede.procesar || ocupado">Procesar</button>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Ayuda: qué se habilita en cada estado -->
+          <div class="tarjeta">
+            <h3>Botones habilitados según estado</h3>
+            <div class="tabla-contenedor">
+              <table>
+                <thead>
+                  <tr><th>Estado</th><th>Agregar / quitar renglones</th><th>Terminar</th><th>Procesar</th></tr>
+                </thead>
+                <tbody>
+                  <template x-for="e in estados" :key="e">
+                    <tr>
+                      <td><span class="estado" :class="e" x-text="etiquetaEstado(e)"></span></td>
+                      <td x-text="acciones[e].renglones ? '✓ habilitado' : '✕ deshabilitado'"></td>
+                      <td x-text="acciones[e].terminar ? '✓ habilitado' : '✕ deshabilitado'"></td>
+                      <td x-text="acciones[e].procesar ? '✓ habilitado' : (e === 'procesado' ? '✕ deshabilitado (solo lectura)' : '✕ deshabilitado')"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== #56 Tablero ===================== -->
+    <section x-show="pantalla === 'tablero'" x-data="tablero" @ruta.window="alCambiarRuta($event.detail)">
+      <div class="titulo-pantalla">
+        <h2>Tablero</h2>
+      </div>
+
+      <div class="grilla-tablero">
+        <!-- Top 10 (S1) -->
+        <div class="tarjeta">
+          <h3>Top 10 vinos más vendidos</h3>
+          <div class="error-api" x-show="errorTop" x-text="errorTop"></div>
+          <div class="tabla-contenedor">
+            <table>
+              <thead><tr><th>#</th><th>Vino</th><th class="num">Unidades</th></tr></thead>
+              <tbody>
+                <template x-for="(v, i) in top" :key="v.cod_vino">
+                  <tr>
+                    <td x-text="i + 1"></td>
+                    <td class="texto-largo">
+                      <a class="enlace" :href="'#vino/' + v.cod_vino" x-text="v.nombre + ' ' + v.anada"></a>
+                      <span class="sub" x-text="v.volumen_ml + ' ml'"></span>
+                    </td>
+                    <td class="num" x-text="numero(v.botellas)"></td>
+                  </tr>
+                </template>
+                <tr x-show="cargandoTop && top.length === 0"><td colspan="3" class="vacio">Cargando…</td></tr>
+                <tr x-show="!cargandoTop && !errorTop && top.length === 0"><td colspan="3" class="vacio">Todavía no hay ventas.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="aclaracion">Botellas vendidas en toda la red de salas (consulta S1).</p>
+        </div>
+
+        <div class="columna-tablero">
+        <!-- Ventas por sala (S8) -->
+        <div class="tarjeta">
+          <h3>Ventas por sala · último trimestre</h3>
+          <div class="error-api" x-show="errorVentas" x-text="errorVentas"></div>
+          <p class="cargando" x-show="cargandoVentas && ventas.salas.length === 0">Cargando…</p>
+          <p class="vacio" x-show="!cargandoVentas && !errorVentas && ventas.salas.length === 0">No hubo ventas en el período.</p>
+
+          <div class="barras" role="list">
+            <template x-for="s in salasVisibles" :key="s.id_sala">
+              <div class="barra-sala" role="listitem" :title="pesos(s.monto_total)">
+                <span class="nombre" x-text="'#' + s.id_sala + ' ' + s.localidad"></span>
+                <div class="pista"><div :style="'width: ' + anchoBarra(s.monto_total)"></div></div>
+                <span class="monto" x-text="millones(s.monto_total)"></span>
+              </div>
+            </template>
+          </div>
+          <button type="button" class="enlace ver-todas" x-show="ventas.salas.length > 10"
+                  @click="todasLasSalas = !todasLasSalas"
+                  x-text="todasLasSalas ? 'Ver solo las 10 primeras' : `Ver las ${ventas.salas.length} salas`"></button>
+
+          <p class="aclaracion" x-show="ventas.desde">
+            Suma del total de los comprobantes del <span x-text="fecha(ventas.desde)"></span>
+            al <span x-text="fecha(ventas.hasta)"></span> (consulta S8; el período lo fija la base con <code>CURRENT_DATE</code>).
+          </p>
+        </div>
+
+        <!-- Transportista más activo (S7) -->
+        <div class="tarjeta">
+          <h3>Transportista más activo · último mes</h3>
+          <div class="error-api" x-show="errorActivo" x-text="errorActivo"></div>
+          <p class="cargando" x-show="cargandoActivo && !activo.desde">Cargando…</p>
+
+          <template x-if="activo.transportista">
+            <div class="destacado-transportista">
+              <div>
+                <strong x-text="activo.transportista.razon_social"></strong>
+                <span x-text="'#' + activo.transportista.cod_transportista + ' · CUIT ' + cuit(activo.transportista.cuit)"></span>
+              </div>
+              <div class="cifra">
+                <strong x-text="numero(activo.transportista.ingresos_trasladados)"></strong>
+                <span x-text="activo.transportista.ingresos_trasladados === 1 ? 'ingreso trasladado' : 'ingresos trasladados'"></span>
+              </div>
+            </div>
+          </template>
+          <p class="vacio" x-show="!cargandoActivo && !errorActivo && activo.desde && !activo.transportista">
+            No hubo ingresos en el período.
+          </p>
+
+          <p class="aclaracion" x-show="activo.desde">
+            Ingresos del <span x-text="fecha(activo.desde)"></span> al <span x-text="fecha(activo.hasta)"></span>
+            (consulta S7; si hay empate, gana el de menor código).
+          </p>
+        </div>
+        </div>
+      </div>
+
+      <!-- Vinos sin stock en la sala (S6) -->
+      <div class="tarjeta">
+        <h3>Vinos sin stock en la sala, con stock en el depósito (S6)</h3>
+        <div class="campo selector-sala">
+          <label for="tb-sala">Sala</label>
+          <select id="tb-sala" x-model="salaElegida" @change="cargarSinStock()">
+            <template x-for="s in salas" :key="s.id_sala">
+              <option :value="String(s.id_sala)" x-text="etiquetaSala(s)" :selected="String(s.id_sala) === salaElegida"></option>
+            </template>
+          </select>
+        </div>
+
+        <div class="error-api" x-show="errorSinStock" x-text="errorSinStock"></div>
+
+        <div class="tabla-contenedor">
+          <table>
+            <thead>
+              <tr><th>Cód</th><th>Vino</th><th>Tipo</th><th>Bodega</th><th class="num">Stock en sala</th><th class="num">Stock en depósito</th></tr>
+            </thead>
+            <tbody>
+              <template x-for="v in filasSinStock" :key="v.cod_vino">
+                <tr>
+                  <td x-text="v.cod_vino"></td>
+                  <td class="texto-largo" x-text="v.nombre + ' ' + v.anada + ' · ' + v.volumen_ml + ' ml'"></td>
+                  <td x-text="v.tipo"></td>
+                  <td class="texto-largo" x-text="v.bodega"></td>
+                  <td class="num stock-cero" x-text="v.stock_sala"></td>
+                  <td class="num" :class="claseDeposito(v.stock_deposito)" x-text="numero(v.stock_deposito)"></td>
+                </tr>
+              </template>
+              <tr x-show="cargandoSinStock"><td colspan="6" class="vacio">Cargando…</td></tr>
+              <tr x-show="!cargandoSinStock && !errorSinStock && sinStock.length === 0"><td colspan="6" class="vacio">La sala tiene stock de todos los vinos del depósito.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="paginacion" x-show="sinStock.length > 0">
+          <span><span x-text="numero(sinStock.length)"></span> vinos para reponer</span>
+          <div class="controles">
+            <button type="button" class="boton" @click="irA(pagina - 1)" :disabled="pagina <= 1">← Anterior</button>
+            <span>Página <span x-text="pagina"></span> de <span x-text="totalPaginas"></span></span>
+            <button type="button" class="boton" @click="irA(pagina + 1)" :disabled="pagina >= totalPaginas">Siguiente →</button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

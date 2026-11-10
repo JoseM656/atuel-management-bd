@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -24,6 +25,13 @@ type RenglonComprobanteInput struct {
 	Cantidad int `json:"cantidad"`
 }
 
+// consultor es lo común a *pgxpool.Pool y pgx.Tx para leer: así
+// ObtenerComprobante sirve tanto fuera como dentro de una transacción.
+type consultor interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
 // CrearComprobante inserta la cabecera y sus renglones en una sola
 // transacción. Los triggers de la base calculan descuento, precios, subtotal y
 // total, validan el stock (RN-09) y lo descuentan. Si un renglón no tiene
@@ -36,6 +44,47 @@ func CrearComprobante(ctx context.Context, pool *pgxpool.Pool, c ComprobanteNuev
 	}
 	defer tx.Rollback(ctx)
 
+	nro, err := insertarComprobante(ctx, tx, c)
+	if err != nil {
+		return 0, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+	return nro, nil
+}
+
+// SimularComprobante hace exactamente los mismos INSERT que CrearComprobante,
+// con los mismos triggers (RN-08 importes, RN-09 stock, RI-03 precio), lee
+// los importes que calculó la base y termina con ROLLBACK: no se guarda el
+// comprobante ni se descuenta stock. Lo usa la pantalla de venta para mostrar
+// precios, descuentos y total antes de confirmar, sin calcularlos en el front.
+//
+// Efecto lateral: la secuencia IDENTITY de comprobante.nro no retrocede con el
+// ROLLBACK, así que cada simulación consume un número (quedan saltos en la
+// numeración). La respuesta no incluye ese nro porque no existe.
+func SimularComprobante(ctx context.Context, pool *pgxpool.Pool, c ComprobanteNuevo) (*ComprobanteDetalle, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx) // siempre: es una simulación
+
+	nro, err := insertarComprobante(ctx, tx, c)
+	if err != nil {
+		return nil, err
+	}
+	d, err := ObtenerComprobante(ctx, tx, nro)
+	if err != nil {
+		return nil, err
+	}
+	d.Nro = 0
+	return d, nil
+}
+
+// insertarComprobante inserta cabecera y renglones dentro de la transacción
+// recibida y devuelve el nro generado. No hace COMMIT ni ROLLBACK.
+func insertarComprobante(ctx context.Context, tx pgx.Tx, c ComprobanteNuevo) (int, error) {
 	var nro int
 	if err := tx.QueryRow(ctx, `
 		INSERT INTO comprobante (id_cliente, id_sala)
@@ -50,10 +99,6 @@ func CrearComprobante(ctx context.Context, pool *pgxpool.Pool, c ComprobanteNuev
 			VALUES ($1, $2, $3)`, nro, r.CodVino, r.Cantidad); err != nil {
 			return 0, err
 		}
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return 0, err
 	}
 	return nro, nil
 }
@@ -86,7 +131,7 @@ type RenglonComprobante struct {
 
 // ObtenerComprobante devuelve la cabecera y los renglones de un comprobante.
 // Devuelve pgx.ErrNoRows si el número no existe.
-func ObtenerComprobante(ctx context.Context, pool *pgxpool.Pool, nro int) (*ComprobanteDetalle, error) {
+func ObtenerComprobante(ctx context.Context, pool consultor, nro int) (*ComprobanteDetalle, error) {
 	const cabecera = `
 		SELECT c.nro, c.fecha::text, c.id_cliente, cl.nombre_razon_social,
 		       c.id_sala, c.subtotal, c.porcentaje_descuento, c.total

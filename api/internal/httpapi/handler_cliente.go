@@ -17,7 +17,8 @@ type ClientesHandler struct {
 	Pool *pgxpool.Pool
 }
 
-// Listar responde GET /clientes con filtro por tipo y paginación.
+// Listar responde GET /clientes con filtro por tipo, búsqueda ?q= (ID exacto,
+// documento que empieza con lo escrito o nombre) y paginación.
 func (h *ClientesHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 
@@ -32,7 +33,7 @@ func (h *ClientesHandler) Listar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f := db.ClienteFiltro{Tipo: q.Get("tipo"), Limit: limit, Offset: offset}
+	f := db.ClienteFiltro{Tipo: q.Get("tipo"), Q: q.Get("q"), Limit: limit, Offset: offset}
 
 	clientes, err := db.ListarClientes(r.Context(), h.Pool, f)
 	if err != nil {

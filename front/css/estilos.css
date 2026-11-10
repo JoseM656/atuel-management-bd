@@ -1,0 +1,517 @@
+/* Estilos del front. CSS plano, sin frameworks.
+   Layout: barra lateral fija (navegación) + contenido. */
+
+:root {
+  --vino: #7b1e3a;
+  --vino-oscuro: #2b1218;
+  --vino-claro: #f8ecef;
+  --fondo: #f6f4f1;
+  --superficie: #ffffff;
+  --cabecera-tabla: #f1ece8;
+  --texto: #1f1f1f;
+  --texto-suave: #6b6b6b;
+  --borde: #e6e1dc;
+  --ok: #1f7a3a;
+  --alerta: #a86200;
+  --error: #b3261e;
+  --error-fondo: #fdecea;
+  --radio: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--texto);
+  background: var(--fondo);
+}
+
+[x-cloak] { display: none !important; }
+
+code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+
+/* ---------- Layout ---------- */
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem 1.25rem;
+  background: var(--vino-oscuro);
+  color: #fff;
+}
+.sidebar .marca { padding: 0 0.25rem 1.75rem; }
+.sidebar .marca h1 { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.sidebar .marca p { margin: 0.15rem 0 0; font-size: 0.8rem; opacity: 0.85; }
+
+.sidebar nav { display: flex; flex-direction: column; gap: 0.35rem; }
+.sidebar nav a {
+  padding: 0.7rem 0.75rem;
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+}
+.sidebar nav a:hover { background: rgba(255, 255, 255, 0.08); }
+.sidebar nav a.activa { background: var(--vino); font-weight: 600; }
+
+.sidebar .pie { margin-top: auto; font-size: 0.75rem; opacity: 0.85; }
+.sidebar .pie .salud { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.35rem; }
+.punto { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #999; flex-shrink: 0; }
+.punto.ok { background: #6fdc8c; }
+.punto.error { background: #ff8a80; }
+
+main { flex: 1; min-width: 0; padding: 2rem 2rem 3rem; }
+
+.titulo-pantalla { margin-bottom: 1.5rem; }
+.titulo-pantalla h2 { margin: 0; font-size: 1.6rem; font-weight: 700; }
+.titulo-pantalla .subtitulo { margin-top: 0.35rem; font-size: 0.85rem; color: var(--texto-suave); }
+
+/* ---------- Tarjetas y formularios ---------- */
+.tarjeta {
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+.tarjeta h3 { margin: 0 0 0.9rem; font-size: 1rem; font-weight: 600; }
+
+.filtros {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr 0.5fr auto auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+.campo { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.filtros .buscador { grid-column: 1 / -1; }
+.campo label { font-size: 0.78rem; color: var(--texto-suave); }
+
+input, select {
+  width: 100%;
+  height: 2.6rem;
+  padding: 0 0.75rem;
+  font: inherit;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+input:focus, select:focus { outline: 2px solid var(--vino); outline-offset: -1px; }
+
+.boton {
+  height: 2.6rem;
+  padding: 0 1rem;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  cursor: pointer;
+}
+.boton:hover:not(:disabled) { background: var(--fondo); }
+.boton.primario { background: var(--vino); border-color: var(--vino); color: #fff; }
+.boton.primario:hover:not(:disabled) { background: #651830; }
+.boton:disabled { cursor: not-allowed; background: #ebe7e3; color: var(--texto-suave); border-color: #ebe7e3; }
+
+.enlace {
+  padding: 0;
+  font: inherit;
+  font-weight: 500;
+  color: var(--vino);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.enlace:hover { text-decoration: underline; }
+
+/* ---------- Tablas ---------- */
+.tabla-contenedor {
+  overflow-x: auto;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 0.75rem 0.65rem; text-align: left; white-space: nowrap; }
+th:first-child, td:first-child { padding-left: 1rem; }
+th:last-child, td:last-child { padding-right: 1rem; }
+th { font-weight: 500; color: var(--texto-suave); background: var(--cabecera-tabla); }
+td { border-top: 1px solid var(--borde); }
+tbody tr:hover { background: #faf7f5; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+/* Nombre, cepas del corte y bodega pueden ser largos: se dejan partir en
+   líneas para que la tabla entre a lo ancho sin esconder información. */
+td.texto-largo { white-space: normal; min-width: 130px; max-width: 180px; line-height: 1.35; }
+.vacio { padding: 2rem; text-align: center; color: var(--texto-suave); }
+
+.stock-ok     { color: var(--ok); font-weight: 600; }
+.stock-bajo   { color: var(--alerta); font-weight: 600; }
+.stock-cero   { color: var(--error); font-weight: 600; }
+
+/* ---------- Paginación ---------- */
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  color: var(--texto-suave);
+}
+.paginacion .controles { display: flex; align-items: center; gap: 0.75rem; color: var(--texto); }
+
+/* ---------- Mensajes ---------- */
+/* Errores de la API: se muestran tal cual llegan (regla de oro). */
+.error-api {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  border-left: 4px solid var(--error);
+  border-radius: 6px;
+  background: var(--error-fondo);
+  color: var(--error);
+  white-space: pre-wrap;
+}
+.cargando { color: var(--texto-suave); }
+
+.boceto {
+  padding: 1rem;
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--texto-suave);
+}
+.boceto ul { margin: 0.5rem 0 0; }
+
+/* ---------- Encabezados con acciones y migas ---------- */
+.titulo-pantalla.con-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.acciones { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.migas { margin-bottom: 1rem; font-size: 0.85rem; color: var(--texto-suave); }
+.migas a { color: var(--vino); font-weight: 500; text-decoration: none; }
+.migas a:hover { text-decoration: underline; }
+
+a.boton { display: inline-flex; align-items: center; text-decoration: none; }
+.boton.peligro { color: var(--error); border-color: var(--error); background: var(--superficie); }
+.boton.peligro:hover:not(:disabled) { background: var(--error-fondo); }
+
+/* ---------- Ficha del vino ---------- */
+.datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+.dato {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 8px;
+  background: var(--fondo);
+}
+.dato span { font-size: 0.78rem; color: var(--texto-suave); }
+.dato strong { font-size: 1.05rem; font-weight: 600; }
+.dato.destacado { background: var(--vino-claro); }
+.dato.destacado strong { color: var(--vino); }
+.aclaracion { margin: 0.9rem 0 0; font-size: 0.78rem; color: var(--texto-suave); }
+
+.barra-cepa + .barra-cepa { margin-top: 0.9rem; }
+.barra-cepa .fila { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
+.barra { height: 7px; border-radius: 4px; background: var(--vino-claro); overflow: hidden; }
+.barra > div { height: 100%; border-radius: 4px; background: var(--vino); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  padding: 0.45rem 0.85rem;
+  font: inherit;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+}
+button.chip { cursor: pointer; }
+button.chip:hover { border-color: var(--vino); }
+.chip.activo { background: var(--vino-claro); border-color: var(--vino-claro); color: var(--vino); }
+
+/* ---------- Alerta de error de la API (con título) ---------- */
+.alerta-api {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radio);
+  background: var(--error-fondo);
+  color: var(--error);
+}
+.alerta-api .icono { font-size: 1.1rem; line-height: 1.2; }
+.alerta-api strong { display: block; margin-bottom: 0.15rem; }
+.alerta-api div > div { white-space: pre-wrap; }
+/* SQLSTATE · restricción: muestra que la regla la aplicó la base (#88). */
+.alerta-api .detalle-error {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
+
+/* ---------- Formulario de vino ---------- */
+.form-vino { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
+.form-vino .tarjeta { margin-bottom: 0; }
+.grilla-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 1rem; }
+.campo.ancho { grid-column: 1 / -1; }
+.fila-cepa {
+  display: grid;
+  grid-template-columns: 1fr 90px auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 0.8rem;
+}
+h3.separado { margin-top: 1.5rem; }
+.barra-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+/* ---------- Ventana de confirmación (centrada) ---------- */
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(20, 10, 12, 0.45);
+}
+.modal {
+  width: min(420px, 100%);
+  padding: 1.5rem;
+  text-align: center;
+  background: var(--superficie);
+  border-radius: var(--radio);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+.modal h3 { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.modal p { margin: 0.5rem 0 1.5rem; color: var(--texto-suave); }
+.modal .acciones { justify-content: center; }
+.boton.borrar { background: var(--error); border-color: var(--error); color: #fff; }
+.boton.borrar:hover:not(:disabled) { background: #8f1e18; }
+
+/* ---------- Nueva venta ---------- */
+.cabecera-venta { display: grid; grid-template-columns: 1.3fr 1.3fr 0.7fr; gap: 1rem; align-items: start; }
+.combo { position: relative; }
+.desplegable {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  min-width: 300px;
+  padding: 0.6rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+.desplegable .tipos { margin-bottom: 0.5rem; }
+.desplegable .tipos .chip { padding: 0.3rem 0.7rem; }
+.desplegable .error-api { margin: 0 0 0.5rem; }
+.desplegable ul { list-style: none; margin: 0; padding: 0; max-height: 290px; overflow-y: auto; }
+.desplegable li.vacio { padding: 1rem; }
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  font: inherit;
+  text-align: left;
+  color: var(--texto);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.opcion:hover, .opcion:focus-visible { background: var(--vino-claro); outline: none; }
+.opcion .id { min-width: 3.2rem; font-size: 0.78rem; color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+.opcion .texto, .elegido > div { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.opcion .texto span, .elegido > div span { font-size: 0.78rem; color: var(--texto-suave); }
+.pie-desplegable {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.55rem 0.1rem;
+  margin-top: 0.4rem;
+  border-top: 1px solid var(--borde);
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+.insignia {
+  flex-shrink: 0;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: var(--vino-claro);
+  color: var(--vino);
+}
+.insignia.gris { background: var(--fondo); color: var(--texto-suave); font-weight: 500; }
+.elegido {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--vino-claro);
+  border-radius: 8px;
+  background: #fdf8f9;
+}
+.fecha { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; min-height: 2.6rem; }
+.fecha span { font-size: 0.78rem; color: var(--texto-suave); }
+
+.grilla-venta { display: grid; grid-template-columns: 1fr 300px; gap: 1.25rem; align-items: start; margin-bottom: 1.25rem; }
+/* Sin esto la columna no se achica más que la tabla y desborda en móvil. */
+.grilla-venta > * { min-width: 0; }
+.agregar-vino { display: grid; grid-template-columns: 1fr 110px auto; gap: 0.75rem; align-items: end; }
+.pendiente { color: var(--texto-suave); font-style: italic; text-align: center; }
+.enlace.peligro { color: var(--error); }
+
+.resumen { position: sticky; top: 1rem; margin-bottom: 0; }
+.resumen .linea { display: flex; justify-content: space-between; gap: 1rem; padding: 0.4rem 0; font-variant-numeric: tabular-nums; }
+.resumen .linea.total { margin-top: 0.4rem; padding-top: 0.8rem; border-top: 1px solid var(--borde); font-size: 1.25rem; font-weight: 700; }
+.resumen .linea.total span:last-child { color: var(--vino); }
+.resumen .aclaracion { margin: 0.4rem 0 1rem; }
+.resumen .boton.ancho + .boton.ancho { margin-top: 0.6rem; }
+.resumen.confirmado { position: static; max-width: 360px; margin: 1.25rem 0 0 auto; }
+.resumen.confirmado .boton { margin-top: 1rem; }
+.boton.ancho { width: 100%; }
+
+.aviso-ok {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--ok);
+  border-radius: var(--radio);
+  background: #e9f6ed;
+  color: var(--ok);
+}
+.aviso-ok .icono { font-size: 1.1rem; line-height: 1.2; }
+.aviso-ok strong { display: block; margin-bottom: 0.15rem; }
+
+/* ---------- Transferencias ---------- */
+.grilla-transferencias { display: grid; grid-template-columns: 280px 1fr; gap: 1.25rem; align-items: start; }
+.grilla-transferencias > * { min-width: 0; }
+.lista-documentos { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0; }
+.documento {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.85rem;
+  color: var(--texto);
+  text-decoration: none;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+.documento:hover { border-color: var(--vino); }
+.documento.activo { border-color: var(--vino); background: #fdf8f9; }
+.documento .fila { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.documento .detalle { font-size: 0.78rem; color: var(--texto-suave); }
+.paginacion.compacta { margin: 0; justify-content: space-between; }
+.paginacion.compacta .boton { height: 2.1rem; padding: 0 0.7rem; }
+
+.estado {
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+.estado.en_confeccion { background: #fdf0d5; color: #8a5a00; }
+.estado.terminado     { background: #e3edfb; color: #1f4f99; }
+.estado.procesado     { background: #e2f3e7; color: var(--ok); }
+
+.titulo-tarjeta { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.9rem; }
+.titulo-tarjeta h3 { margin: 0; }
+h3.grande { font-size: 1.3rem; font-weight: 700; }
+input:disabled { background: var(--fondo); color: var(--texto); }
+.acciones.derecha { justify-content: flex-end; margin-bottom: 1.25rem; }
+.tabla-contenedor.separada { margin: 1rem 0; }
+.tarjeta.vacio { padding: 2rem; }
+
+/* ---------- Tablero ---------- */
+.grilla-tablero { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
+.grilla-tablero > * { min-width: 0; }
+.sub { display: block; font-size: 0.75rem; color: var(--texto-suave); }
+.barras { display: flex; flex-direction: column; gap: 0.55rem; }
+.barra-sala { display: grid; grid-template-columns: 9.5rem 1fr 5.2rem; gap: 0.6rem; align-items: center; font-size: 0.82rem; }
+.barra-sala .nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto-suave); }
+.barra-sala .pista { height: 1.15rem; border-radius: 4px; background: var(--vino-claro); overflow: hidden; }
+.barra-sala .pista > div { height: 100%; border-radius: 4px; background: var(--vino); }
+.barra-sala .monto { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ver-todas { margin-top: 0.8rem; }
+.columna-tablero { display: flex; flex-direction: column; gap: 1.25rem; }
+.columna-tablero .tarjeta, .grilla-tablero > .tarjeta { margin-bottom: 0; }
+.grilla-tablero { margin-bottom: 1.25rem; }
+.destacado-transportista {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  background: var(--vino-claro);
+}
+.destacado-transportista > div { display: flex; flex-direction: column; gap: 0.2rem; }
+.destacado-transportista span { font-size: 0.78rem; color: var(--texto-suave); }
+.destacado-transportista .cifra { align-items: flex-end; }
+.destacado-transportista .cifra strong { font-size: 1.6rem; line-height: 1; color: var(--vino); font-variant-numeric: tabular-nums; }
+.selector-sala { max-width: 420px; margin-bottom: 1rem; }
+
+/* ---------- Pantallas angostas ---------- */
+@media (max-width: 1000px) {
+  .filtros { grid-template-columns: 1fr 1fr; }
+  .form-vino { grid-template-columns: 1fr; }
+  .cabecera-venta { grid-template-columns: 1fr 1fr; }
+  .grilla-venta, .grilla-transferencias, .grilla-tablero { grid-template-columns: 1fr; }
+  .resumen { position: static; }
+}
+@media (max-width: 640px) {
+  .datos, .grilla-form { grid-template-columns: 1fr; }
+  .cabecera-venta, .agregar-vino { grid-template-columns: 1fr; }
+  .desplegable { min-width: 0; }
+  .elegido { flex-wrap: wrap; }
+  .barra-sala { grid-template-columns: 6.5rem 1fr 4.6rem; }
+}
+@media (max-width: 760px) {
+  .layout { flex-direction: column; }
+  .sidebar { position: static; height: auto; width: 100%; padding: 1rem; }
+  .sidebar .marca { padding-bottom: 0.75rem; }
+  .sidebar nav { flex-direction: row; flex-wrap: wrap; }
+  .sidebar .pie { margin-top: 0.75rem; }
+  main { padding: 1.25rem 1rem 2rem; }
+  .filtros { grid-template-columns: 1fr; }
+}

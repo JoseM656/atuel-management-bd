@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/JoseM656/atuel-management-bd/internal/db"
 	"github.com/JoseM656/atuel-management-bd/internal/httperr"
@@ -18,7 +19,7 @@ type VinosHandler struct {
 	Pool *pgxpool.Pool
 }
 
-// Listar responde GET /vinos con filtros (tipo, cepa, bodega, anada) y
+// Listar responde GET /vinos con filtros (nombre, tipo, cepa, bodega, anada) y
 // paginación (limit, offset). Devuelve {total, limit, offset, vinos}.
 func (h *VinosHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
@@ -40,6 +41,7 @@ func (h *VinosHandler) Listar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	f := db.VinoFiltro{
+		Nombre: strings.TrimSpace(q.Get("nombre")),
 		Tipo:   q.Get("tipo"),
 		Cepa:   q.Get("cepa"),
 		Bodega: q.Get("bodega"),

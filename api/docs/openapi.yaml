@@ -3,9 +3,12 @@ info:
   title: Bodegas del Atuel — API
   version: 0.2.0
   description: |
-    API REST de la capa de datos (Etapa 6). Hoy expone `/salud` y el CRUD de
-    `/vinos`; se irán agregando clientes, comprobantes, transferencias,
-    ingresos y reportes (S1–S12).
+    API REST de la capa de datos (Etapa 6): vinos, clientes, comprobantes,
+    transferencias, ingresos, catálogos y reportes (S1–S12 y tablero).
+
+    Todos los errores responden `{"error": "...", "codigo": "<SQLSTATE>",
+    "restriccion": "<nombre>"}` (esquema `Error`); `codigo` y `restriccion`
+    aparecen solo cuando el error lo generó la base.
 servers:
   - url: http://localhost:3333
     description: Local
@@ -24,6 +27,11 @@ paths:
     get:
       summary: Lista de vinos con su bodega (filtros y paginación)
       parameters:
+        - name: nombre
+          in: query
+          required: false
+          description: Búsqueda parcial por nombre, sin distinguir mayúsculas (ILIKE '%texto%'). Los comodines % y _ se buscan como texto.
+          schema: { type: string }
         - name: tipo
           in: query
           required: false
@@ -102,6 +110,11 @@ paths:
           description: Vino no encontrado
     put:
       summary: Reemplaza los campos de un vino (el cambio de precio se audita)
+      description: |
+        Si el cuerpo trae `cepas` y/o `maridajes`, se reemplazan completos en la
+        misma transacción. RN-05 (suma = 100) y el maridaje obligatorio son
+        triggers diferidos: si no se cumplen, el COMMIT falla (409) y no se
+        guarda ningún cambio. Si no vienen, el corte y los maridajes no se tocan.
       parameters:
         - name: cod
           in: path
@@ -138,8 +151,15 @@ paths:
 
   /clientes:
     get:
-      summary: Lista de clientes con su subtipo (filtro y paginación)
+      summary: Lista de clientes con su subtipo (filtro, búsqueda y paginación)
       parameters:
+        - name: q
+          in: query
+          required: false
+          description: |
+            Búsqueda: ID exacto (aparece primero), documento que empieza con los
+            dígitos escritos (se ignoran guiones) o nombre que contiene el texto.
+          schema: { type: string }
         - name: tipo
           in: query
           required: false
@@ -232,6 +252,32 @@ paths:
         "409":
           description: Tiene comprobantes (RN-14)
 
+  /comprobantes/simular:
+    post:
+      summary: Simula una venta sin guardarla (ROLLBACK)
+      description: |
+        Hace los mismos INSERT que POST /comprobantes, con los mismos triggers
+        (RN-08, RN-09, RI-03), lee los importes calculados por la base y
+        termina en ROLLBACK: no se guarda nada ni se descuenta stock. La
+        pantalla de venta lo usa para mostrar precios y total antes de
+        confirmar. La secuencia de comprobante.nro no retrocede, así que cada
+        simulación consume un número. `nro` vuelve en 0.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ComprobanteNuevo" }
+      responses:
+        "200":
+          description: Importes calculados por la base
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComprobanteDetalle" }
+        "409":
+          description: Sin stock (RN-09) u otra regla violada
+        "422":
+          description: CHECK violado (cantidad <= 0, etc.)
+
   /comprobantes:
     post:
       summary: Venta transaccional (cabecera + renglones)
@@ -277,6 +323,40 @@ paths:
           description: No encontrado
 
   /transferencias:
+    get:
+      summary: Lista de transferencias (filtros y paginación)
+      description: |
+        Ordenadas de la más reciente a la más antigua. Un estado que no existe
+        en el ENUM estado_documento lo rechaza la base (22P02 → 400).
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          description: Filtro por estado
+          schema: { type: string, enum: [en_confeccion, terminado, procesado] }
+        - name: id_sala
+          in: query
+          required: false
+          description: Filtro por sala
+          schema: { type: integer }
+        - name: limit
+          in: query
+          required: false
+          description: Tamaño de página (default 20, mínimo 1)
+          schema: { type: integer }
+        - name: offset
+          in: query
+          required: false
+          description: Filas a saltear (default 0)
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Página de transferencias con total
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransferenciasPagina" }
+        "400":
+          description: Parámetro inválido (estado inexistente, limit < 1, etc.)
     post:
       summary: Alta de una transferencia (en_confeccion)
       description: |
@@ -303,6 +383,28 @@ paths:
         "422":
           description: NOT NULL violado (sala inexistente → 409 por FK)
 
+  /transferencias/{nro}:
+    get:
+      summary: Transferencia con su estado actual y sus renglones
+      description: |
+        El front usa `estado` para habilitar los botones Terminar / Procesar
+        (RN-11: en_confeccion → terminado → procesado).
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Transferencia
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransferenciaDetalle" }
+        "400":
+          description: Número inválido
+        "404":
+          description: No encontrada
+
   /transferencias/{nro}/renglones:
     post:
       summary: Carga renglones a una transferencia en confección
@@ -324,6 +426,30 @@ paths:
       responses:
         "204":
           description: Renglones agregados
+        "409":
+          description: Transferencia no en confección (RN-12)
+
+  /transferencias/{nro}/renglones/{cod}:
+    delete:
+      summary: Quita el renglón de un vino de una transferencia en confección
+      description: |
+        Borra el renglón mientras la transferencia está en_confeccion. Fuera de
+        confección lo rechaza el trigger trg_renglon_transferencia_doc (RN-12).
+      parameters:
+        - name: nro
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: cod
+          in: path
+          required: true
+          description: cod_vino del renglón
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Renglón quitado
+        "404":
+          description: El renglón no existe
         "409":
           description: Transferencia no en confección (RN-12)
 
@@ -442,6 +568,55 @@ paths:
         "409":
           description: Estado inválido o no existe
 
+  /salas:
+    get:
+      summary: Salas de venta (catálogo para desplegables)
+      description: Lista completa, sin paginar, ordenada por localidad y dirección.
+      responses:
+        "200":
+          description: Salas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Sala" }
+
+  /cepas:
+    get:
+      summary: Cepas (catálogo para desplegables y filtro ?cepa= de /vinos)
+      responses:
+        "200":
+          description: Cepas ordenadas por nombre
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CepaItem" }
+
+  /bodegas:
+    get:
+      summary: Bodegas (catálogo para desplegables y filtro ?bodega= de /vinos)
+      responses:
+        "200":
+          description: Bodegas ordenadas por razón social
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Bodega" }
+
+  /maridajes:
+    get:
+      summary: Maridajes (catálogo para el alta de vino)
+      responses:
+        "200":
+          description: Maridajes ordenados por nombre
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MaridajeItem" }
+
   /reportes/s1:
     get:
       summary: S1 · Top 10 vinos por botellas vendidas
@@ -547,6 +722,103 @@ paths:
         "200":
           description: Clientes
 
+  /reportes/top-vinos:
+    get:
+      summary: Tablero · Top 10 vinos más vendidos (misma lógica que S1)
+      description: Mismo ranking que S1, con añada y volumen para mostrar.
+      responses:
+        "200":
+          description: Ranking
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    cod_vino: { type: integer }
+                    nombre: { type: string }
+                    anada: { type: integer }
+                    volumen_ml: { type: integer }
+                    botellas: { type: integer }
+  /reportes/ventas-por-sala:
+    get:
+      summary: Tablero · Ventas por sala del último trimestre (misma lógica que S8)
+      description: |
+        Mismos montos que S8, con la localidad de cada sala y el período usado
+        (desde = CURRENT_DATE - 3 meses, hasta = CURRENT_DATE).
+      responses:
+        "200":
+          description: Período y montos por sala, de mayor a menor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  desde: { type: string, format: date }
+                  hasta: { type: string, format: date }
+                  salas:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id_sala: { type: integer }
+                        localidad: { type: string }
+                        monto_total: { type: number }
+  /reportes/transportista-activo:
+    get:
+      summary: Tablero · Transportista más activo del último mes (misma lógica que S7)
+      description: |
+        Mismo resultado que S7 (más ingresos trasladados; empate → menor código),
+        con el CUIT y el período usado (desde = CURRENT_DATE - 1 mes).
+        `transportista` es null si no hubo ingresos en el período.
+      responses:
+        "200":
+          description: Período y transportista
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  desde: { type: string, format: date }
+                  hasta: { type: string, format: date }
+                  transportista:
+                    type: object
+                    nullable: true
+                    properties:
+                      cod_transportista: { type: integer }
+                      razon_social: { type: string }
+                      cuit: { type: string }
+                      ingresos_trasladados: { type: integer }
+  /reportes/vinos-sin-stock:
+    get:
+      summary: Tablero · Vinos sin stock en una sala, con stock en depósito (misma lógica que S6)
+      parameters:
+        - name: sala
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Mismos vinos que S6, con tipo, bodega y stock en sala para mostrar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    cod_vino: { type: integer }
+                    nombre: { type: string }
+                    anada: { type: integer }
+                    volumen_ml: { type: integer }
+                    tipo: { type: string }
+                    bodega: { type: string }
+                    stock_sala: { type: integer }
+                    stock_deposito: { type: integer }
+        "400":
+          description: Parámetro sala inválido
+
 components:
   schemas:
     Vino:
@@ -560,6 +832,8 @@ components:
         graduacion: { type: number }
         precio: { type: number }
         bodega: { type: string }
+        cepas: { type: string, description: "Corte, de mayor a menor porcentaje (ej. \"Merlot, Syrah, Bonarda\")" }
+        stock_total: { type: integer, description: "Depósito + salas (vista v_stock_total_vino)" }
     VinosPagina:
       type: object
       properties:
@@ -579,8 +853,11 @@ components:
         volumen_ml: { type: integer }
         graduacion: { type: number }
         precio: { type: number }
+        cuit_bodega: { type: string }
         bodega: { type: string }
-        stock_total: { type: integer }
+        stock_deposito: { type: integer }
+        stock_salas: { type: integer }
+        stock_total: { type: integer, description: "Depósito + salas (vista v_stock_total_vino)" }
         cepas:
           type: array
           items: { $ref: "#/components/schemas/Cepa" }
@@ -590,11 +867,13 @@ components:
     Cepa:
       type: object
       properties:
+        id_cepa: { type: integer }
         nombre: { type: string }
         porcentaje: { type: number }
     Maridaje:
       type: object
       properties:
+        id_maridaje: { type: integer }
         nombre: { type: string }
         temperatura_servicio: { type: number }
     VinoNuevo:
@@ -630,6 +909,14 @@ components:
         graduacion: { type: number }
         precio: { type: number }
         cuit_bodega: { type: string }
+        cepas:
+          type: array
+          description: Opcional. Si viene, reemplaza el corte completo (RN-05).
+          items: { $ref: "#/components/schemas/CepaInput" }
+        maridajes:
+          type: array
+          description: Opcional. Si viene, reemplaza los maridajes (al menos uno).
+          items: { type: integer }
     Cliente:
       type: object
       properties:
@@ -735,6 +1022,75 @@ components:
       properties:
         cod_vino: { type: integer }
         cantidad: { type: integer }
+    TransferenciaDetalle:
+      type: object
+      properties:
+        nro: { type: integer }
+        id_sala: { type: integer }
+        sala: { type: string, description: "calle número, localidad" }
+        localidad: { type: string }
+        fecha_confeccion: { type: string, format: date }
+        estado: { type: string, enum: [en_confeccion, terminado, procesado] }
+        renglones:
+          type: array
+          items: { $ref: "#/components/schemas/RenglonTransferencia" }
+    RenglonTransferencia:
+      type: object
+      properties:
+        cod_vino: { type: integer }
+        vino: { type: string }
+        anada: { type: integer }
+        volumen_ml: { type: integer }
+        cantidad: { type: integer }
+        stock_deposito:
+          type: integer
+          description: Stock actual del depósito (informativo; lo valida sp_procesar_transferencia al procesar)
+    TransferenciaResumen:
+      type: object
+      properties:
+        nro: { type: integer }
+        id_sala: { type: integer }
+        sala: { type: string }
+        localidad: { type: string }
+        fecha_confeccion: { type: string, format: date }
+        estado: { type: string, enum: [en_confeccion, terminado, procesado] }
+        cant_renglones: { type: integer }
+    TransferenciasPagina:
+      type: object
+      properties:
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+        transferencias:
+          type: array
+          items: { $ref: "#/components/schemas/TransferenciaResumen" }
+    Sala:
+      type: object
+      properties:
+        id_sala: { type: integer }
+        descripcion: { type: string, description: "calle número, localidad" }
+        direccion: { type: string, description: "calle número" }
+        localidad: { type: string }
+        provincia: { type: string }
+        codigo_postal: { type: string }
+        dia_cierre: { type: string, description: "ENUM dia_semana (lunes … domingo)" }
+    CepaItem:
+      type: object
+      properties:
+        id_cepa: { type: integer }
+        nombre: { type: string }
+        tipo: { type: string }
+    Bodega:
+      type: object
+      properties:
+        cuit: { type: string }
+        razon_social: { type: string }
+    MaridajeItem:
+      type: object
+      properties:
+        id_maridaje: { type: integer }
+        nombre: { type: string }
+        temperatura_servicio: { type: number }
     RenglonIngresoInput:
       type: object
       required: [cod_vino, cantidad]
@@ -743,5 +1099,14 @@ components:
         cantidad: { type: integer }
     Error:
       type: object
+      description: |
+        Error de la API. Si viene de la base (#88), `error` está en castellano:
+        el texto del RAISE EXCEPTION para P0001, el mensaje de
+        httperr/mensajes.go para las restricciones conocidas, o uno genérico
+        con el nombre de la restricción. El código HTTP sigue la tabla
+        SQLSTATE → HTTP del enunciado.
+      required: [error]
       properties:
-        error: { type: string }
+        error: { type: string, example: "La añada debe estar entre 1990 y 2100." }
+        codigo: { type: string, description: "SQLSTATE (solo si el error vino de la base)", example: "23514" }
+        restriccion: { type: string, description: "Nombre del CHECK/UNIQUE/FK violado, si lo hay", example: "ck_vino_anada" }

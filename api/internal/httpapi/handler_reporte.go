@@ -30,6 +30,45 @@ func (h *ReportesHandler) Registrar(r chi.Router) {
 	r.Get("/reportes/s11", h.S11)
 	r.Get("/reportes/s12a", h.S12a)
 	r.Get("/reportes/s12b", h.S12b)
+
+	// Tablero del front (#56): rutas del enunciado, misma lógica que S1/S8/S7/S6.
+	r.Get("/reportes/top-vinos", h.TopVinos)
+	r.Get("/reportes/ventas-por-sala", h.VentasPorSala)
+	r.Get("/reportes/transportista-activo", h.TransportistaActivo)
+	r.Get("/reportes/vinos-sin-stock", h.VinosSinStock)
+}
+
+func (h *ReportesHandler) TransportistaActivo(w http.ResponseWriter, r *http.Request) {
+	res, err := db.TransportistaMasActivo(r.Context(), h.Pool)
+	if err != nil {
+		httperr.Write(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
+func (h *ReportesHandler) TopVinos(w http.ResponseWriter, r *http.Request) {
+	filas, err := db.TopVinos(r.Context(), h.Pool)
+	writeReporte(w, err, filas)
+}
+
+func (h *ReportesHandler) VentasPorSala(w http.ResponseWriter, r *http.Request) {
+	res, err := db.VentasPorSalaTrimestre(r.Context(), h.Pool)
+	if err != nil {
+		httperr.Write(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
+func (h *ReportesHandler) VinosSinStock(w http.ResponseWriter, r *http.Request) {
+	sala, err := queryIntObligatorio(r, "sala")
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "parámetro 'sala' inválido"})
+		return
+	}
+	filas, err := db.VinosSinStock(r.Context(), h.Pool, sala)
+	writeReporte(w, err, filas)
 }
 
 // queryIntObligatorio lee un parámetro de query entero y lo exige.

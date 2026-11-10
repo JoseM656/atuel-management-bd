@@ -12,7 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/JoseM656/atuel-management-bd/internal/httperr"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -139,6 +141,128 @@ func TestPrecioNegativo(t *testing.T) {
 	}
 }
 
+// errorAPI decodifica el cuerpo de error {"error","codigo","restriccion"} (#88).
+func errorAPI(t *testing.T, body string) httperr.Respuesta {
+	t.Helper()
+	var r httperr.Respuesta
+	if err := json.Unmarshal([]byte(body), &r); err != nil {
+		t.Fatalf("el error no es JSON válido (%v): %s", err, body)
+	}
+	return r
+}
+
+// TestMensajesRestriccionesExisten: cada restricción con mensaje propio en
+// httperr/mensajes.go existe en la base. Si alguien renombra o borra un
+// CHECK/UNIQUE/FK, este test falla y el mensaje no queda desactualizado (#88).
+func TestMensajesRestriccionesExisten(t *testing.T) {
+	if testPool == nil {
+		t.Skip("sin TEST_DATABASE_URL/DATABASE_URL: se omiten los tests de integración")
+	}
+	for _, nombre := range httperr.Restricciones() {
+		var existe bool
+		err := testPool.QueryRow(context.Background(), `
+			SELECT EXISTS (
+			    SELECT 1 FROM pg_constraint
+			    WHERE conname = $1 AND connamespace = 'public'::regnamespace)`, nombre).Scan(&existe)
+		if err != nil {
+			t.Fatalf("consultar pg_constraint: %v", err)
+		}
+		if !existe {
+			t.Errorf("la restricción %q tiene mensaje en httperr/mensajes.go pero no existe en la base", nombre)
+		}
+	}
+}
+
+// TestMensajeAnada: añada 1920 viola ck_vino_anada → 422 con el mensaje en
+// castellano, el SQLSTATE y el nombre de la restricción (#88).
+func TestMensajeAnada(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/vinos", map[string]any{
+		"nombre": "Vino Test Añada", "tipo": "tinto", "anada": 1920,
+		"volumen_ml": 750, "graduacion": 13, "precio": 9000,
+		"cuit_bodega": "30700000019",
+		"cepas":       []map[string]any{{"id_cepa": 1, "porcentaje": 100}},
+		"maridajes":   []int{1},
+	})
+	if code != http.StatusUnprocessableEntity {
+		t.Fatalf("esperaba 422, obtuve %d: %s", code, body)
+	}
+	e := errorAPI(t, body)
+	if e.Error != "La añada debe estar entre 1990 y 2100." || e.Codigo != "23514" || e.Restriccion != "ck_vino_anada" {
+		t.Fatalf("respuesta inesperada: %+v", e)
+	}
+}
+
+// TestMensajeVinoDuplicado: un segundo vino con el mismo nombre, añada y
+// volumen viola uq_vino_nombre_anada_volumen → 409 en castellano (#88).
+func TestMensajeVinoDuplicado(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	vino := map[string]any{
+		"nombre": "Vino Test Duplicado " + strconv.FormatInt(time.Now().UnixNano(), 36), "tipo": "tinto",
+		"anada": 2022, "volumen_ml": 750, "graduacion": 13, "precio": 9000,
+		"cuit_bodega": "30700000019",
+		"cepas":       []map[string]any{{"id_cepa": 1, "porcentaje": 100}},
+		"maridajes":   []int{1},
+	}
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/vinos", vino)
+	if code != http.StatusCreated {
+		t.Fatalf("alta: esperaba 201, obtuve %d: %s", code, body)
+	}
+	defer doJSON(t, http.MethodDelete, srv.URL+"/vinos/"+fstr(decodeJSON(t, body)["cod_vino"].(float64)), nil)
+
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/vinos", vino)
+	if code != http.StatusConflict {
+		t.Fatalf("duplicado: esperaba 409, obtuve %d: %s", code, body)
+	}
+	e := errorAPI(t, body)
+	if e.Error != "Ya existe un vino con ese nombre, añada y volumen." || e.Codigo != "23505" || e.Restriccion != "uq_vino_nombre_anada_volumen" {
+		t.Fatalf("respuesta inesperada: %+v", e)
+	}
+}
+
+// TestMensajeBorradoRN14: borrar un vino con ventas lo impide una FK (RN-14)
+// → 409 con el mensaje de RN-14, no el de «vino inexistente» (#88).
+func TestMensajeBorradoRN14(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodDelete, srv.URL+"/vinos/1", nil)
+	if code != http.StatusConflict {
+		t.Fatalf("esperaba 409, obtuve %d: %s", code, body)
+	}
+	e := errorAPI(t, body)
+	if !strings.HasPrefix(e.Error, "No se puede eliminar el vino") || e.Codigo != "23503" || e.Restriccion == "" {
+		t.Fatalf("respuesta inesperada: %+v", e)
+	}
+}
+
+// TestMensajeP0001SinEnvoltorio: un RAISE EXCEPTION llega con su texto, sin
+// «ERROR: …» ni «(SQLSTATE P0001)» (#88).
+func TestMensajeP0001SinEnvoltorio(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/transferencias", map[string]any{"id_sala": 1})
+	if code != http.StatusCreated {
+		t.Fatalf("crear transferencia: esperaba 201, obtuve %d: %s", code, body)
+	}
+	nro := fstr(decodeJSON(t, body)["nro"].(float64))
+
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/transferencias/"+nro+"/procesar", nil)
+	if code != http.StatusConflict {
+		t.Fatalf("esperaba 409, obtuve %d: %s", code, body)
+	}
+	e := errorAPI(t, body)
+	if e.Codigo != "P0001" || strings.Contains(e.Error, "ERROR:") || strings.Contains(e.Error, "SQLSTATE") ||
+		!strings.Contains(e.Error, "solo se procesa terminado") {
+		t.Fatalf("respuesta inesperada: %+v", e)
+	}
+}
+
 // TestCambioEstadoInvalido: procesar una transferencia todavía en_confeccion
 // es un salto de estado inválido (RN-11) -> 409.
 func TestCambioEstadoInvalido(t *testing.T) {
@@ -229,6 +353,400 @@ func TestListarClientes(t *testing.T) {
 	}
 	if decodeJSON(t, body)["total"] == nil {
 		t.Fatalf("esperaba el campo total: %s", body)
+	}
+}
+
+// TestObtenerTransferencia: GET /transferencias/{nro} devuelve el estado real
+// y los renglones, y el estado cambia cuando se termina (RN-11). Es lo que usa
+// el front para habilitar los botones.
+func TestObtenerTransferencia(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/transferencias", map[string]any{"id_sala": 1})
+	if code != http.StatusCreated {
+		t.Fatalf("crear transferencia: esperaba 201, obtuve %d: %s", code, body)
+	}
+	nro := fstr(decodeJSON(t, body)["nro"].(float64))
+
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/transferencias/"+nro+"/renglones",
+		[]map[string]any{{"cod_vino": 1, "cantidad": 2}})
+	if code != http.StatusNoContent {
+		t.Fatalf("agregar renglón: esperaba 204, obtuve %d: %s", code, body)
+	}
+
+	code, body = doJSON(t, http.MethodGet, srv.URL+"/transferencias/"+nro, nil)
+	if code != http.StatusOK {
+		t.Fatalf("esperaba 200, obtuve %d: %s", code, body)
+	}
+	m := decodeJSON(t, body)
+	if m["estado"] != "en_confeccion" {
+		t.Fatalf("esperaba estado en_confeccion, obtuve %v", m["estado"])
+	}
+	if r, ok := m["renglones"].([]any); !ok || len(r) != 1 {
+		t.Fatalf("esperaba 1 renglón, obtuve %v", m["renglones"])
+	}
+
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/transferencias/"+nro+"/terminar", nil)
+	if code != http.StatusNoContent {
+		t.Fatalf("terminar: esperaba 204, obtuve %d: %s", code, body)
+	}
+	_, body = doJSON(t, http.MethodGet, srv.URL+"/transferencias/"+nro, nil)
+	if e := decodeJSON(t, body)["estado"]; e != "terminado" {
+		t.Fatalf("tras terminar esperaba estado terminado, obtuve %v", e)
+	}
+}
+
+// TestQuitarRenglonTransferencia: en confección se puede quitar un renglón y el
+// detalle trae el stock del depósito; ya terminada, el trigger RN-12 lo
+// rechaza (409) y el renglón sigue ahí.
+func TestQuitarRenglonTransferencia(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/transferencias", map[string]any{"id_sala": 1})
+	if code != http.StatusCreated {
+		t.Fatalf("crear transferencia: esperaba 201, obtuve %d: %s", code, body)
+	}
+	nro := fstr(decodeJSON(t, body)["nro"].(float64))
+	base := srv.URL + "/transferencias/" + nro
+
+	code, body = doJSON(t, http.MethodPost, base+"/renglones",
+		[]map[string]any{{"cod_vino": 1, "cantidad": 2}, {"cod_vino": 2, "cantidad": 3}})
+	if code != http.StatusNoContent {
+		t.Fatalf("agregar renglones: esperaba 204, obtuve %d: %s", code, body)
+	}
+
+	if code, body = doJSON(t, http.MethodDelete, base+"/renglones/2", nil); code != http.StatusNoContent {
+		t.Fatalf("quitar renglón: esperaba 204, obtuve %d: %s", code, body)
+	}
+	if code, _ = doJSON(t, http.MethodDelete, base+"/renglones/2", nil); code != http.StatusNotFound {
+		t.Fatalf("quitar renglón inexistente: esperaba 404, obtuve %d", code)
+	}
+
+	_, body = doJSON(t, http.MethodGet, base, nil)
+	renglones := decodeJSON(t, body)["renglones"].([]any)
+	if len(renglones) != 1 {
+		t.Fatalf("esperaba 1 renglón tras quitar, obtuve %d", len(renglones))
+	}
+	if _, ok := renglones[0].(map[string]any)["stock_deposito"]; !ok {
+		t.Fatalf("el renglón no trae stock_deposito: %v", renglones[0])
+	}
+
+	if code, body = doJSON(t, http.MethodPost, base+"/terminar", nil); code != http.StatusNoContent {
+		t.Fatalf("terminar: esperaba 204, obtuve %d: %s", code, body)
+	}
+	code, body = doJSON(t, http.MethodDelete, base+"/renglones/1", nil)
+	if code != http.StatusConflict || !strings.Contains(body, "no está en confección") {
+		t.Fatalf("quitar en terminado: esperaba 409 con el mensaje de RN-12, obtuve %d: %s", code, body)
+	}
+}
+
+// TestTableroIgualQueSeccion8: las rutas del tablero devuelven los mismos
+// vinos/salas y cantidades que S1, S8 y S6 (solo suman columnas para mostrar).
+func TestTableroIgualQueSeccion8(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	lista := func(ruta string) []map[string]any {
+		t.Helper()
+		code, body := doJSON(t, http.MethodGet, srv.URL+ruta, nil)
+		if code != http.StatusOK {
+			t.Fatalf("%s: esperaba 200, obtuve %d: %s", ruta, code, body)
+		}
+		var filas []map[string]any
+		if err := json.Unmarshal([]byte(body), &filas); err != nil {
+			t.Fatalf("%s: %v", ruta, err)
+		}
+		return filas
+	}
+	iguales := func(nombre string, a, b []map[string]any, clave, valor string) {
+		t.Helper()
+		if len(a) != len(b) {
+			t.Fatalf("%s: %d filas contra %d", nombre, len(a), len(b))
+		}
+		for i := range a {
+			if a[i][clave] != b[i][clave] || a[i][valor] != b[i][valor] {
+				t.Fatalf("%s fila %d: %v/%v contra %v/%v", nombre, i, a[i][clave], a[i][valor], b[i][clave], b[i][valor])
+			}
+		}
+	}
+
+	iguales("top-vinos vs S1", lista("/reportes/top-vinos"), lista("/reportes/s1"), "cod_vino", "botellas")
+
+	code, body := doJSON(t, http.MethodGet, srv.URL+"/reportes/ventas-por-sala", nil)
+	if code != http.StatusOK {
+		t.Fatalf("ventas-por-sala: esperaba 200, obtuve %d: %s", code, body)
+	}
+	var ventas struct {
+		Desde, Hasta string
+		Salas        []map[string]any
+	}
+	if err := json.Unmarshal([]byte(body), &ventas); err != nil || ventas.Desde == "" {
+		t.Fatalf("ventas-por-sala: respuesta inválida (%v): %s", err, body)
+	}
+	iguales("ventas-por-sala vs S8", ventas.Salas, lista("/reportes/s8"), "id_sala", "monto_total")
+
+	code, body = doJSON(t, http.MethodGet, srv.URL+"/reportes/transportista-activo", nil)
+	if code != http.StatusOK {
+		t.Fatalf("transportista-activo: esperaba 200, obtuve %d: %s", code, body)
+	}
+	var activo struct {
+		Desde         string
+		Transportista map[string]any
+	}
+	if err := json.Unmarshal([]byte(body), &activo); err != nil || activo.Desde == "" {
+		t.Fatalf("transportista-activo: respuesta inválida (%v): %s", err, body)
+	}
+	s7 := lista("/reportes/s7")
+	if (activo.Transportista == nil) != (len(s7) == 0) {
+		t.Fatalf("transportista-activo: %v contra S7 %v", activo.Transportista, s7)
+	}
+	if activo.Transportista != nil {
+		iguales("transportista-activo vs S7", []map[string]any{activo.Transportista}, s7, "cod_transportista", "ingresos_trasladados")
+	}
+
+	sinStock := lista("/reportes/vinos-sin-stock?sala=3")
+	iguales("vinos-sin-stock vs S6", sinStock, lista("/reportes/s6?sala=3"), "cod_vino", "stock_deposito")
+	for _, f := range sinStock {
+		if f["stock_sala"] != float64(0) {
+			t.Fatalf("vinos-sin-stock: el vino %v tiene stock en sala %v", f["cod_vino"], f["stock_sala"])
+		}
+	}
+
+	if code, _ := doJSON(t, http.MethodGet, srv.URL+"/reportes/vinos-sin-stock?sala=abc", nil); code != http.StatusBadRequest {
+		t.Fatalf("sala inválida: esperaba 400, obtuve %d", code)
+	}
+}
+
+// TestTransferenciaInexistente: GET de una transferencia que no existe -> 404.
+func TestTransferenciaInexistente(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, _ := doJSON(t, http.MethodGet, srv.URL+"/transferencias/99999999", nil)
+	if code != http.StatusNotFound {
+		t.Fatalf("esperaba 404, obtuve %d", code)
+	}
+}
+
+// TestListarTransferenciasEstadoInvalido: un estado que no existe en el ENUM
+// estado_documento lo rechaza la base (22P02) y la API responde 400.
+func TestListarTransferenciasEstadoInvalido(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	code, body := doJSON(t, http.MethodGet, srv.URL+"/transferencias?estado=anulado", nil)
+	if code != http.StatusBadRequest {
+		t.Fatalf("esperaba 400, obtuve %d: %s", code, body)
+	}
+
+	code, body = doJSON(t, http.MethodGet, srv.URL+"/transferencias?estado=terminado&limit=5", nil)
+	if code != http.StatusOK {
+		t.Fatalf("con un estado válido esperaba 200, obtuve %d: %s", code, body)
+	}
+	if decodeJSON(t, body)["total"] == nil {
+		t.Fatalf("esperaba el campo total: %s", body)
+	}
+}
+
+// TestCatalogos: los cuatro listados de catálogo responden 200 con una lista
+// no vacía (sobre la base cargada) y cada fila trae el campo id que el front
+// envía después en POST /vinos y POST /comprobantes.
+func TestCatalogos(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	casos := []struct{ ruta, campoID string }{
+		{"/salas", "id_sala"},
+		{"/cepas", "id_cepa"},
+		{"/bodegas", "cuit"},
+		{"/maridajes", "id_maridaje"},
+	}
+	for _, c := range casos {
+		code, body := doJSON(t, http.MethodGet, srv.URL+c.ruta, nil)
+		if code != http.StatusOK {
+			t.Fatalf("%s: esperaba 200, obtuve %d: %s", c.ruta, code, body)
+		}
+		var filas []map[string]any
+		if err := json.Unmarshal([]byte(body), &filas); err != nil {
+			t.Fatalf("%s: esperaba una lista JSON (%v): %s", c.ruta, err, body)
+		}
+		if len(filas) == 0 {
+			t.Fatalf("%s: esperaba al menos una fila", c.ruta)
+		}
+		if filas[0][c.campoID] == nil {
+			t.Fatalf("%s: esperaba el campo %s: %v", c.ruta, c.campoID, filas[0])
+		}
+	}
+}
+
+// TestEditarVinoComposicion: PUT /vinos/{cod} reemplaza el corte en una sola
+// transacción. Si los porcentajes no suman 100, la base lo rechaza (RN-05,
+// 409) y el corte anterior queda intacto; con una suma válida se guarda. Al
+// final se borra el vino de prueba (no tiene movimientos, RN-14 lo permite).
+func TestEditarVinoComposicion(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	nombre := "Vino Test Edición " + strconv.FormatInt(time.Now().UnixNano(), 36)
+	vino := map[string]any{
+		"nombre": nombre, "tipo": "tinto", "anada": 2022,
+		"volumen_ml": 750, "graduacion": 13.5, "precio": 9000,
+		"cuit_bodega": "30700000019",
+		"cepas":       []map[string]any{{"id_cepa": 1, "porcentaje": 100}},
+		"maridajes":   []int{1},
+	}
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/vinos", vino)
+	if code != http.StatusCreated {
+		t.Fatalf("alta: esperaba 201, obtuve %d: %s", code, body)
+	}
+	cod := fstr(decodeJSON(t, body)["cod_vino"].(float64))
+	defer doJSON(t, http.MethodDelete, srv.URL+"/vinos/"+cod, nil)
+
+	cantCepas := func() int {
+		_, body := doJSON(t, http.MethodGet, srv.URL+"/vinos/"+cod, nil)
+		return len(decodeJSON(t, body)["cepas"].([]any))
+	}
+
+	// Suma 90 → 409 con el mensaje del trigger, y el corte sigue siendo el original.
+	vino["cepas"] = []map[string]any{{"id_cepa": 1, "porcentaje": 60}, {"id_cepa": 2, "porcentaje": 30}}
+	code, body = doJSON(t, http.MethodPut, srv.URL+"/vinos/"+cod, vino)
+	if code != http.StatusConflict || !strings.Contains(body, "no suma 100") {
+		t.Fatalf("suma 90: esperaba 409 «no suma 100», obtuve %d: %s", code, body)
+	}
+	if n := cantCepas(); n != 1 {
+		t.Fatalf("tras el rechazo el corte debía quedar intacto (1 cepa), quedó con %d", n)
+	}
+
+	// Suma 100 → 204 y el corte nuevo tiene 2 cepas.
+	vino["cepas"] = []map[string]any{{"id_cepa": 1, "porcentaje": 60}, {"id_cepa": 2, "porcentaje": 40}}
+	code, body = doJSON(t, http.MethodPut, srv.URL+"/vinos/"+cod, vino)
+	if code != http.StatusNoContent {
+		t.Fatalf("suma 100: esperaba 204, obtuve %d: %s", code, body)
+	}
+	if n := cantCepas(); n != 2 {
+		t.Fatalf("esperaba 2 cepas tras editar, hay %d", n)
+	}
+}
+
+// TestBuscarVinoPorNombre: ?nombre= busca parte del nombre sin distinguir
+// mayúsculas, se combina con otros filtros, y un comodín de LIKE ("%") se
+// busca como texto literal (no devuelve todos los vinos).
+func TestBuscarVinoPorNombre(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	total := func(query string) float64 {
+		t.Helper()
+		code, body := doJSON(t, http.MethodGet, srv.URL+"/vinos?"+query, nil)
+		if code != http.StatusOK {
+			t.Fatalf("%s: esperaba 200, obtuve %d: %s", query, code, body)
+		}
+		return decodeJSON(t, body)["total"].(float64)
+	}
+
+	todos := total("limit=1")
+	mayus := total("nombre=RESERVA&limit=1")
+	minus := total("nombre=reserva&limit=1")
+	if mayus == 0 || mayus != minus || mayus >= todos {
+		t.Fatalf("«reserva» debía encontrar algunos vinos (no todos) sin importar mayúsculas: RESERVA=%v reserva=%v todos=%v", mayus, minus, todos)
+	}
+	if conTipo := total("nombre=reserva&tipo=tinto&limit=1"); conTipo > minus {
+		t.Fatalf("combinado con tipo no puede devolver más que solo por nombre: %v > %v", conTipo, minus)
+	}
+	if comodin := total(url.Values{"nombre": {"%"}}.Encode() + "&limit=1"); comodin != 0 {
+		t.Fatalf("«%%» debía buscarse como texto literal (0 vinos), devolvió %v", comodin)
+	}
+}
+
+// TestSimularVenta: POST /comprobantes/simular devuelve los importes que
+// calcula la base (precio copiado, descuento del cliente, total) sin guardar
+// nada: el stock de la sala queda igual. Sin stock responde 409 (RN-09), igual
+// que una venta real.
+func TestSimularVenta(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	stockSala := func() float64 {
+		t.Helper()
+		var n float64
+		if err := testPool.QueryRow(context.Background(),
+			`SELECT cantidad FROM stock_sala WHERE id_sala = 1 AND cod_vino = 1`).Scan(&n); err != nil {
+			t.Fatalf("leer stock: %v", err)
+		}
+		return n
+	}
+	antes := stockSala()
+
+	venta := map[string]any{
+		"id_cliente": 2, "id_sala": 1,
+		"renglones": []map[string]any{{"cod_vino": 1, "cantidad": 1}},
+	}
+	code, body := doJSON(t, http.MethodPost, srv.URL+"/comprobantes/simular", venta)
+	if code != http.StatusOK {
+		t.Fatalf("esperaba 200, obtuve %d: %s", code, body)
+	}
+	m := decodeJSON(t, body)
+	renglones := m["renglones"].([]any)
+	if len(renglones) != 1 || m["total"].(float64) <= 0 || renglones[0].(map[string]any)["precio_unitario"].(float64) <= 0 {
+		t.Fatalf("esperaba 1 renglón con precio y total calculados por la base: %s", body)
+	}
+	if m["nro"].(float64) != 0 {
+		t.Fatalf("una simulación no tiene nro de comprobante: %v", m["nro"])
+	}
+	if despues := stockSala(); despues != antes {
+		t.Fatalf("la simulación no debe descontar stock: antes %v, después %v", antes, despues)
+	}
+
+	venta["renglones"] = []map[string]any{{"cod_vino": 1, "cantidad": 999999}}
+	code, body = doJSON(t, http.MethodPost, srv.URL+"/comprobantes/simular", venta)
+	if code != http.StatusConflict || !strings.Contains(body, "stock insuficiente") {
+		t.Fatalf("sin stock: esperaba 409 «stock insuficiente», obtuve %d: %s", code, body)
+	}
+}
+
+// TestBuscarClientes: ?q= encuentra por ID exacto (primero en la lista), por
+// documento con guiones y por nombre; se combina con ?tipo=.
+func TestBuscarClientes(t *testing.T) {
+	srv := nuevoServer(t)
+	defer srv.Close()
+
+	buscar := func(query string) map[string]any {
+		t.Helper()
+		code, body := doJSON(t, http.MethodGet, srv.URL+"/clientes?"+query, nil)
+		if code != http.StatusOK {
+			t.Fatalf("%s: esperaba 200, obtuve %d: %s", query, code, body)
+		}
+		return decodeJSON(t, body)
+	}
+	primero := func(m map[string]any) map[string]any {
+		t.Helper()
+		l := m["clientes"].([]any)
+		if len(l) == 0 {
+			t.Fatalf("esperaba al menos un cliente: %v", m)
+		}
+		return l[0].(map[string]any)
+	}
+
+	porID := primero(buscar("q=2&limit=5"))
+	if porID["id_cliente"].(float64) != 2 {
+		t.Fatalf("el ID exacto debía aparecer primero, apareció %v", porID["id_cliente"])
+	}
+
+	doc := porID["nro_doc"].(string)
+	conGuion := doc[:2] + "-" + doc[2:]
+	if c := primero(buscar(url.Values{"q": {conGuion}}.Encode())); c["nro_doc"] != doc && !strings.HasPrefix(c["nro_doc"].(string), doc) {
+		t.Fatalf("buscar el documento con guion debía encontrar %s, encontró %v", doc, c["nro_doc"])
+	}
+
+	nombre := strings.Fields(porID["nombre_razon_social"].(string))[0]
+	if buscar(url.Values{"q": {strings.ToUpper(nombre)}}.Encode())["total"].(float64) == 0 {
+		t.Fatalf("buscar por nombre «%s» debía encontrar clientes", nombre)
+	}
+
+	if m := buscar("q=Exportadora&tipo=socio"); m["total"].(float64) != 0 {
+		t.Fatalf("«Exportadora» entre socios no debía encontrar nada, encontró %v", m["total"])
 	}
 }
 

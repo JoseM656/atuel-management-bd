@@ -23,6 +23,9 @@ curl http://localhost:3333/vinos
 # Paginación: 5 por página, salteando 10
 curl 'http://localhost:3333/vinos?limit=5&offset=10'
 
+# Búsqueda por nombre: parcial y sin distinguir mayúsculas
+curl -i 'http://localhost:3333/vinos?nombre=reserva'
+
 # Filtro por tipo (tinto | blanco | rosado | espumante)
 curl 'http://localhost:3333/vinos?tipo=tinto'
 
@@ -103,6 +106,10 @@ curl -i -X DELETE http://localhost:3333/vinos/401
 # Lista (con filtro ?tipo= y paginación)
 curl 'http://localhost:3333/clientes?tipo=socio&limit=5'
 
+# Búsqueda ?q=: ID exacto (primero), documento que empieza con (ignora guiones) o nombre
+curl 'http://localhost:3333/clientes?q=18500&limit=20'
+curl 'http://localhost:3333/clientes?q=30-8001&tipo=exportador&limit=20'
+
 # Detalle con subtipo
 curl http://localhost:3333/clientes/1
 ```
@@ -163,6 +170,19 @@ curl -i -X POST http://localhost:3333/comprobantes \
   -d '{"id_cliente": 1, "id_sala": 1, "renglones": [{"cod_vino": 1, "cantidad": 999999}]}'
 ```
 
+## Comprobantes — simulación (`POST /comprobantes/simular`)
+
+```bash
+# Mismo cuerpo que una venta. La base calcula precio, descuento y total con sus
+# triggers y la transacción termina en ROLLBACK: no guarda nada ni toca stock.
+curl -i -X POST http://localhost:3333/comprobantes/simular \
+  -H 'Content-Type: application/json' \
+  -d '{"id_cliente": 2, "id_sala": 1, "renglones": [{"cod_vino": 1, "cantidad": 6}]}'
+# → 200 {"nro":0, "subtotal":..., "porcentaje_descuento":..., "total":..., "renglones":[...]}
+
+# Sin stock → 409 con el mismo mensaje que una venta real (RN-09)
+```
+
 ## Comprobantes — detalle (`GET /comprobantes/{nro}`)
 
 ```bash
@@ -191,6 +211,9 @@ curl -i -X POST http://localhost:3333/transferencias/N/renglones \
   -d '[{"cod_vino": 1, "cantidad": 5}]'
 # → 204
 
+# Quitar el renglón de un vino (solo en_confeccion) → 204 · no existe → 404
+curl -i -X DELETE http://localhost:3333/transferencias/N/renglones/1
+
 # 3. Terminar (en_confeccion -> terminado)
 curl -i -X POST http://localhost:3333/transferencias/N/terminar
 # → 204
@@ -201,6 +224,28 @@ curl -i -X POST http://localhost:3333/transferencias/N/procesar
 
 # Renglón sobre una transferencia ya terminada → 409 (RN-12)
 # Procesar sin stock suficiente → 409 (RN-11)
+```
+
+## Transferencias — consulta (`GET /transferencias` y `GET /transferencias/{nro}`)
+
+```bash
+# Detalle: cabecera con el estado actual (RN-11) + renglones
+curl -i http://localhost:3333/transferencias/1
+# → 200 {"nro":1,"id_sala":1,"sala":"...","localidad":"...","fecha_confeccion":"...","estado":"procesado",
+#        "renglones":[{"cod_vino":1,"vino":"...","anada":2020,"volumen_ml":750,"cantidad":5,"stock_deposito":254}]}
+
+# No existe → 404 · Número inválido → 400
+curl -i http://localhost:3333/transferencias/99999999
+curl -i http://localhost:3333/transferencias/abc
+
+# Listado, de la más reciente a la más antigua (limit=20 por defecto)
+curl -i 'http://localhost:3333/transferencias?limit=5'
+
+# Filtros: estado (en_confeccion | terminado | procesado) y sala
+curl -i 'http://localhost:3333/transferencias?estado=terminado&id_sala=1'
+
+# Estado inexistente → 400 (lo rechaza el ENUM de la base, SQLSTATE 22P02)
+curl -i 'http://localhost:3333/transferencias?estado=anulado'
 ```
 
 ## Ingresos (`POST /ingresos` y sub-recursos)
@@ -228,6 +273,16 @@ curl -i -X POST http://localhost:3333/ingresos/N/procesar
 
 # Procesar un ingreso que no está terminado → 409 (RN-10)
 # Vino ajeno a la bodega → 409 (RI-04)
+```
+
+## Catálogos — desplegables del front (solo lectura)
+
+```bash
+# Listas completas, sin paginar, ordenadas por nombre
+curl -i http://localhost:3333/salas       # → [{"id_sala":7,"descripcion":"Av. Principal 70 715, Agrelo","localidad":"Agrelo"}, ...]
+curl -i http://localhost:3333/cepas       # → [{"id_cepa":5,"nombre":"Bonarda","tipo":"tinta"}, ...]
+curl -i http://localhost:3333/bodegas     # → [{"cuit":"30700000085","razon_social":"Bodega Altos del Diamante S.A."}, ...]
+curl -i http://localhost:3333/maridajes   # → [{"id_maridaje":4,"nombre":"Carnes blancas","temperatura_servicio":12}, ...]
 ```
 
 ## Reportes — consultas S1–S12 (solo lectura)
@@ -273,6 +328,26 @@ curl 'http://localhost:3333/reportes/s12a?bodega=30700000019'
 curl http://localhost:3333/reportes/s12b
 ```
 
+## Reportes — tablero del front (rutas del enunciado)
+
+Misma lógica que S1, S8, S7 y S6; solo suman columnas para mostrar. S1–S12 no cambian.
+
+```bash
+# Top 10 vinos (S1) con añada y volumen
+curl http://localhost:3333/reportes/top-vinos
+
+# Ventas por sala del último trimestre (S8) con localidad y período
+curl http://localhost:3333/reportes/ventas-por-sala
+# → {"desde":"2026-08-09","hasta":"2026-11-09","salas":[{"id_sala":16,"localidad":"...","monto_total":...}]}
+
+# Transportista más activo del último mes (S7) con CUIT y período (transportista = null si no hubo ingresos)
+curl http://localhost:3333/reportes/transportista-activo
+# → {"desde":"2026-10-09","hasta":"2026-11-09","transportista":{"cod_transportista":1,"razon_social":"...","cuit":"...","ingresos_trasladados":57}}
+
+# Vinos sin stock en la sala 3 con stock en depósito (S6) con tipo y bodega
+curl 'http://localhost:3333/reportes/vinos-sin-stock?sala=3'
+```
+
 ## Errores (SQLSTATE → HTTP)
 
 | SQLSTATE | Significado | HTTP |
@@ -282,3 +357,29 @@ curl http://localhost:3333/reportes/s12b
 | `22P02` | invalid_text_representation | 400 |
 | `40001` / `40P01` | serialization / deadlock | 503 |
 | `P0001` | RAISE EXCEPTION (reglas RN/RI) | 409 |
+
+### Mensajes en castellano (#88)
+
+El cuerpo es `{"error": "...", "codigo": "<SQLSTATE>", "restriccion": "<nombre>"}`. La regla la aplica la base;
+la API solo traduce el texto por nombre de restricción (`api/internal/httperr/mensajes.go`).
+
+```bash
+# CHECK: añada fuera de rango → 422
+curl -s -X POST http://localhost:3333/vinos -H 'Content-Type: application/json' \
+  -d '{"nombre":"Prueba","tipo":"tinto","anada":1920,"volumen_ml":750,"graduacion":13,"precio":9000,
+       "cuit_bodega":"30700000019","cepas":[{"id_cepa":1,"porcentaje":100}],"maridajes":[1]}'
+# → {"error":"La añada debe estar entre 1990 y 2100.","codigo":"23514","restriccion":"ck_vino_anada"}
+
+# FK al borrar un vino con ventas (RN-14) → 409
+curl -s -X DELETE http://localhost:3333/vinos/1
+# → {"error":"No se puede eliminar el vino porque tiene ventas, stock, transferencias, ingresos o historial de precios.",
+#    "codigo":"23503","restriccion":"fk_auditoria_vino"}
+
+# RAISE EXCEPTION (P0001): el texto del trigger, sin «ERROR: … (SQLSTATE P0001)» → 409
+curl -s -X POST http://localhost:3333/transferencias/1/renglones -H 'Content-Type: application/json' \
+  -d '[{"cod_vino":1,"cantidad":1}]'
+# → {"error":"la transferencia 1 no está en confección, no se pueden modificar sus renglones","codigo":"P0001"}
+```
+
+Una restricción sin mensaje propio devuelve un texto genérico con su nombre (por ejemplo «El dato no cumple la
+restricción ck_xxx.»). Si se renombra o borra una restricción de la tabla, `TestMensajesRestriccionesExisten` falla.
