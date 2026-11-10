@@ -1,0 +1,1021 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="DER" id="der-bodegas">
+    <mxGraphModel dx="3315" dy="2218" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="E_DEPARTAMENTO" parent="1" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="DEPARTAMENTO" vertex="1">
+          <mxGeometry height="46" width="150" x="460" y="2364" as="geometry" />
+        </mxCell>
+        <mxCell id="A_DEPARTAMENTO_id_departamento" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id_departamento" vertex="1">
+          <mxGeometry height="32" width="125" x="300" y="2390" as="geometry" />
+        </mxCell>
+        <mxCell id="A_DEPARTAMENTO_nombre" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nombre" vertex="1">
+          <mxGeometry height="32" width="70" x="590" y="2430" as="geometry" />
+        </mxCell>
+        <mxCell id="A_DEPARTAMENTO_provincia" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="provincia" vertex="1">
+          <mxGeometry height="32" width="85" x="460" y="2430" as="geometry" />
+        </mxCell>
+        <mxCell id="E_LOCALIDAD" parent="1" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="LOCALIDAD" vertex="1">
+          <mxGeometry height="46" width="150" x="1026" y="802" as="geometry" />
+        </mxCell>
+        <mxCell id="A_LOCALIDAD_id_localidad" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id_localidad" vertex="1">
+          <mxGeometry height="32" width="105" x="1063" y="916" as="geometry" />
+        </mxCell>
+        <mxCell id="A_LOCALIDAD_nombre" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nombre" vertex="1">
+          <mxGeometry height="32" width="70" x="994" y="908" as="geometry" />
+        </mxCell>
+        <mxCell id="A_LOCALIDAD_provincia" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="provincia" vertex="1">
+          <mxGeometry height="32" width="85" x="924.5" y="857" as="geometry" />
+        </mxCell>
+        <mxCell id="A_LOCALIDAD_codigo_postal" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="codigo_postal" vertex="1">
+          <mxGeometry height="32" width="111" x="1194" y="864" as="geometry" />
+        </mxCell>
+        <mxCell id="E_DEPOSITO" parent="1" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="DEPOSITO" vertex="1">
+          <mxGeometry height="46" width="150" x="1018" y="1071" as="geometry" />
+        </mxCell>
+        <mxCell id="A_DEPOSITO_id" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id" vertex="1">
+          <mxGeometry height="32" width="70" x="928" y="1024" as="geometry" />
+        </mxCell>
+        <mxCell id="E_SALA_VENTA" parent="1" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="SALA_VENTA" vertex="1">
+          <mxGeometry height="46" width="150" x="1024" y="496" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SALA_VENTA_id_sala" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id_sala" vertex="1">
+          <mxGeometry height="32" width="72" x="937.5" y="523" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SALA_VENTA_calle" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="calle" vertex="1">
+          <mxGeometry height="32" width="70" x="1116" y="424" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SALA_VENTA_numero" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="numero" vertex="1">
+          <mxGeometry height="32" width="70" x="1021.5" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="A_SALA_VENTA_dia_cierre" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="dia_cierre" vertex="1">
+          <mxGeometry height="32" width="92" x="940" y="456" as="geometry" />
+        </mxCell>
+        <mxCell id="E_EMPLEADO" parent="1" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="EMPLEADO" vertex="1">
+          <mxGeometry height="46" width="150" x="1024" y="306" as="geometry" />
+        </mxCell>
+        <mxCell id="A_EMPLEADO_cuit" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="cuit" vertex="1">
+          <mxGeometry height="32" width="70" x="910" y="282" as="geometry" />
+        </mxCell>
+        <mxCell id="A_EMPLEADO_nombre" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nombre" vertex="1">
+          <mxGeometry height="32" width="70" x="994" y="256" as="geometry" />
+        </mxCell>
+        <mxCell id="A_EMPLEADO_fecha_ingreso" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha_ingreso" vertex="1">
+          <mxGeometry height="32" width="111" x="1091.5" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="A_EMPLEADO_salario" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="salario" vertex="1">
+          <mxGeometry height="32" width="72" x="1200" y="282" as="geometry" />
+        </mxCell>
+        <mxCell id="E_FINCA" parent="1" style="whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" value="FINCA" vertex="1">
+          <mxGeometry height="46" width="150" x="710" y="2224" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FINCA_id_finca" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id_finca" vertex="1">
+          <mxGeometry height="32" width="78" x="843" y="2310" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FINCA_nombre" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nombre" vertex="1">
+          <mxGeometry height="32" width="70" x="753.5" y="2324" as="geometry" />
+        </mxCell>
+        <mxCell id="A_FINCA_superficie_ha" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="superficie_ha" vertex="1">
+          <mxGeometry height="32" width="111" x="914.5" y="2270" as="geometry" />
+        </mxCell>
+        <mxCell id="E_PARCELA" parent="1" style="shape=ext;margin=3;double=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" value="PARCELA" vertex="1">
+          <mxGeometry height="46" width="150" x="1009.5" y="2071" as="geometry" />
+        </mxCell>
+        <mxCell id="A_PARCELA_nro_parcela" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="&lt;span style=&quot;text-decoration: underline dashed;&quot;&gt;nro_parcela&lt;/span&gt;" vertex="1">
+          <mxGeometry height="32" width="98" x="921" y="1996" as="geometry" />
+        </mxCell>
+        <mxCell id="A_PARCELA_superficie_ha" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="superficie_ha" vertex="1">
+          <mxGeometry height="32" width="111" x="908" y="2146" as="geometry" />
+        </mxCell>
+        <mxCell id="A_PARCELA_anio_plantacion" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="anio_plantacion" vertex="1">
+          <mxGeometry height="32" width="125" x="1022" y="2177" as="geometry" />
+        </mxCell>
+        <mxCell id="E_CEPA" parent="1" style="whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" value="CEPA" vertex="1">
+          <mxGeometry height="46" width="150" x="1008" y="1783" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CEPA_id_cepa" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id_cepa" vertex="1">
+          <mxGeometry height="32" width="72" x="908" y="1790" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CEPA_nombre" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nombre" vertex="1">
+          <mxGeometry height="32" width="70" x="1176" y="1790" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CEPA_tipo" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="tipo" vertex="1">
+          <mxGeometry height="32" width="70" x="1164" y="1850" as="geometry" />
+        </mxCell>
+        <mxCell id="E_LOTE_UVA" parent="1" style="whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" value="LOTE_UVA" vertex="1">
+          <mxGeometry height="46" width="150" x="1482" y="2071" as="geometry" />
+        </mxCell>
+        <mxCell id="A_LOTE_UVA_nro_lote" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="nro_lote" vertex="1">
+          <mxGeometry height="32" width="78" x="1670" y="2095" as="geometry" />
+        </mxCell>
+        <mxCell id="A_LOTE_UVA_fecha_cosecha" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha_cosecha" vertex="1">
+          <mxGeometry height="32" width="111" x="1614" y="2146" as="geometry" />
+        </mxCell>
+        <mxCell id="A_LOTE_UVA_kg" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="kg" vertex="1">
+          <mxGeometry height="32" width="70" x="1642" y="2050" as="geometry" />
+        </mxCell>
+        <mxCell id="E_ANALISIS_CALIDAD" parent="1" style="whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" value="ANALISIS_CALIDAD" vertex="1">
+          <mxGeometry height="46" width="150" x="1482" y="2462" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ANALISIS_CALIDAD_id_analisis" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id_analisis" vertex="1">
+          <mxGeometry height="32" width="98" x="1508" y="2570" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ANALISIS_CALIDAD_fecha" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha" vertex="1">
+          <mxGeometry height="32" width="70" x="1398" y="2518" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ANALISIS_CALIDAD_brix" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="brix" vertex="1">
+          <mxGeometry height="32" width="70" x="1438" y="2555" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ANALISIS_CALIDAD_ph" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="ph" vertex="1">
+          <mxGeometry height="32" width="70" x="1614" y="2550" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ANALISIS_CALIDAD_acidez_total" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="acidez_total" vertex="1">
+          <mxGeometry height="32" width="105" x="1666" y="2500" as="geometry" />
+        </mxCell>
+        <mxCell id="E_BODEGA" parent="1" style="whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;" value="BODEGA" vertex="1">
+          <mxGeometry height="46" width="150" x="1478" y="1719" as="geometry" />
+        </mxCell>
+        <mxCell id="A_BODEGA_cuit" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="cuit" vertex="1">
+          <mxGeometry height="32" width="70" x="1438" y="1640" as="geometry" />
+        </mxCell>
+        <mxCell id="A_BODEGA_razon_social" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="razon_social" vertex="1">
+          <mxGeometry height="32" width="105" x="1375" y="1773" as="geometry" />
+        </mxCell>
+        <mxCell id="A_BODEGA_domicilio" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="domicilio" vertex="1">
+          <mxGeometry height="32" width="85" x="1595" y="1652" as="geometry" />
+        </mxCell>
+        <mxCell id="E_VINO" parent="1" style="whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;" value="VINO" vertex="1">
+          <mxGeometry height="46" width="150" x="1630" y="1240" as="geometry" />
+        </mxCell>
+        <mxCell id="A_VINO_cod_vino" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="cod_vino" vertex="1">
+          <mxGeometry height="32" width="78" x="1906" y="1313" as="geometry" />
+        </mxCell>
+        <mxCell id="A_VINO_nombre" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nombre" vertex="1">
+          <mxGeometry height="32" width="70" x="1685" y="1135" as="geometry" />
+        </mxCell>
+        <mxCell id="A_VINO_tipo" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="tipo" vertex="1">
+          <mxGeometry height="32" width="70" x="1632" y="1167" as="geometry" />
+        </mxCell>
+        <mxCell id="A_VINO_anada" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="anada" vertex="1">
+          <mxGeometry height="32" width="70" x="1720" y="1167" as="geometry" />
+        </mxCell>
+        <mxCell id="A_VINO_volumen_ml" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="volumen_ml" vertex="1">
+          <mxGeometry height="32" width="92" x="1572" y="1135" as="geometry" />
+        </mxCell>
+        <mxCell id="A_VINO_graduacion" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="graduacion" vertex="1">
+          <mxGeometry height="32" width="92" x="1900" y="1348" as="geometry" />
+        </mxCell>
+        <mxCell id="A_VINO_precio" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="precio" vertex="1">
+          <mxGeometry height="32" width="70" x="1913" y="1274" as="geometry" />
+        </mxCell>
+        <mxCell id="E_MARIDAJE" parent="1" style="whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;" value="MARIDAJE" vertex="1">
+          <mxGeometry height="46" width="150" x="1729" y="1719" as="geometry" />
+        </mxCell>
+        <mxCell id="A_MARIDAJE_id_maridaje" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id_maridaje" vertex="1">
+          <mxGeometry height="32" width="98" x="1860" y="1778" as="geometry" />
+        </mxCell>
+        <mxCell id="A_MARIDAJE_nombre" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nombre" vertex="1">
+          <mxGeometry height="32" width="70" x="1674" y="1778" as="geometry" />
+        </mxCell>
+        <mxCell id="A_MARIDAJE_temperatura_servicio" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="temperatura_servicio" vertex="1">
+          <mxGeometry height="32" width="158" x="1729" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="E_AUDITORIA_PRECIO" parent="1" style="whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;" value="AUDITORIA_PRECIO" vertex="1">
+          <mxGeometry height="46" width="150" x="2047" y="1719" as="geometry" />
+        </mxCell>
+        <mxCell id="A_AUDITORIA_PRECIO_id_auditoria" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id_auditoria" vertex="1">
+          <mxGeometry height="32" width="105" x="2218" y="1725" as="geometry" />
+        </mxCell>
+        <mxCell id="A_AUDITORIA_PRECIO_precio_anterior" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="precio_anterior" vertex="1">
+          <mxGeometry height="32" width="125" x="2004" y="1790" as="geometry" />
+        </mxCell>
+        <mxCell id="A_AUDITORIA_PRECIO_precio_nuevo" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="precio_nuevo" vertex="1">
+          <mxGeometry height="32" width="105" x="2151" y="1778" as="geometry" />
+        </mxCell>
+        <mxCell id="A_AUDITORIA_PRECIO_fecha_hora" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha_hora" vertex="1">
+          <mxGeometry height="32" width="92" x="1949" y="1684" as="geometry" />
+        </mxCell>
+        <mxCell id="A_AUDITORIA_PRECIO_usuario" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="usuario" vertex="1">
+          <mxGeometry height="32" width="72" x="2160" y="1672" as="geometry" />
+        </mxCell>
+        <mxCell id="E_CLIENTE" parent="1" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=12;" value="CLIENTE" vertex="1">
+          <mxGeometry height="46" width="150" x="1610" y="965" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CLIENTE_id_cliente" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="id_cliente" vertex="1">
+          <mxGeometry height="32" width="92" x="1748" y="1034" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CLIENTE_nombre_razon_social" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nombre_razon_social" vertex="1">
+          <mxGeometry height="32" width="151" x="1438" y="948" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CLIENTE_tipo_doc" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="tipo_doc" vertex="1">
+          <mxGeometry height="32" width="78" x="1642" y="1044" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CLIENTE_nro_doc" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nro_doc" vertex="1">
+          <mxGeometry height="32" width="72" x="1560" y="846" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CLIENTE_direccion" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="direccion" vertex="1">
+          <mxGeometry height="32" width="85" x="1642" y="857" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CLIENTE_fecha_alta" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha_alta" vertex="1">
+          <mxGeometry height="32" width="92" x="1701" y="896" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CLIENTE_tipo" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="tipo" vertex="1">
+          <mxGeometry height="32" width="70" x="1560" y="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="A_CLIENTE_descuento" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="descuento" vertex="1">
+          <mxGeometry height="32" width="85" x="1487" y="1002" as="geometry" />
+        </mxCell>
+        <mxCell id="E_SOCIO" parent="1" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=12;" value="SOCIO" vertex="1">
+          <mxGeometry height="46" width="150" x="2420" y="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="E_DISTRIBUIDOR" parent="1" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=12;" value="DISTRIBUIDOR" vertex="1">
+          <mxGeometry height="46" width="150" x="2182" y="773" as="geometry" />
+        </mxCell>
+        <mxCell id="A_DISTRIBUIDOR_zona_cobertura" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="zona_cobertura" vertex="1">
+          <mxGeometry height="32" width="118" x="2256" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="A_DISTRIBUIDOR_nro_habilitacion" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="nro_habilitacion" vertex="1">
+          <mxGeometry height="32" width="131" x="2104" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="E_EXPORTADOR" parent="1" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=12;" value="EXPORTADOR" vertex="1">
+          <mxGeometry height="46" width="150" x="2420" y="924" as="geometry" />
+        </mxCell>
+        <mxCell id="A_EXPORTADOR_pais_destino" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="pais_destino" vertex="1">
+          <mxGeometry height="32" width="105" x="2640" y="928" as="geometry" />
+        </mxCell>
+        <mxCell id="E_PERMISO_EXPORTACION" parent="1" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=12;" value="PERMISO_EXPORTACION" vertex="1">
+          <mxGeometry height="46" width="150" x="2420" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="A_PERMISO_EXPORTACION_codigo" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="codigo" vertex="1">
+          <mxGeometry height="32" width="70" x="2560" y="518" as="geometry" />
+        </mxCell>
+        <mxCell id="A_PERMISO_EXPORTACION_fecha_emision" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha_emision" vertex="1">
+          <mxGeometry height="32" width="111" x="2630" y="589" as="geometry" />
+        </mxCell>
+        <mxCell id="A_PERMISO_EXPORTACION_fecha_vencimiento" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha_vencimiento" vertex="1">
+          <mxGeometry height="32" width="138" x="2392" y="486" as="geometry" />
+        </mxCell>
+        <mxCell id="E_COMPROBANTE" parent="1" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=12;" value="COMPROBANTE" vertex="1">
+          <mxGeometry height="46" width="150" x="1860" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="A_COMPROBANTE_nro" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="nro" vertex="1">
+          <mxGeometry height="32" width="70" x="1891" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="A_COMPROBANTE_fecha" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha" vertex="1">
+          <mxGeometry height="32" width="70" x="1953" y="472" as="geometry" />
+        </mxCell>
+        <mxCell id="A_COMPROBANTE_subtotal" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="subtotal" vertex="1">
+          <mxGeometry height="32" width="78" x="1983" y="523" as="geometry" />
+        </mxCell>
+        <mxCell id="A_COMPROBANTE_porcentaje_descuento" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="porcentaje_descuento" vertex="1">
+          <mxGeometry height="32" width="158" x="1760" y="472" as="geometry" />
+        </mxCell>
+        <mxCell id="A_COMPROBANTE_total" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="total" vertex="1">
+          <mxGeometry height="32" width="70" x="2049" y="571" as="geometry" />
+        </mxCell>
+        <mxCell id="E_TRANSPORTISTA" parent="1" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=12;" value="TRANSPORTISTA" vertex="1">
+          <mxGeometry height="46" width="150" x="570" y="1023" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TRANSPORTISTA_cod_transportista" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="cod_transportista" vertex="1">
+          <mxGeometry height="32" width="138" x="400" y="1037" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TRANSPORTISTA_razon_social" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="razon_social" vertex="1">
+          <mxGeometry height="32" width="105" x="730" y="970" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TRANSPORTISTA_cuit" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="cuit" vertex="1">
+          <mxGeometry height="32" width="70" x="495" y="980" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TRANSPORTISTA_email" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="email" vertex="1">
+          <mxGeometry height="32" width="70" x="510" y="1085" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TRANSPORTISTA_telefono" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="telefono" vertex="1">
+          <mxGeometry height="32" width="78" x="602" y="1106" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TRANSPORTISTA_domicilio" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="domicilio" vertex="1">
+          <mxGeometry height="32" width="85" x="560" y="948" as="geometry" />
+        </mxCell>
+        <mxCell id="E_INGRESO" parent="1" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=12;" value="INGRESO" vertex="1">
+          <mxGeometry height="46" width="150" x="823.5" y="1380" as="geometry" />
+        </mxCell>
+        <mxCell id="A_INGRESO_cod_ingreso" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="cod_ingreso" vertex="1">
+          <mxGeometry height="32" width="98" x="687" y="1422" as="geometry" />
+        </mxCell>
+        <mxCell id="A_INGRESO_fecha" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha" vertex="1">
+          <mxGeometry height="32" width="70" x="773" y="1464" as="geometry" />
+        </mxCell>
+        <mxCell id="A_INGRESO_estado" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="estado" vertex="1">
+          <mxGeometry height="32" width="70" x="715" y="1355" as="geometry" />
+        </mxCell>
+        <mxCell id="E_TRANSFERENCIA" parent="1" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=12;" value="TRANSFERENCIA" vertex="1">
+          <mxGeometry height="46" width="150" x="1694" y="719" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TRANSFERENCIA_nro" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;fontStyle=4;" value="nro" vertex="1">
+          <mxGeometry height="32" width="70" x="1596" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TRANSFERENCIA_fecha_confeccion" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="fecha_confeccion" vertex="1">
+          <mxGeometry height="32" width="131" x="1730" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="A_TRANSFERENCIA_estado" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="estado" vertex="1">
+          <mxGeometry height="32" width="70" x="1632" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="R_se_ubica" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="se ubica" vertex="1">
+          <mxGeometry height="86" width="170" x="450" y="2204" as="geometry" />
+        </mxCell>
+        <mxCell id="R_sala_loc" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="ubicada en" vertex="1">
+          <mxGeometry height="86" width="170" x="1016" y="633" as="geometry" />
+        </mxCell>
+        <mxCell id="R_trabaja" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="trabaja en" vertex="1">
+          <mxGeometry height="86" width="170" x="1312" y="338" as="geometry" />
+        </mxCell>
+        <mxCell id="R_encargado" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="es encargado de" vertex="1">
+          <mxGeometry height="86" width="170" x="687" y="338" as="geometry" />
+        </mxCell>
+        <mxCell id="R_dep_loc" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="ubicado en" vertex="1">
+          <mxGeometry height="86" width="170" x="1170" y="953" as="geometry" />
+        </mxCell>
+        <mxCell id="R_posee" parent="1" style="shape=rhombus;double=1;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="posee" vertex="1">
+          <mxGeometry height="86" width="170" x="700" y="2050" as="geometry" />
+        </mxCell>
+        <mxCell id="R_plantada" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="tiene plantada" vertex="1">
+          <mxGeometry height="86" width="170" x="998" y="1920" as="geometry" />
+        </mxCell>
+        <mxCell id="R_proviene" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="proviene de" vertex="1">
+          <mxGeometry height="86" width="170" x="1234" y="2050" as="geometry" />
+        </mxCell>
+        <mxCell id="R_entregado" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="entregado a" vertex="1">
+          <mxGeometry height="86" width="170" x="1472" y="1910" as="geometry" />
+        </mxCell>
+        <mxCell id="R_analiza" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="se analiza" vertex="1">
+          <mxGeometry height="86" width="170" x="1472" y="2270" as="geometry" />
+        </mxCell>
+        <mxCell id="R_elabora" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="elabora" vertex="1">
+          <mxGeometry height="86" width="170" x="1468" y="1548" as="geometry" />
+        </mxCell>
+        <mxCell id="R_audita" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="audita" vertex="1">
+          <mxGeometry height="86" width="170" x="1949" y="1548" as="geometry" />
+        </mxCell>
+        <mxCell id="R_composicion" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#d6b656;fontSize=11;" value="composición" vertex="1">
+          <mxGeometry height="86" width="170" x="1216" y="1496" as="geometry" />
+        </mxCell>
+        <mxCell id="A_composicion_porcentaje" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="porcentaje" vertex="1">
+          <mxGeometry height="32" width="92" x="1084" y="1523" as="geometry" />
+        </mxCell>
+        <mxCell id="R_maridaje" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="se recomienda con" vertex="1">
+          <mxGeometry height="86" width="170" x="1709" y="1548" as="geometry" />
+        </mxCell>
+        <mxCell id="R_vive" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="vive en" vertex="1">
+          <mxGeometry height="86" width="170" x="1386" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="R_permiso" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="emitido a" vertex="1">
+          <mxGeometry height="86" width="170" x="2410" y="733" as="geometry" />
+        </mxCell>
+        <mxCell id="R_realiza" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="realiza" vertex="1">
+          <mxGeometry height="86" width="170" x="1860" y="819" as="geometry" />
+        </mxCell>
+        <mxCell id="R_realizado" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="realizado en" vertex="1">
+          <mxGeometry height="86" width="170" x="1496" y="488" as="geometry" />
+        </mxCell>
+        <mxCell id="R_renglon" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#d6b656;fontSize=11;" value="renglón" vertex="1">
+          <mxGeometry height="86" width="170" x="2172" y="1210" as="geometry" />
+        </mxCell>
+        <mxCell id="A_renglon_cantidad" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="cantidad" vertex="1">
+          <mxGeometry height="32" width="78" x="2140" y="1296" as="geometry" />
+        </mxCell>
+        <mxCell id="A_renglon_precio_unitario" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="precio_unitario" vertex="1">
+          <mxGeometry height="32" width="125" x="2321" y="1286" as="geometry" />
+        </mxCell>
+        <mxCell id="A_renglon_importe_descuento" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="importe_descuento" vertex="1">
+          <mxGeometry height="32" width="138" x="2302" y="1199" as="geometry" />
+        </mxCell>
+        <mxCell id="A_renglon_subtotal" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="subtotal" vertex="1">
+          <mxGeometry height="32" width="78" x="2119" y="1199" as="geometry" />
+        </mxCell>
+        <mxCell id="R_stock_sala" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#d6b656;fontSize=11;" value="stock sala" vertex="1">
+          <mxGeometry height="86" width="170" x="1317" y="1085" as="geometry" />
+        </mxCell>
+        <mxCell id="A_stock_sala_cantidad" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="cantidad" vertex="1">
+          <mxGeometry height="32" width="78" x="1280" y="1170" as="geometry" />
+        </mxCell>
+        <mxCell id="R_stock_dep" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#d6b656;fontSize=11;" value="stock depósito" vertex="1">
+          <mxGeometry height="86" width="170" x="1009.5" y="1220" as="geometry" />
+        </mxCell>
+        <mxCell id="A_stock_dep_cantidad" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="cantidad" vertex="1">
+          <mxGeometry height="32" width="78" x="980" y="1306" as="geometry" />
+        </mxCell>
+        <mxCell id="R_cubre" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="cubre" vertex="1">
+          <mxGeometry height="86" width="170" x="680" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="R_traslada" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="traslada" vertex="1">
+          <mxGeometry height="86" width="170" x="810" y="1152" as="geometry" />
+        </mxCell>
+        <mxCell id="R_genera" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="genera" vertex="1">
+          <mxGeometry height="86" width="170" x="815" y="1566" as="geometry" />
+        </mxCell>
+        <mxCell id="R_ingresa" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#d6b656;fontSize=11;" value="ingresa" vertex="1">
+          <mxGeometry height="86" width="170" x="1147" y="1360" as="geometry" />
+        </mxCell>
+        <mxCell id="A_ingresa_cantidad" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="cantidad" vertex="1">
+          <mxGeometry height="32" width="78" x="1194" y="1313" as="geometry" />
+        </mxCell>
+        <mxCell id="R_solicita" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="solicita" vertex="1">
+          <mxGeometry height="86" width="170" x="1340" y="641" as="geometry" />
+        </mxCell>
+        <mxCell id="R_transfiere" parent="1" style="shape=rhombus;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#d6b656;fontSize=11;" value="transfiere" vertex="1">
+          <mxGeometry height="86" width="170" x="1861" y="1062" as="geometry" />
+        </mxCell>
+        <mxCell id="A_transfiere_cantidad" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" value="cantidad" vertex="1">
+          <mxGeometry height="32" width="78" x="2010" y="1056" as="geometry" />
+        </mxCell>
+        <mxCell id="ISA" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=13;" value="d" vertex="1">
+          <mxGeometry height="44" width="44" x="2235" y="965" as="geometry" />
+        </mxCell>
+        <mxCell id="ed1" edge="1" parent="1" source="E_DEPARTAMENTO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_DEPARTAMENTO_id_departamento" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed2" edge="1" parent="1" source="E_DEPARTAMENTO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_DEPARTAMENTO_nombre" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed3" edge="1" parent="1" source="E_DEPARTAMENTO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_DEPARTAMENTO_provincia" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed4" edge="1" parent="1" source="E_LOCALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_LOCALIDAD_id_localidad" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed5" edge="1" parent="1" source="E_LOCALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_LOCALIDAD_nombre" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed6" edge="1" parent="1" source="E_LOCALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_LOCALIDAD_provincia" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed7" edge="1" parent="1" source="E_LOCALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_LOCALIDAD_codigo_postal" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed8" edge="1" parent="1" source="E_DEPOSITO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_DEPOSITO_id" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed9" edge="1" parent="1" source="E_SALA_VENTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_SALA_VENTA_id_sala" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed10" edge="1" parent="1" source="E_SALA_VENTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_SALA_VENTA_calle" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed11" edge="1" parent="1" source="E_SALA_VENTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_SALA_VENTA_numero" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed12" edge="1" parent="1" source="E_SALA_VENTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_SALA_VENTA_dia_cierre" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed13" edge="1" parent="1" source="E_EMPLEADO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_EMPLEADO_cuit" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed14" edge="1" parent="1" source="E_EMPLEADO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_EMPLEADO_nombre" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed15" edge="1" parent="1" source="E_EMPLEADO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_EMPLEADO_fecha_ingreso" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed16" edge="1" parent="1" source="E_EMPLEADO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_EMPLEADO_salario" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed17" edge="1" parent="1" source="E_FINCA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_FINCA_id_finca" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed18" edge="1" parent="1" source="E_FINCA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_FINCA_nombre" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed19" edge="1" parent="1" source="E_FINCA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_FINCA_superficie_ha" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed20" edge="1" parent="1" source="E_PARCELA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_PARCELA_nro_parcela" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed21" edge="1" parent="1" source="E_PARCELA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_PARCELA_superficie_ha" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed22" edge="1" parent="1" source="E_PARCELA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_PARCELA_anio_plantacion" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed23" edge="1" parent="1" source="E_CEPA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CEPA_id_cepa" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed24" edge="1" parent="1" source="E_CEPA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CEPA_nombre" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed25" edge="1" parent="1" source="E_CEPA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CEPA_tipo" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed26" edge="1" parent="1" source="E_LOTE_UVA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_LOTE_UVA_nro_lote" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed27" edge="1" parent="1" source="E_LOTE_UVA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_LOTE_UVA_fecha_cosecha" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed28" edge="1" parent="1" source="E_LOTE_UVA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_LOTE_UVA_kg" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed29" edge="1" parent="1" source="E_ANALISIS_CALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_ANALISIS_CALIDAD_id_analisis" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed30" edge="1" parent="1" source="E_ANALISIS_CALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_ANALISIS_CALIDAD_fecha" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed31" edge="1" parent="1" source="E_ANALISIS_CALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_ANALISIS_CALIDAD_brix" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed32" edge="1" parent="1" source="E_ANALISIS_CALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_ANALISIS_CALIDAD_ph" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed33" edge="1" parent="1" source="E_ANALISIS_CALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_ANALISIS_CALIDAD_acidez_total" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed34" edge="1" parent="1" source="E_BODEGA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_BODEGA_cuit" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed35" edge="1" parent="1" source="E_BODEGA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_BODEGA_razon_social" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed36" edge="1" parent="1" source="E_BODEGA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_BODEGA_domicilio" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed37" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_VINO_cod_vino" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1840" y="1320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed38" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_VINO_nombre" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed39" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_VINO_tipo" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed40" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_VINO_anada" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed41" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_VINO_volumen_ml" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1640" y="1210" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed42" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_VINO_graduacion" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1820" y="1330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed43" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_VINO_precio" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1790" y="1290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed44" edge="1" parent="1" source="E_MARIDAJE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_MARIDAJE_id_maridaje" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed45" edge="1" parent="1" source="E_MARIDAJE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_MARIDAJE_nombre" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed46" edge="1" parent="1" source="E_MARIDAJE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_MARIDAJE_temperatura_servicio" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed47" edge="1" parent="1" source="E_AUDITORIA_PRECIO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_AUDITORIA_PRECIO_id_auditoria" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed48" edge="1" parent="1" source="E_AUDITORIA_PRECIO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_AUDITORIA_PRECIO_precio_anterior" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed49" edge="1" parent="1" source="E_AUDITORIA_PRECIO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_AUDITORIA_PRECIO_precio_nuevo" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed50" edge="1" parent="1" source="E_AUDITORIA_PRECIO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_AUDITORIA_PRECIO_fecha_hora" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed51" edge="1" parent="1" source="E_AUDITORIA_PRECIO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_AUDITORIA_PRECIO_usuario" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed52" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CLIENTE_id_cliente" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed53" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CLIENTE_nombre_razon_social" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed54" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CLIENTE_tipo_doc" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed55" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CLIENTE_nro_doc" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed56" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CLIENTE_direccion" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed57" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CLIENTE_fecha_alta" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed58" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CLIENTE_tipo" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed59" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_CLIENTE_descuento" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed60" edge="1" parent="1" source="E_DISTRIBUIDOR" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_DISTRIBUIDOR_zona_cobertura" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed61" edge="1" parent="1" source="E_DISTRIBUIDOR" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_DISTRIBUIDOR_nro_habilitacion" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed62" edge="1" parent="1" source="E_EXPORTADOR" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_EXPORTADOR_pais_destino" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed63" edge="1" parent="1" source="E_PERMISO_EXPORTACION" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_PERMISO_EXPORTACION_codigo" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed64" edge="1" parent="1" source="E_PERMISO_EXPORTACION" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_PERMISO_EXPORTACION_fecha_emision" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed65" edge="1" parent="1" source="E_PERMISO_EXPORTACION" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_PERMISO_EXPORTACION_fecha_vencimiento" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed66" edge="1" parent="1" source="E_COMPROBANTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_COMPROBANTE_nro" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed67" edge="1" parent="1" source="E_COMPROBANTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_COMPROBANTE_fecha" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed68" edge="1" parent="1" source="E_COMPROBANTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_COMPROBANTE_subtotal" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed69" edge="1" parent="1" source="E_COMPROBANTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_COMPROBANTE_porcentaje_descuento" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed70" edge="1" parent="1" source="E_COMPROBANTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_COMPROBANTE_total" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed71" edge="1" parent="1" source="E_TRANSPORTISTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_TRANSPORTISTA_cod_transportista" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed72" edge="1" parent="1" source="E_TRANSPORTISTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_TRANSPORTISTA_razon_social" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed73" edge="1" parent="1" source="E_TRANSPORTISTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_TRANSPORTISTA_cuit" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed74" edge="1" parent="1" source="E_TRANSPORTISTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_TRANSPORTISTA_email" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed75" edge="1" parent="1" source="E_TRANSPORTISTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_TRANSPORTISTA_telefono" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed76" edge="1" parent="1" source="E_TRANSPORTISTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_TRANSPORTISTA_domicilio" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed77" edge="1" parent="1" source="E_INGRESO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_INGRESO_cod_ingreso" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed78" edge="1" parent="1" source="E_INGRESO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_INGRESO_fecha" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed79" edge="1" parent="1" source="E_INGRESO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_INGRESO_estado" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed80" edge="1" parent="1" source="E_TRANSFERENCIA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_TRANSFERENCIA_nro" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed81" edge="1" parent="1" source="E_TRANSFERENCIA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_TRANSFERENCIA_fecha_confeccion" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed82" edge="1" parent="1" source="E_TRANSFERENCIA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_TRANSFERENCIA_estado" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed83" edge="1" parent="1" source="E_FINCA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_se_ubica" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed84" edge="1" parent="1" source="E_DEPARTAMENTO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_se_ubica" value="(0,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed85" edge="1" parent="1" source="E_SALA_VENTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_sala_loc" value="(1,1)">
+          <mxGeometry relative="1" x="-0.0163" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed86" edge="1" parent="1" source="E_LOCALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_sala_loc" value="(0,N)">
+          <mxGeometry relative="1" x="-0.0094" y="4" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed87" edge="1" parent="1" source="E_EMPLEADO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_trabaja" value="(1,1)">
+          <mxGeometry relative="1" x="-0.0159" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed88" edge="1" parent="1" source="E_SALA_VENTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_trabaja" value="(1,N)">
+          <mxGeometry relative="1" x="0.0918" y="-5" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed89" edge="1" parent="1" source="E_LOCALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_encargado" value="(1,1)">
+          <mxGeometry relative="1" x="0.1139" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="850" y="670" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed90" edge="1" parent="1" source="E_EMPLEADO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_encargado" value="(0,1)">
+          <mxGeometry relative="1" x="-0.1605" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed91" edge="1" parent="1" source="E_DEPOSITO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_dep_loc" value="(1,1)">
+          <mxGeometry relative="1" x="0.0242" y="2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed92" edge="1" parent="1" source="E_LOCALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_dep_loc" value="(0,1)">
+          <mxGeometry relative="1" x="0.0196" y="-3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed93" edge="1" parent="1" source="E_PARCELA" style="shape=link;html=1;endArrow=none;labelBackgroundColor=#ffffff;fontSize=11;" target="R_posee" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed94" edge="1" parent="1" source="E_FINCA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_posee" value="(1,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed95" edge="1" parent="1" source="E_PARCELA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_plantada" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed96" edge="1" parent="1" source="E_CEPA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_plantada" value="(0,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed97" edge="1" parent="1" source="E_LOTE_UVA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_proviene" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed98" edge="1" parent="1" source="E_PARCELA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_proviene" value="(0,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed99" edge="1" parent="1" source="E_LOTE_UVA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_entregado" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed100" edge="1" parent="1" source="E_BODEGA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_entregado" value="(0,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed101" edge="1" parent="1" source="E_ANALISIS_CALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_analiza" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed102" edge="1" parent="1" source="E_LOTE_UVA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_analiza" value="(0,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed103" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_elabora" value="(1,1)">
+          <mxGeometry relative="1" x="0.6841" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed104" edge="1" parent="1" source="E_BODEGA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_elabora" value="(0,N)">
+          <mxGeometry relative="1" x="0.6235" y="3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed105" edge="1" parent="1" source="E_AUDITORIA_PRECIO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_audita" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed106" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_audita" value="(0,N)">
+          <mxGeometry relative="1" x="0.8832" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed107" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_composicion" value="(1,N)">
+          <mxGeometry relative="1" x="0.8019" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed108" edge="1" parent="1" source="E_CEPA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_composicion" value="(0,N)">
+          <mxGeometry relative="1" x="0.6517" y="3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed109" edge="1" parent="1" source="R_composicion" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_composicion_porcentaje" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed110" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_maridaje" value="(1,N)">
+          <mxGeometry relative="1" x="0.733" y="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed111" edge="1" parent="1" source="E_MARIDAJE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_maridaje" value="(0,N)">
+          <mxGeometry relative="1" x="0.3637" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed112" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_vive" value="(1,1)">
+          <mxGeometry relative="1" x="-0.3935" y="-2" as="geometry">
+            <mxPoint x="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed113" edge="1" parent="1" source="E_LOCALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_vive" value="(0,N)">
+          <mxGeometry relative="1" x="-0.5922" y="-3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed114" edge="1" parent="1" source="E_PERMISO_EXPORTACION" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_permiso" value="(1,1)">
+          <mxGeometry relative="1" x="-0.193" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed115" edge="1" parent="1" source="E_EXPORTADOR" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_permiso" value="(0,N)">
+          <mxGeometry relative="1" x="0.0361" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed116" edge="1" parent="1" source="E_COMPROBANTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_realiza" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed117" edge="1" parent="1" source="E_CLIENTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_realiza" value="(0,N)">
+          <mxGeometry relative="1" x="-0.095" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed118" edge="1" parent="1" source="E_COMPROBANTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_realizado" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed119" edge="1" parent="1" source="E_SALA_VENTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_realizado" value="(0,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed120" edge="1" parent="1" source="E_COMPROBANTE" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_renglon" value="(1,N)">
+          <mxGeometry relative="1" x="-0.0317" y="5" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="2130" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed121" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_renglon" value="(0,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed122" edge="1" parent="1" source="R_renglon" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_renglon_cantidad" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed123" edge="1" parent="1" source="R_renglon" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_renglon_precio_unitario" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed124" edge="1" parent="1" source="R_renglon" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_renglon_importe_descuento" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed125" edge="1" parent="1" source="R_renglon" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_renglon_subtotal" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed126" edge="1" parent="1" source="E_SALA_VENTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_stock_sala" value="(0,N)">
+          <mxGeometry relative="1" x="-0.119" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1320" y="750" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed127" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_stock_sala" value="(0,N)">
+          <mxGeometry relative="1" x="0.6075" y="2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed128" edge="1" parent="1" source="R_stock_sala" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_stock_sala_cantidad" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed129" edge="1" parent="1" source="E_DEPOSITO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_stock_dep" value="(0,N)">
+          <mxGeometry relative="1" x="0.0283" y="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed130" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_stock_dep" value="(0,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed131" edge="1" parent="1" source="R_stock_dep" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_stock_dep_cantidad" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed132" edge="1" parent="1" source="E_TRANSPORTISTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_cubre" value="(0,N)">
+          <mxGeometry relative="1" x="0.1765" y="-3" as="geometry">
+            <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed133" edge="1" parent="1" source="E_LOCALIDAD" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_cubre" value="(0,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed134" edge="1" parent="1" source="E_INGRESO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_traslada" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed135" edge="1" parent="1" source="E_TRANSPORTISTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_traslada" value="(0,N)">
+          <mxGeometry relative="1" x="-0.1728" y="2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed136" edge="1" parent="1" source="E_INGRESO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_genera" value="(1,1)">
+          <mxGeometry relative="1" x="0.1429" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed137" edge="1" parent="1" source="E_BODEGA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_genera" value="(0,N)">
+          <mxGeometry relative="1" x="0.8101" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed138" edge="1" parent="1" source="E_INGRESO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_ingresa" value="(1,N)">
+          <mxGeometry relative="1" x="0.3429" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed139" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_ingresa" value="(0,N)">
+          <mxGeometry relative="1" x="0.5177" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed140" edge="1" parent="1" source="R_ingresa" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_ingresa_cantidad" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed141" edge="1" parent="1" source="E_TRANSFERENCIA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_solicita" value="(1,1)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed142" edge="1" parent="1" source="E_SALA_VENTA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_solicita" value="(0,N)">
+          <mxGeometry relative="1" x="-0.55" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed143" edge="1" parent="1" source="E_TRANSFERENCIA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_transfiere" value="(1,N)">
+          <mxGeometry relative="1" x="-0.6843" y="-3" as="geometry">
+            <mxPoint y="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed144" edge="1" parent="1" source="E_VINO" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="R_transfiere" value="(0,N)">
+          <mxGeometry relative="1" x="0.1872" y="3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed145" edge="1" parent="1" source="R_transfiere" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="A_transfiere_cantidad" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed146" edge="1" parent="1" source="E_CLIENTE" style="shape=link;html=1;endArrow=none;labelBackgroundColor=#ffffff;fontSize=11;" target="ISA" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed147" edge="1" parent="1" source="ISA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="E_SOCIO" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed148" edge="1" parent="1" source="ISA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="E_DISTRIBUIDOR" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed149" edge="1" parent="1" source="ISA" style="endArrow=none;html=1;labelBackgroundColor=#ffffff;fontSize=11;" target="E_EXPORTADOR" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=12;" value="&lt;b&gt;DER — Bodegas del Atuel (notación de Chen)&lt;/b&gt;&lt;br&gt;&lt;br&gt;(min,max) junto a cada entidad = participación de esa entidad en la relación.&lt;br&gt;Nombre subrayado = clave primaria · subrayado punteado = clave parcial (entidad débil).&lt;br&gt;Rectángulo doble = entidad débil · rombo doble = relación identificadora · línea doble = participación total.&lt;br&gt;Rombo naranja = relación N:M con atributos propios · círculo «d» = jerarquía de Cliente (total y disjunta).&lt;br&gt;&lt;br&gt;&lt;b&gt;Reglas que el diagrama no puede mostrar:&lt;/b&gt;&lt;br&gt;• Lote–Parcela: como máximo un lote por parcela y campaña (año de fecha_cosecha); la campaña es derivada y no se dibuja.&lt;br&gt;• Se analiza: el mínimo es 0 por lote a propósito (el análisis se hace después de la cosecha).&lt;br&gt;• Depósito: existe un único depósito central (id = 1).&lt;br&gt;• Composición: los porcentajes de cada vino suman 100." vertex="1">
+          <mxGeometry height="190" width="900" x="80" y="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
